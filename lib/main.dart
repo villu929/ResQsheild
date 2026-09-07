@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
+import 'screens/getstarted_screen.dart';
 
 void main() {
   runApp(const ResQShieldApp());
@@ -21,7 +21,7 @@ class ResQShieldApp extends StatelessWidget {
           seedColor: const Color(0xFF0877C9),
         ),
       ),
-      home: const LoginScreen(),
+      home: const GetStartedScreen(),
     );
   }
 }

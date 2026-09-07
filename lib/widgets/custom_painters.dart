@@ -54,38 +54,38 @@ class _BackgroundWaterPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
 
-    // Soft blue-grey background gradient
+    // Soft light blue background water gradient (transparent to gentle sky blue)
     final bgGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: const [
-        Color(0xFF7E98AE), // Top/primary: #7E98AE
-        Color(0xFF8FA9BC), // Main: #8FA9BC
-        Color(0xFFB4C9D8), // Lighter areas: #B4C9D8
-        Color(0xFF99ADBF), // Bottom: #99ADBF
+        Color(0x00E9F4FB),
+        Color(0x20E9F4FB),
+        Color(0x40DDF0FC),
+        Color(0x55CEE8FA),
       ],
       stops: const [0.0, 0.35, 0.70, 1.0],
     );
 
     canvas.drawRect(rect, Paint()..shader = bgGradient.createShader(rect));
 
-    // Radial ambient light at top right for soft lighter areas (#B4C9D8)
+    // Radial ambient light at top right for soft sky highlights
     final ambientGlow = RadialGradient(
       center: const Alignment(0.6, -0.6),
       radius: 0.95,
       colors: [
-        const Color(0xFFB4C9D8).withOpacity(0.40),
+        const Color(0xFFCCE4FA).withValues(alpha: 0.35),
         Colors.transparent,
       ],
     );
     canvas.drawRect(rect, Paint()..shader = ambientGlow.createShader(rect));
 
-    // Secondary soft glow for lighter areas mid-left (#B4C9D8)
+    // Secondary soft glow for lighter areas mid-left
     final midGlow = RadialGradient(
       center: const Alignment(-0.4, 0.25),
       radius: 0.85,
       colors: [
-        const Color(0xFFB4C9D8).withOpacity(0.28),
+        const Color(0xFFBAE6FD).withValues(alpha: 0.20),
         Colors.transparent,
       ],
     );
@@ -109,7 +109,7 @@ class _BackgroundWaterPainter extends CustomPainter {
     canvas.drawPath(
       path1,
       Paint()
-        ..color = const Color(0xFFB4C9D8).withOpacity(0.22)
+        ..color = const Color(0xFF38BDF8).withValues(alpha: 0.08)
         ..style = PaintingStyle.fill,
     );
 
@@ -129,7 +129,7 @@ class _BackgroundWaterPainter extends CustomPainter {
     canvas.drawPath(
       path2,
       Paint()
-        ..color = Colors.white.withOpacity(0.12)
+        ..color = Colors.white.withValues(alpha: 0.18)
         ..style = PaintingStyle.fill,
     );
 
@@ -146,7 +146,7 @@ class _BackgroundWaterPainter extends CustomPainter {
         Offset(seedX + math.sin(phase + i) * 6, offsetY),
         radius,
         Paint()
-          ..color = Colors.white.withOpacity(0.18 + (i % 3) * 0.06)
+          ..color = Colors.white.withValues(alpha: 0.18 + (i % 3) * 0.06)
           ..style = PaintingStyle.fill,
       );
     }

@@ -1,12 +1,14 @@
 import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'home_screen.dart';
 
 // ============================================================================
-// PERMISSION SCREEN
+// RESQSHIELD APP PERMISSIONS SCREEN
+// ----------------------------------------------------------------------------
+// Accordion-style interactive permission cards matching user reference images.
+// Exactly 1 card expanded at a time with smooth 280-320ms ease-out transitions.
 // ============================================================================
 
 class PermissionScreen extends StatefulWidget {
@@ -19,109 +21,113 @@ class PermissionScreen extends StatefulWidget {
 class _PermissionScreenState extends State<PermissionScreen>
     with TickerProviderStateMixin {
   // --------------------------------------------------------------------------
-  // ANIMATION
+  // INTERACTION & EXPANSION STATE
   // --------------------------------------------------------------------------
-  late final AnimationController _bgController;
-  late final AnimationController _cardController;
-  late final AnimationController _pulseController;
-  late final Animation<double> _cardSlide;
-  late final Animation<double> _cardFade;
-  late final Animation<double> _pulse;
+  // Only one permission can be expanded at a time (null = all collapsed)
+  int? _expandedIndex;
 
   // --------------------------------------------------------------------------
-  // PERMISSION STATE
+  // REQUEST ALL / SUBMIT STATE
   // --------------------------------------------------------------------------
-  final List<_PermItem> _perms = [
-    _PermItem(
-      permission: Permission.locationWhenInUse,
-      icon: Icons.my_location_rounded,
-      title: 'Location Tracking',
-      subtitle:
-          'Aapki live location track karne ke liye\n(Flood zone alerts & evacuation routes)',
-      color: const Color(0xFF0877C9),
-      gradient: [const Color(0xFF0877C9), const Color(0xFF05529A)],
-    ),
-    _PermItem(
-      permission: Permission.sms,
-      icon: Icons.sms_rounded,
-      title: 'SMS Alerts',
-      subtitle:
-          'Emergency alerts aur SOS messages\nbhejne ke liye permission chahiye',
-      color: const Color(0xFF15945C),
-      gradient: [const Color(0xFF15945C), const Color(0xFF0D6B43)],
-    ),
-    _PermItem(
-      permission: Permission.notification,
-      icon: Icons.notifications_active_rounded,
-      title: 'Notifications',
-      subtitle:
-          'Flood warnings aur rescue updates ke\nliye real-time notifications',
-      color: const Color(0xFFF39A20),
-      gradient: [const Color(0xFFF39A20), const Color(0xFFD97C0D)],
-    ),
-    _PermItem(
-      permission: Permission.microphone,
-      icon: Icons.mic_rounded,
-      title: 'Audio Alerts',
-      subtitle: 'Emergency audio broadcasts aur\nvoice SOS bhejne ke liye',
-      color: const Color(0xFF7351D8),
-      gradient: [const Color(0xFF7351D8), const Color(0xFF5436B5)],
-    ),
-  ];
-
   bool _requesting = false;
   bool _allDone = false;
+  bool _buttonPressed = false;
+  bool _skipPressed = false;
+
+  // --------------------------------------------------------------------------
+  // SUBTLE MICRO-ANIMATION CONTROLLERS
+  // --------------------------------------------------------------------------
+  late final AnimationController _ambientController;
+  late final Animation<double> _pulseAnimation;
+
+  // --------------------------------------------------------------------------
+  // 4 PERMISSIONS DEFINITION
+  // --------------------------------------------------------------------------
+  final List<_PermissionData> _permissions = [
+    _PermissionData(
+      permission: Permission.locationWhenInUse,
+      icon: Icons.location_on_rounded,
+      title: 'Location Tracking',
+      description: 'Helps us track your location for\nflood alerts & evacuation routes.',
+      expandedTitle: 'Live Location',
+      expandedSubtitle:
+          'Your location helps us send faster flood alerts and recommend safer evacuation routes.',
+    ),
+    _PermissionData(
+      permission: Permission.notification,
+      icon: Icons.notifications_none_rounded,
+      title: 'Live Flood Alerts',
+      description: 'Get real-time alerts and warnings\nin your area.',
+      expandedTitle: 'Real-Time Alerts',
+      expandedSubtitle:
+          'Get notified when flood risk, water levels or severe weather conditions change near you.',
+    ),
+    _PermissionData(
+      permission: Permission.sms,
+      icon: Icons.warning_amber_rounded,
+      title: 'Emergency Assistance',
+      description: 'Helps us connect you with rescue\nteams when you need help.',
+      expandedTitle: 'Emergency Support',
+      expandedSubtitle:
+          'If you need urgent help, ResQShield can help connect you with nearby emergency and rescue services.',
+    ),
+    _PermissionData(
+      permission: Permission.notification,
+      icon: Icons.people_outline_rounded,
+      title: 'Community Updates',
+      description: 'Stay connected with your\nlocal community.',
+      expandedTitle: 'Community Safety',
+      expandedSubtitle:
+          'Receive verified updates, local flood reports and important safety information from your area.',
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
 
-    _cardController = AnimationController(
+    // Subtle 2.5s ambient breathing cycle for pins/status indicators
+    _ambientController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
 
-    _cardSlide = Tween<double>(begin: 60, end: 0).animate(
-      CurvedAnimation(parent: _cardController, curve: Curves.easeOutCubic),
+    _pulseAnimation = Tween<double>(begin: 0.96, end: 1.05).animate(
+      CurvedAnimation(parent: _ambientController, curve: Curves.easeInOut),
     );
-    _cardFade = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _cardController, curve: Curves.easeOut));
-    _pulse = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    Future.delayed(const Duration(milliseconds: 250), () {
-      if (mounted) _cardController.forward();
-    });
   }
 
   @override
   void dispose() {
-    _bgController.dispose();
-    _cardController.dispose();
-    _pulseController.dispose();
+    _ambientController.dispose();
     super.dispose();
   }
 
   // --------------------------------------------------------------------------
-  // REQUEST ALL PERMISSIONS — timeout-safe, never freezes
+  // ACCORDION TOGGLE
   // --------------------------------------------------------------------------
-  Future<void> _requestAll() async {
-    if (_requesting) return;
-    setState(() => _requesting = true);
+  void _toggleCard(int index) {
+    setState(() {
+      if (_expandedIndex == index) {
+        _expandedIndex = null; // Collapse if already open
+      } else {
+        _expandedIndex = index; // Expand clicked row, collapse others
+      }
+    });
+  }
 
-    for (final item in _perms) {
+  // --------------------------------------------------------------------------
+  // ALLOW ALL PERMISSIONS HANDLER
+  // --------------------------------------------------------------------------
+  Future<void> _handleAllowAll() async {
+    if (_requesting || _allDone) return;
+
+    setState(() {
+      _requesting = true;
+    });
+
+    // Request actual OS permissions with timeout fallback
+    for (final item in _permissions) {
       PermissionStatus status = PermissionStatus.granted;
       try {
         if (!kIsWeb) {
@@ -133,55 +139,21 @@ class _PermissionScreenState extends State<PermissionScreen>
       } catch (_) {
         status = PermissionStatus.granted;
       }
-      if (mounted) {
-        setState(() {
-          item.status = status;
-        });
-      }
-      // Small pause so the user sees each card update
-      await Future.delayed(const Duration(milliseconds: 300));
+      item.status = status;
+      await Future.delayed(const Duration(milliseconds: 180));
     }
 
-    if (mounted) {
-      setState(() {
-        _allDone = true;
-        _requesting = false;
-      });
+    if (!mounted) return;
 
-      await Future.delayed(const Duration(milliseconds: 700));
-      if (mounted) {
-        _navigateToHome();
-      }
-    }
-  }
+    setState(() {
+      _requesting = false;
+      _allDone = true;
+    });
 
-  Future<void> _requestSingle(_PermItem item) async {
-    if (_requesting) return;
-    PermissionStatus status = PermissionStatus.granted;
-    try {
-      if (!kIsWeb) {
-        status = await item.permission.request().timeout(
-          const Duration(seconds: 4),
-          onTimeout: () => PermissionStatus.granted,
-        );
-      }
-    } catch (_) {
-      status = PermissionStatus.granted;
-    }
-    if (mounted) {
-      setState(() {
-        item.status = status;
-        if (_perms.every((p) => p.isGranted)) {
-          _allDone = true;
-        }
-      });
-      if (_allDone) {
-        await Future.delayed(const Duration(milliseconds: 700));
-        if (mounted) {
-          _navigateToHome();
-        }
-      }
-    }
+    await Future.delayed(const Duration(milliseconds: 650));
+    if (!mounted) return;
+
+    _navigateToHome();
   }
 
   void _navigateToHome() {
@@ -192,82 +164,208 @@ class _PermissionScreenState extends State<PermissionScreen>
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 600),
+        transitionDuration: const Duration(milliseconds: 500),
       ),
       (route) => false,
     );
   }
 
   // --------------------------------------------------------------------------
-  // SKIP (navigate anyway)
-  // --------------------------------------------------------------------------
-  void _skipToHome() {
-    _navigateToHome();
-  }
-
-  // --------------------------------------------------------------------------
-  // BUILD
+  // BUILD METHOD (RESPONSIVE SINGLE SCREEN WITH ACCORDION)
   // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF063A5B),
-      body: Stack(
-        children: [
-          // Animated ocean background
-          AnimatedBuilder(
-            animation: _bgController,
-            builder: (_, _) => CustomPaint(
-              painter: _OceanBgPainter(_bgController.value),
-              size: Size.infinite,
-            ),
-          ),
+      backgroundColor: const Color(0xFFE9F4FB),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double w = constraints.maxWidth;
+          final double h = constraints.maxHeight;
 
-          // Content
-          SafeArea(
-            child: AnimatedBuilder(
-              animation: _cardController,
-              builder: (_, child) {
-                return Transform.translate(
-                  offset: Offset(0, _cardSlide.value),
-                  child: Opacity(opacity: _cardFade.value, child: child),
-                );
-              },
-              child: Column(
-                children: [
-                  const SizedBox(height: 36),
+          // Responsive metrics (reference viewport 390w x 844h)
+          final double scaleW = (w / 390.0).clamp(0.65, 1.40);
+          final double scaleH = (h / 844.0).clamp(0.55, 1.35);
+          final double scaleMin = math.min(scaleW, scaleH);
+          final double textScale = (math.min(w / 390.0, h / 800.0)).clamp(0.65, 1.25);
 
-                  // Shield icon + title
-                  _buildHeader(),
+          final double padH = (18.0 * scaleW).clamp(12.0, 24.0);
+          final double padV = (8.0 * scaleH).clamp(4.0, 14.0);
 
-                  const SizedBox(height: 28),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // ==============================================================
+              // 1. EXACT USER PROVIDED BACKGROUND IMAGE
+              // ==============================================================
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/permission_bg.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                ),
+              ),
 
-                  // Permission cards
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          ..._perms.map(
-                            (item) => _PermCard(
-                              item: item,
-                              index: _perms.indexOf(item),
-                              onTap: () => _requestSingle(item),
-                            ),
+              // ==============================================================
+              // 2. MAIN ACCORDION UI
+              // ==============================================================
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+                  child: Column(
+                    children: [
+                      // ── TOP BAR: LOGO & BRAND ──
+                      _buildTopBar(scaleW, scaleH, scaleMin, textScale),
+
+                      SizedBox(height: (12.0 * scaleH).clamp(6.0, 18.0)),
+
+                      // ── HEADER: APP PERMISSIONS TITLE & SUBTITLE ──
+                      _buildHeader(scaleH, textScale),
+
+                      SizedBox(height: (12.0 * scaleH).clamp(6.0, 18.0)),
+
+                      // ── 4 EXPANDABLE ACCORDION CARDS ──
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(_permissions.length, (index) {
+                              final item = _permissions[index];
+                              final isExpanded = _expandedIndex == index;
+
+                              return _buildAccordionCard(
+                                index: index,
+                                item: item,
+                                isExpanded: isExpanded,
+                                scaleW: scaleW,
+                                scaleH: scaleH,
+                                scaleMin: scaleMin,
+                                textScale: textScale,
+                              );
+                            }),
                           ),
-                          const SizedBox(height: 20),
-                        ],
+                        ),
                       ),
+
+                      SizedBox(height: (10.0 * scaleH).clamp(6.0, 16.0)),
+
+                      // ── BOTTOM BUTTONS: ALLOW ALL & SKIP ──
+                      _buildBottomButtons(scaleW, scaleH, scaleMin, textScale),
+
+                      SizedBox(height: (4.0 * scaleH).clamp(2.0, 8.0)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // TOP BAR: LOGO & BRAND NAME
+  // --------------------------------------------------------------------------
+  Widget _buildTopBar(double scaleW, double scaleH, double scaleMin, double textScale) {
+    final double logoSize = (38.0 * scaleMin).clamp(28.0, 48.0);
+    final double resSize = (18.0 * textScale).clamp(14.0, 22.0);
+    final double qSize = (20.0 * textScale).clamp(15.0, 24.0);
+    final double taglineSize = (8.5 * textScale).clamp(6.8, 10.5);
+
+    return Row(
+      children: [
+        Image.asset(
+          'assets/images/app_logo.png',
+          width: logoSize,
+          height: logoSize,
+          fit: BoxFit.contain,
+        ),
+        SizedBox(width: (8.0 * scaleW).clamp(5.0, 12.0)),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Res',
+                    style: TextStyle(
+                      color: const Color(0xFF013973),
+                      fontSize: resSize,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
                     ),
                   ),
-
-                  // Bottom buttons
-                  _buildBottomButtons(),
-
-                  const SizedBox(height: 16),
+                  TextSpan(
+                    text: 'Q',
+                    style: TextStyle(
+                      color: const Color(0xFF00FF00),
+                      fontSize: qSize,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
+                      shadows: const [
+                        Shadow(
+                          color: Color(0x5500FF00),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'Shield',
+                    style: TextStyle(
+                      color: const Color(0xFF013973),
+                      fontSize: resSize,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
                 ],
               ),
+            ),
+            Text(
+              'Safer Routes. Stronger Communities.',
+              style: TextStyle(
+                color: const Color(0xFF013973).withValues(alpha: 0.75),
+                fontSize: taglineSize,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // HEADER: TITLE & SUBTITLE
+  // --------------------------------------------------------------------------
+  Widget _buildHeader(double scaleH, double textScale) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'App Permissions',
+            style: TextStyle(
+              color: const Color(0xFF013973),
+              fontSize: (22.0 * textScale).clamp(18.0, 26.0),
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+          SizedBox(height: (3.0 * scaleH).clamp(1.0, 6.0)),
+          Text(
+            'ResQShield needs a few permissions\nto keep you safe and informed.',
+            style: TextStyle(
+              color: const Color(0xFF47627E),
+              fontSize: (12.0 * textScale).clamp(10.0, 14.0),
+              fontWeight: FontWeight.w500,
+              height: 1.30,
             ),
           ),
         ],
@@ -275,405 +373,782 @@ class _PermissionScreenState extends State<PermissionScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        // Animated shield
-        AnimatedBuilder(
-          animation: _pulse,
-          builder: (_, child) =>
-              Transform.scale(scale: _pulse.value, child: child),
-          child: Container(
-            width: 95,
-            height: 95,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.08),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0877C9).withOpacity(0.4),
-                  blurRadius: 28,
-                  spreadRadius: 4,
+  // --------------------------------------------------------------------------
+  // ACCORDION PERMISSION CARD (COMPACT / EXPANDED INLINE)
+  // --------------------------------------------------------------------------
+  Widget _buildAccordionCard({
+    required int index,
+    required _PermissionData item,
+    required bool isExpanded,
+    required double scaleW,
+    required double scaleH,
+    required double scaleMin,
+    required double textScale,
+  }) {
+    final double cardRadius = (16.0 * scaleMin).clamp(13.0, 20.0);
+    final double iconDim = (40.0 * scaleMin).clamp(32.0, 46.0);
+    final double iconSize = (22.0 * scaleMin).clamp(18.0, 26.0);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      margin: EdgeInsets.only(bottom: (8.0 * scaleH).clamp(5.0, 12.0)),
+      decoration: BoxDecoration(
+        color: isExpanded
+            ? Colors.white.withValues(alpha: 0.96)
+            : Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(
+          color: isExpanded
+              ? const Color(0xFF007AEB).withValues(alpha: 0.45)
+              : const Color(0xFFD3E7F8),
+          width: isExpanded ? 1.4 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isExpanded
+                ? const Color(0x18007AEB)
+                : const Color(0x0A013973),
+            blurRadius: isExpanded ? 12 : 6,
+            offset: Offset(0, isExpanded ? 4 : 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(cardRadius),
+          onTap: () => _toggleCard(index),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: (14.0 * scaleW).clamp(10.0, 18.0),
+              vertical: (10.0 * scaleH).clamp(7.0, 13.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── DEFAULT ROW HEADER ──
+                Row(
+                  children: [
+                    // Icon in circular light-blue container
+                    Container(
+                      width: iconDim,
+                      height: iconDim,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F3FD),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFCCE4FA),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          item.icon,
+                          color: const Color(0xFF007AEB),
+                          size: iconSize,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(width: (12.0 * scaleW).clamp(8.0, 16.0)),
+
+                    // Title + Description
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              color: const Color(0xFF0F2D52),
+                              fontSize: (13.5 * textScale).clamp(11.5, 15.5),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                          SizedBox(height: (2.0 * scaleH).clamp(1.0, 4.0)),
+                          Text(
+                            item.description,
+                            style: TextStyle(
+                              color: const Color(0xFF537392),
+                              fontSize: (10.5 * textScale).clamp(9.0, 12.0),
+                              fontWeight: FontWeight.w500,
+                              height: 1.25,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Chevron (Changes > → ^ with smooth transition)
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeInOutCubic,
+                      child: Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_down_rounded
+                            : Icons.chevron_right_rounded,
+                        color: isExpanded
+                            ? const Color(0xFF007AEB)
+                            : const Color(0xFF88A6C2),
+                        size: (22.0 * scaleMin).clamp(18.0, 26.0),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── ACCORDION EXPANDED INNER PANEL (SMOOTH HEIGHT + OPACITY) ──
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOutCubic,
+                  child: isExpanded
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: (10.0 * scaleH).clamp(6.0, 14.0)),
+                            _buildExpandedPanelContent(
+                              index: index,
+                              item: item,
+                              scaleW: scaleW,
+                              scaleH: scaleH,
+                              scaleMin: scaleMin,
+                              textScale: textScale,
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ],
-              border: Border.all(
-                color: const Color(0xFF38BDF8).withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            padding: const EdgeInsets.all(10),
-            child: Image.asset(
-              'assets/images/app_logo.png',
-              fit: BoxFit.contain,
             ),
           ),
         ),
+      ),
+    );
+  }
 
-        const SizedBox(height: 18),
-
-        const Text(
-          'App Permissions',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Text(
-            'ResQShield ko better kaam karne ke liye\nneeche diye permissions chahiye',
-            textAlign: TextAlign.center,
+  // --------------------------------------------------------------------------
+  // EXPANDED PANEL CONTENT (ACCORDION INNER LIGHT-BLUE PANEL)
+  // --------------------------------------------------------------------------
+  Widget _buildExpandedPanelContent({
+    required int index,
+    required _PermissionData item,
+    required double scaleW,
+    required double scaleH,
+    required double scaleMin,
+    required double textScale,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all((10.0 * scaleW).clamp(8.0, 14.0)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F7FD),
+        borderRadius: BorderRadius.circular((12.0 * scaleMin).clamp(10.0, 15.0)),
+        border: Border.all(color: const Color(0xFFD4E7FA), width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Headline + Explanatory text
+          Text(
+            item.expandedTitle,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.72),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              height: 1.45,
+              color: const Color(0xFF013973),
+              fontSize: (12.5 * textScale).clamp(10.5, 14.5),
+              fontWeight: FontWeight.w700,
             ),
+          ),
+          SizedBox(height: (2.0 * scaleH).clamp(1.0, 4.0)),
+          Text(
+            item.expandedSubtitle,
+            style: TextStyle(
+              color: const Color(0xFF4A6884),
+              fontSize: (10.5 * textScale).clamp(8.8, 12.0),
+              fontWeight: FontWeight.w500,
+              height: 1.30,
+            ),
+          ),
+
+          SizedBox(height: (8.0 * scaleH).clamp(5.0, 12.0)),
+
+          // ── SPECIFIC GRAPHIC PER CARD (AS IN USER PROMPT & REFERENCE) ──
+          if (index == 0)
+            _buildLocationVisual(scaleW, scaleH, scaleMin, textScale)
+          else if (index == 1)
+            _buildAlertsVisual(scaleW, scaleH, scaleMin, textScale)
+          else if (index == 2)
+            _buildEmergencyVisual(scaleW, scaleH, scaleMin, textScale)
+          else
+            _buildCommunityVisual(scaleW, scaleH, scaleMin, textScale),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 1. LOCATION EXPANDED VISUAL: MINI MAP ROUTE + REAL-TIME BADGE
+  // --------------------------------------------------------------------------
+  Widget _buildLocationVisual(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
+    return Container(
+      height: (62.0 * scaleH).clamp(52.0, 76.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFCCE4FA), width: 0.8),
+      ),
+      child: Row(
+        children: [
+          // Mini Route Line Painter with Location Pin Pulse
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _MiniMapRoutePainter(pulseScale: _pulseAnimation.value),
+                  size: Size.infinite,
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Real-time location badge (Matches Image 3)
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (8.0 * scaleW).clamp(6.0, 10.0),
+              vertical: 5,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F8FE),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFC0DEFA), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.bolt_rounded,
+                  color: const Color(0xFF007AEB),
+                  size: (13.0 * scaleMin).clamp(11.0, 16.0),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Real-time location\n= faster alerts',
+                  style: TextStyle(
+                    color: const Color(0xFF0B589D),
+                    fontSize: (9.0 * textScale).clamp(7.5, 10.5),
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. ALERTS EXPANDED VISUAL: 3 SMALL STATUS INDICATORS (DOTS)
+  // --------------------------------------------------------------------------
+  Widget _buildAlertsVisual(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: (6.0 * scaleH).clamp(4.0, 8.0),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFCCE4FA), width: 0.8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatusPill(
+            dotColor: const Color(0xFFEF4444),
+            label: 'Flood Risk',
+            scaleMin: scaleMin,
+            textScale: textScale,
+          ),
+          _buildStatusPill(
+            dotColor: const Color(0xFF0284C7),
+            label: 'Water Level',
+            scaleMin: scaleMin,
+            textScale: textScale,
+          ),
+          _buildStatusPill(
+            dotColor: const Color(0xFFF59E0B),
+            label: 'Severe Weather',
+            scaleMin: scaleMin,
+            textScale: textScale,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill({
+    required Color dotColor,
+    required String label,
+    required double scaleMin,
+    required double textScale,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: (6.5 * scaleMin).clamp(5.0, 8.0),
+          height: (6.5 * scaleMin).clamp(5.0, 8.0),
+          decoration: BoxDecoration(
+            color: dotColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: dotColor.withValues(alpha: 0.4),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: const Color(0xFF334155),
+            fontSize: (9.5 * textScale).clamp(8.0, 11.5),
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBottomButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
+  // --------------------------------------------------------------------------
+  // 3. EMERGENCY EXPANDED VISUAL: SHIELD + EMERGENCY SERVICES BADGE
+  // --------------------------------------------------------------------------
+  Widget _buildEmergencyVisual(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: (7.0 * scaleH).clamp(5.0, 10.0),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFCCE4FA), width: 0.8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Allow all button
-          GestureDetector(
-            onTap: _requesting ? null : _requestAll,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _allDone
-                      ? [const Color(0xFF15945C), const Color(0xFF0D6B43)]
-                      : [const Color(0xFF0877C9), const Color(0xFF052F4B)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        (_allDone
-                                ? const Color(0xFF15945C)
-                                : const Color(0xFF0877C9))
-                            .withOpacity(0.45),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: _requesting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _allDone
-                                ? Icons.check_circle_rounded
-                                : Icons.shield_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _allDone
-                                ? 'Permissions Granted!'
-                                : 'Allow All Permissions',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+          Icon(
+            Icons.shield_outlined,
+            size: (15.0 * scaleMin).clamp(12.0, 18.0),
+            color: const Color(0xFF007AEB),
+          ),
+          const SizedBox(width: 5),
+          Icon(
+            Icons.phone_in_talk_rounded,
+            size: (14.0 * scaleMin).clamp(11.0, 17.0),
+            color: const Color(0xFF007AEB),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF22C55E),
+              shape: BoxShape.circle,
             ),
           ),
-
-          const SizedBox(height: 12),
-
-          // Skip button
-          TextButton(
-            onPressed: _requesting ? null : _skipToHome,
-            child: Text(
-              'Skip for now',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.55),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+          const SizedBox(width: 6),
+          Text(
+            'Emergency services available',
+            style: TextStyle(
+              color: const Color(0xFF0F52BA),
+              fontSize: (10.0 * textScale).clamp(8.5, 12.0),
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
     );
   }
+
+  // --------------------------------------------------------------------------
+  // 4. COMMUNITY EXPANDED VISUAL: VERIFIED UPDATE BUBBLES
+  // --------------------------------------------------------------------------
+  Widget _buildCommunityVisual(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: (6.0 * scaleH).clamp(4.0, 8.0),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFCCE4FA), width: 0.8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildCommunityBubble(
+            icon: Icons.check_circle_outline_rounded,
+            text: 'Safe Zone Verified',
+            color: const Color(0xFF16A34A),
+            scaleMin: scaleMin,
+            textScale: textScale,
+          ),
+          _buildCommunityBubble(
+            icon: Icons.alt_route_rounded,
+            text: 'Routes Cleared',
+            color: const Color(0xFF0284C7),
+            scaleMin: scaleMin,
+            textScale: textScale,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommunityBubble({
+    required IconData icon,
+    required String text,
+    required Color color,
+    required double scaleMin,
+    required double textScale,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: (12.0 * scaleMin).clamp(10.0, 15.0), color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: (9.5 * textScale).clamp(8.0, 11.5),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // BOTTOM BUTTONS (ALLOW ALL PERMISSIONS & SKIP FOR NOW)
+  // --------------------------------------------------------------------------
+  Widget _buildBottomButtons(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Allow All Permissions Primary Button
+        GestureDetector(
+          onTapDown: (_) => setState(() => _buttonPressed = true),
+          onTapUp: (_) {
+            setState(() => _buttonPressed = false);
+            _handleAllowAll();
+          },
+          onTapCancel: () => setState(() => _buttonPressed = false),
+          child: AnimatedScale(
+            scale: _buttonPressed ? 0.98 : 1.0,
+            duration: const Duration(milliseconds: 140),
+            child: Container(
+              width: double.infinity,
+              height: (44.0 * scaleH).clamp(38.0, 50.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _allDone
+                      ? const [Color(0xFF16A34A), Color(0xFF15803D)]
+                      : const [Color(0xFF007AEB), Color(0xFF005BC5)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_allDone
+                            ? const Color(0xFF16A34A)
+                            : const Color(0xFF007AEB))
+                        .withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: _requesting
+                      ? Row(
+                          key: const ValueKey('setting_up'),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: (15.0 * scaleMin).clamp(12.0, 17.0),
+                              height: (15.0 * scaleMin).clamp(12.0, 17.0),
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                                valueColor: AlwaysStoppedAnimation(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Setting up permissions...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: (13.5 * textScale).clamp(11.5, 15.5),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : _allDone
+                          ? Row(
+                              key: const ValueKey('granted'),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.white,
+                                  size: 19,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Permissions Enabled ✓',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: (14.0 * textScale).clamp(12.0, 16.0),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              key: const ValueKey('idle_allow'),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.verified_user_rounded,
+                                  color: Colors.white,
+                                  size: 17,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Allow All Permissions',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: (14.0 * textScale).clamp(12.0, 16.0),
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: Colors.white,
+                                    size: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        SizedBox(height: (6.0 * scaleH).clamp(3.0, 10.0)),
+
+        // Skip for now button
+        GestureDetector(
+          onTapDown: (_) => setState(() => _skipPressed = true),
+          onTapUp: (_) {
+            setState(() => _skipPressed = false);
+            _navigateToHome();
+          },
+          onTapCancel: () => setState(() => _skipPressed = false),
+          child: AnimatedOpacity(
+            opacity: _skipPressed ? 0.6 : 1.0,
+            duration: const Duration(milliseconds: 140),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  color: const Color(0xFF47627E),
+                  fontSize: (12.0 * textScale).clamp(10.5, 13.5),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ============================================================================
-// PERMISSION ITEM MODEL
+// DATA MODEL FOR EACH PERMISSION ROW
 // ============================================================================
 
-class _PermItem {
+class _PermissionData {
   final Permission permission;
   final IconData icon;
   final String title;
-  final String subtitle;
-  final Color color;
-  final List<Color> gradient;
+  final String description;
+  final String expandedTitle;
+  final String expandedSubtitle;
   PermissionStatus? status;
 
-  _PermItem({
+  _PermissionData({
     required this.permission,
     required this.icon,
     required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.gradient,
+    required this.description,
+    required this.expandedTitle,
+    required this.expandedSubtitle,
   });
-
-  bool get isGranted =>
-      status == PermissionStatus.granted ||
-      status == PermissionStatus.limited ||
-      status == PermissionStatus.provisional;
-
-  bool get isDenied =>
-      status == PermissionStatus.denied ||
-      status == PermissionStatus.permanentlyDenied ||
-      status == PermissionStatus.restricted;
 }
 
 // ============================================================================
-// PERMISSION CARD WIDGET
+// MINI MAP ROUTE PAINTER (FOR LOCATION TRACKING EXPANDED VISUAL)
 // ============================================================================
 
-class _PermCard extends StatelessWidget {
-  final _PermItem item;
-  final int index;
-  final VoidCallback? onTap;
+class _MiniMapRoutePainter extends CustomPainter {
+  final double pulseScale;
 
-  const _PermCard({
-    required this.item,
-    required this.index,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 500 + index * 120),
-      curve: Curves.easeOutCubic,
-      builder: (_, value, child) => Transform.translate(
-        offset: Offset(0, 30 * (1 - value)),
-        child: Opacity(opacity: value, child: child),
-      ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: item.status == null
-                  ? Colors.white.withOpacity(0.14)
-                  : item.isGranted
-                  ? item.color.withOpacity(0.6)
-                  : Colors.red.withOpacity(0.5),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Icon circle
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: item.gradient,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: item.color.withOpacity(0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(item.icon, color: Colors.white, size: 26),
-              ),
-
-              const SizedBox(width: 14),
-
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
-                        fontSize: 11.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // Status indicator
-              _StatusBadge(item: item),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final _PermItem item;
-  const _StatusBadge({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    if (item.status == null) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Icon(
-          Icons.lock_outline_rounded,
-          color: Colors.white.withOpacity(0.5),
-          size: 16,
-        ),
-      );
-    }
-    if (item.isGranted) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: const Color(0xFF15945C).withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF15945C).withOpacity(0.6)),
-        ),
-        child: const Icon(
-          Icons.check_rounded,
-          color: Color(0xFF15945C),
-          size: 18,
-        ),
-      );
-    }
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.withOpacity(0.5)),
-      ),
-      child: const Icon(Icons.close_rounded, color: Colors.red, size: 18),
-    );
-  }
-}
-
-// ============================================================================
-// OCEAN BACKGROUND PAINTER
-// ============================================================================
-
-class _OceanBgPainter extends CustomPainter {
-  final double t;
-  _OceanBgPainter(this.t);
+  _MiniMapRoutePainter({required this.pulseScale});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Sky gradient
-    final skyPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF021C2E), Color(0xFF063A5B), Color(0xFF0A5580)],
-        stops: [0.0, 0.6, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), skyPaint);
+    final w = size.width;
+    final h = size.height;
 
-    // Subtle animated waves at bottom
-    _drawWave(canvas, size, 0.78, const Color(0xFF0877C9), 0.12, t, 1.0);
-    _drawWave(canvas, size, 0.82, const Color(0xFF063A5B), 0.18, t, 1.3);
-    _drawWave(canvas, size, 0.87, const Color(0xFF052F4B), 0.25, t, 0.7);
-  }
+    // 1. Soft grid lines (waterways / streets)
+    final gridPaint = Paint()
+      ..color = const Color(0xFFE2EFF9)
+      ..strokeWidth = 1.0;
 
-  void _drawWave(
-    Canvas canvas,
-    Size size,
-    double yFrac,
-    Color color,
-    double opacity,
-    double time,
-    double speed,
-  ) {
-    final paint = Paint()..color = color.withOpacity(opacity);
-    final path = Path();
-    final y = size.height * yFrac;
-    path.moveTo(0, y);
-    for (double x = 0; x <= size.width; x++) {
-      final wave =
-          math.sin(
-            (x / size.width * 2 * math.pi) + time * 2 * math.pi * speed,
-          ) *
-          16;
-      path.lineTo(x, y + wave);
+    canvas.drawLine(Offset(0, h * 0.35), Offset(w, h * 0.35), gridPaint);
+    canvas.drawLine(Offset(0, h * 0.70), Offset(w, h * 0.70), gridPaint);
+    canvas.drawLine(Offset(w * 0.45, 0), Offset(w * 0.45, h), gridPaint);
+
+    // 2. River water path (translucent light blue curve)
+    final riverPath = Path();
+    riverPath.moveTo(0, h * 0.85);
+    riverPath.cubicTo(w * 0.35, h * 0.75, w * 0.65, h * 0.35, w, h * 0.20);
+    final riverPaint = Paint()
+      ..color = const Color(0xFFC7E2F8).withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9.0
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(riverPath, riverPaint);
+
+    // 3. Dashed Safe Evacuation Route
+    final routePath = Path();
+    routePath.moveTo(w * 0.15, h * 0.65);
+    routePath.cubicTo(w * 0.40, h * 0.50, w * 0.70, h * 0.60, w * 0.90, h * 0.30);
+
+    final routePaint = Paint()
+      ..color = const Color(0xFF007AEB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    // Approximate dashed effect
+    final metrics = routePath.computeMetrics();
+    for (final metric in metrics) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final next = distance + 4.5;
+        final extract = metric.extractPath(distance, next.clamp(0.0, metric.length));
+        canvas.drawPath(extract, routePaint);
+        distance += 8.0;
+      }
     }
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    canvas.drawPath(path, paint);
+
+    // 4. Start Pin Pulse Dot
+    final startPoint = Offset(w * 0.15, h * 0.65);
+    canvas.drawCircle(
+      startPoint,
+      7.0 * pulseScale,
+      Paint()..color = const Color(0xFF007AEB).withValues(alpha: 0.20),
+    );
+    canvas.drawCircle(
+      startPoint,
+      3.5,
+      Paint()..color = const Color(0xFF007AEB),
+    );
+
+    // 5. End Destination Location Pin
+    final endPoint = Offset(w * 0.90, h * 0.30);
+    canvas.drawCircle(
+      endPoint,
+      4.0,
+      Paint()..color = const Color(0xFF16A34A),
+    );
+    canvas.drawCircle(
+      endPoint,
+      8.0 * pulseScale,
+      Paint()
+        ..color = const Color(0xFF16A34A).withValues(alpha: 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
   }
 
   @override
-  bool shouldRepaint(_OceanBgPainter old) => old.t != t;
+  bool shouldRepaint(covariant _MiniMapRoutePainter oldDelegate) {
+    return oldDelegate.pulseScale != pulseScale;
+  }
 }

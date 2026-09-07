@@ -13,21 +13,24 @@ import 'rescue_teams_detail_screen.dart';
 // ============================================================
 
 class AppColors {
-  // Soft blue-grey background gradient palette
-  static const bgPrimary = Color(0xFF8FA9BC); // Primary: #8FA9BC (RGB: 143, 169, 188)
-  static const bgTop = Color(0xFF7E98AE);     // Top/primary: #7E98AE
-  static const bgMain = Color(0xFF8FA9BC);    // Main: #8FA9BC
-  static const bgLight = Color(0xFFB4C9D8);   // Lighter areas: #B4C9D8
-  static const bgBottom = Color(0xFF99ADBF);  // Bottom: #99ADBF
+  // Unified light blue / white government-grade palette matching Login, OTP, & Permissions
+  static const bgPrimary = Color(0xFFE9F4FB);
+  static const bgTop = Color(0xFFE3F0F9);
+  static const bgMain = Color(0xFFEAF4FB);
+  static const bgLight = Color(0xFFF3F8FD);
+  static const bgBottom = Color(0xFFE0EFF8);
 
-  static const navy = Color(0xFF7E98AE);
-  static const darkBlue = Color(0xFF5A758B);
-  static const blue = Color(0xFF0877C9);
-  static const lightBlue = Color(0xFF35A9E8);
+  static const navy = Color(0xFF013973);        // Brand Deep Navy
+  static const darkBlue = Color(0xFF0A4F8A);    // Secondary Blue
+  static const blue = Color(0xFF007AEB);        // Primary Action Blue
+  static const lightBlue = Color(0xFF38BDF8);   // Accent Sky Blue
+  static const greenGlow = Color(0xFF00FF00);   // Brand 'Q' Green
 
-  static const white = Color(0xFFFDFEFF);
-  static const text = Color(0xFF10233D);
-  static const muted = Color(0xFF607086);
+  static const cardBg = Colors.white;
+  static const cardBorder = Color(0xFFD6E8F7);
+  static const white = Color(0xFFFFFFFF);
+  static const text = Color(0xFF0F2642);        // Crisp Dark Slate Text
+  static const muted = Color(0xFF537392);       // Muted Slate Text
 
   static const red = Color(0xFFE92828);
   static const orange = Color(0xFFF39A20);
@@ -277,14 +280,36 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: const Color(0xFFE9F4FB),
 
       body: SafeArea(
         bottom: false,
         child: Stack(
           children: [
-            const Positioned.fill(child: BackgroundWater()),
+            // 1. Scenic background image matching login and permission screens
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/permission_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
 
+            // 2. Subtle soft tint overlay for high contrast & readability
+            Positioned.fill(
+              child: Container(
+                color: const Color(0xFFE9F4FB).withValues(alpha: 0.35),
+              ),
+            ),
+
+            // 3. Gentle animated water ripples
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: BackgroundWater(),
+              ),
+            ),
+
+            // 4. Main scrollable content
             Column(children: [Expanded(child: _buildScrollableHome())]),
           ],
         ),
@@ -460,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         TextSpan(
                           text: 'Res',
                           style: TextStyle(
-                            color: Color(0xFF38BDF8),
+                            color: Color(0xFF013973),
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.3,
@@ -469,16 +494,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         TextSpan(
                           text: 'Q',
                           style: TextStyle(
-                            color: Color(0xFF22C55E),
+                            color: Color(0xFF00FF00),
                             fontSize: 23,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.3,
+                            shadows: [
+                              Shadow(
+                                color: Color(0x5500FF00),
+                                blurRadius: 4,
+                              ),
+                            ],
                           ),
                         ),
                         TextSpan(
                           text: 'Shield',
                           style: TextStyle(
-                            color: Color(0xFF38BDF8),
+                            color: Color(0xFF013973),
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.3,
@@ -493,9 +524,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Safer Routes. Stronger Communities.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.86),
+                  color: const Color(0xFF013973).withValues(alpha: 0.75),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.2,
                 ),
               ),
@@ -516,14 +547,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
               Positioned(
                 right: -1,
-                top: -4,
+                top: -3,
                 child: Container(
                   width: 19,
                   height: 19,
                   decoration: BoxDecoration(
                     color: AppColors.red,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.bgTop, width: 2),
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x22E92828),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
                   ),
                   child: const Center(
                     child: Text(
@@ -548,21 +586,32 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 27,
-            shadows: const [
-              Shadow(color: Color(0x33000000), blurRadius: 4, offset: Offset(0, 1)),
-            ],
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: const Color(0xFFD6E8F7), width: 1.1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C013973),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(13),
+          onTap: onTap,
+          child: Center(
+            child: Icon(
+              icon,
+              color: const Color(0xFF013973),
+              size: 24,
+            ),
           ),
         ),
       ),
@@ -580,21 +629,17 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0A4F7A), Color(0xFF063A5B)],
-          ),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: const Color(0xFF0877C9).withOpacity(0.45),
+            color: const Color(0xFFD6E8F7),
             width: 1.2,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.22),
+              color: Color(0x0C013973),
               blurRadius: 14,
-              offset: const Offset(0, 5),
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -604,15 +649,16 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFF0877C9).withOpacity(0.18),
-                borderRadius: BorderRadius.circular(11),
+                color: const Color(0xFFE6F3FD),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF0877C9).withOpacity(0.4),
+                  color: const Color(0xFFCCE4FA),
+                  width: 1.0,
                 ),
               ),
               child: const Icon(
                 Icons.my_location_rounded,
-                color: Color(0xFF35A9E8),
+                color: Color(0xFF007AEB),
                 size: 22,
               ),
             ),
@@ -624,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Text(
                     'Aapki Current Location',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: Color(0xFF537392),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.2,
@@ -634,21 +680,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   _locationLoading
                       ? Row(
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 12,
                               height: 12,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.8,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white.withOpacity(0.7),
+                                  Color(0xFF007AEB),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 7),
-                            Text(
+                            const Text(
                               'Locating...',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Color(0xFF537392),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -658,9 +704,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       : Text(
                           _locationText,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF013973),
                             fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             letterSpacing: 0.2,
                           ),
                         ),
@@ -680,12 +726,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(9),
+                  color: const Color(0xFFE6F3FD),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFFCCE4FA),
+                    width: 1.0,
+                  ),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.refresh_rounded,
-                  color: Colors.white.withOpacity(0.65),
+                  color: Color(0xFF007AEB),
                   size: 18,
                 ),
               ),
@@ -708,19 +758,19 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF0284C7).withValues(alpha: 0.5),
+            color: const Color(0xFFD6E8F7),
             width: 1.2,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color(0xFF0284C7).withValues(alpha: 0.22),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: Color(0x12007AEB),
+              blurRadius: 14,
+              offset: Offset(0, 5),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Color(0x0C013973),
+              blurRadius: 10,
+              offset: Offset(0, 3),
             ),
           ],
         ),
@@ -762,17 +812,17 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 14),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 15),
       decoration: BoxDecoration(
-        color: const Color(0xFF091E33),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFF1E3A5F).withOpacity(0.8),
-          width: 1,
+          color: const Color(0xFFD6E8F7),
+          width: 1.2,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -781,18 +831,25 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Container(
-                width: 7,
-                height: 7,
+                width: 8,
+                height: 8,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF38BDF8),
+                  color: Color(0xFF007AEB),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x66007AEB),
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: 8),
               const Text(
                 'Live Situation',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF013973),
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
                   letterSpacing: 0.2,
@@ -814,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       'View Map',
                       style: TextStyle(
-                        color: Color(0xFF38BDF8),
+                        color: Color(0xFF007AEB),
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -822,8 +879,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(width: 3),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFF38BDF8),
-                      size: 12,
+                      color: Color(0xFF007AEB),
+                      size: 13,
                     ),
                   ],
                 ),
@@ -932,14 +989,14 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFF1E466E).withValues(alpha: 0.8),
+                color: const Color(0xFFD6E8F7),
                 width: 1.2,
               ),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Color(0x0A013973),
                   blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  offset: Offset(0, 3),
                 ),
               ],
             ),
@@ -949,7 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 imagePath,
                 fit: BoxFit.fill,
                 errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFF0F2B44),
+                  color: const Color(0xFFF1F6FB),
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -958,7 +1015,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         fallbackTitle,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF013973),
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
@@ -967,7 +1024,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         fallbackValue,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF0F2642),
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                         ),
@@ -1001,17 +1058,17 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 14),
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF091E33),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFF1E3A5F).withOpacity(0.8),
-          width: 1,
+          color: const Color(0xFFD6E8F7),
+          width: 1.2,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -1024,7 +1081,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 3.5,
                 height: 17,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8),
+                  color: const Color(0xFF007AEB),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -1032,7 +1089,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Text(
                 'Quick Situation',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF013973),
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                   letterSpacing: 0.2,
@@ -1041,7 +1098,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               const Icon(
                 Icons.arrow_forward_rounded,
-                color: Color(0xFF38BDF8),
+                color: Color(0xFF007AEB),
                 size: 20,
               ),
             ],
@@ -1097,20 +1154,18 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: accentColor.withValues(alpha: 0.35),
-            width: 1,
+            color: accentColor.withValues(alpha: 0.40),
+            width: 1.1,
           ),
           boxShadow: [
-            // Ambient elevation drop shadow
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-            // Soft colored glow
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.18),
+            const BoxShadow(
+              color: Color(0x0A013973),
               blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.14),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -1126,7 +1181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   fit: BoxFit.cover,
                   filterQuality: FilterQuality.high,
                   errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFF0F2B44),
+                    color: const Color(0xFFF1F6FB),
                   ),
                 ),
               ),
@@ -1168,23 +1223,30 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 23),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 21,
-            shadows: const [
-              Shadow(
-                color: Color(0x38000000),
-                blurRadius: 4,
-                offset: Offset(0, 1),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F3FD),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFCCE4FA),
+                width: 1.0,
               ),
-            ],
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: const Color(0xFF007AEB),
+                size: 18,
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1192,33 +1254,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
+                    color: Color(0xFF013973),
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.2,
-                    shadows: [
-                      Shadow(
-                        color: Color(0x38000000),
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
+                  style: const TextStyle(
+                    color: Color(0xFF537392),
                     fontSize: 11,
+                    fontWeight: FontWeight.w500,
                     height: 1.25,
-                    shadows: const [
-                      Shadow(
-                        color: Color(0x2E000000),
-                        blurRadius: 3,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -1257,19 +1306,19 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: const Color(0xFFD6E8F7),
               width: 1.2,
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: Color(0x0C013973),
+                blurRadius: 12,
+                offset: Offset(0, 4),
               ),
               BoxShadow(
-                color: const Color(0xFF0284C7).withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 5),
+                color: Color(0x12007AEB),
+                blurRadius: 8,
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -1345,14 +1394,14 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 14),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5F8),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFCEE8EF), width: 1.2),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFD6E8F7), width: 1.2),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -1847,14 +1896,14 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 14),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5F8),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFCEE8EF), width: 1.2),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFD6E8F7), width: 1.2),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -2274,14 +2323,14 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 14),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5F8),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFCEE8EF), width: 1.2),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFD6E8F7), width: 1.2),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -2813,7 +2862,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.blue.withOpacity(0.12),
+              color: AppColors.blue.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -2945,22 +2994,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return Expanded(
       child: InkWell(
         onTap: () => _showMessage('$label opened'),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.18)),
+            color: Colors.white.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFD6E8F7), width: 1.1),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A013973),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.white, size: 22),
+              Icon(icon, color: color, size: 22),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF013973),
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                 ),
@@ -2981,43 +3037,42 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Image.asset(
                 'assets/images/app_logo.png',
-                width: 20,
-                height: 20,
+                width: 22,
+                height: 22,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               const Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
                       text: 'Res',
                       style: TextStyle(
-                        color: Color(0xFF38BDF8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF013973),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                     TextSpan(
                       text: 'Q',
                       style: TextStyle(
-                        color: Color(0xFF22C55E),
-                        fontSize: 11.5,
+                        color: Color(0xFF00FF00),
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w900,
+                        shadows: [
+                          Shadow(
+                            color: Color(0x5500FF00),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
                     ),
                     TextSpan(
                       text: 'Shield Emergency Network',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        shadows: const [
-                          Shadow(
-                            color: Color(0x38000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                        color: Color(0xFF013973),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -3027,18 +3082,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Government of Kerala • Disaster Mitigation Cell',
+            'Government Disaster Mitigation & Early Warning Network',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: 8.5,
+              color: const Color(0xFF013973).withValues(alpha: 0.65),
+              fontSize: 9.5,
               fontWeight: FontWeight.w600,
-              shadows: const [
-                Shadow(
-                  color: Color(0x2E000000),
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
-                ),
-              ],
             ),
           ),
         ],
@@ -3053,15 +3101,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNavigation() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkBlue,
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.18), width: 1),
+        color: Colors.white.withValues(alpha: 0.96),
+        border: const Border(
+          top: BorderSide(color: Color(0xFFD6E8F7), width: 1.2),
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            color: Color(0x0D013973),
+            blurRadius: 12,
+            offset: Offset(0, -3),
           ),
         ],
       ),
@@ -3073,11 +3121,14 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.darkBlue,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: const Color(0xFFB4C9D8),
-        selectedFontSize: 9,
-        unselectedFontSize: 9,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: const Color(0xFF007AEB),
+        unselectedItemColor: const Color(0xFF64748B),
+        selectedFontSize: 9.5,
+        unselectedFontSize: 9.5,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
@@ -3117,13 +3168,17 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFD6E8F7),
+          width: 1.2,
+        ),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Color(0x0C013973),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -3278,7 +3333,7 @@ class _AnimatedRainfallWidgetState extends State<AnimatedRainfallWidget>
             borderRadius: BorderRadius.circular(1),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF38BDF8).withOpacity(0.8),
+                color: const Color(0xFF38BDF8).withValues(alpha: 0.8),
                 blurRadius: 2,
               ),
             ],
