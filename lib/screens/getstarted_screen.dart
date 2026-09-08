@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'login_screen.dart';
+import 'role_selection_screen.dart';
 
 void main() {
   runApp(const ResQShieldApp());
@@ -64,10 +65,10 @@ class _GetStartedScreenState extends State<GetStartedScreen>
   final TextEditingController _passwordController = TextEditingController();
 
   void _validateLogin() {
-    // Navigate directly to Login screen
+    // Navigate to Role Selection Screen (Primary Gateway)
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
     );
   }
 
