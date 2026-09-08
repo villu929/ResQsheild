@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'login_screen.dart';
+import 'citizen/citizen_login_screen.dart';
 import 'field_responder_view.dart';
 import 'admin_console_view.dart';
 
@@ -25,10 +25,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   void _proceedWithRole(UserRole role) {
     switch (role) {
       case UserRole.citizen:
-        // Routes to the existing Login / Authentication flow
+        // Routes to the dedicated Citizen Entrance (Mobile OTP Login & GPS Permissions)
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const CitizenLoginScreen()),
         );
         break;
 
