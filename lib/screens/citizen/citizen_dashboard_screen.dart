@@ -69,7 +69,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'impactHi': 'निचले क्षेत्रों में अगले 2 घंटों में बाढ़ की संभावना है।',
       'badge': 'FLOOD WARNING',
       'badgeHi': 'बाढ़ चेतावनी',
-      'color': Color(0xFFE92828),
+      'color': const Color(0xFFE92828),
     },
     {
       'title': 'High Water Discharge from Upstream Dam',
@@ -82,7 +82,33 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'impactHi': 'नदी की गति तेज है। पुल और नदी तट से दूर रहें।',
       'badge': 'DAM SURGE',
       'badgeHi': 'डैम सर्ज',
-      'color': Color(0xFFF39A20),
+      'color': const Color(0xFFF39A20),
+    },
+    {
+      'title': 'Severe Lightning & Thunderstorm Alert',
+      'titleHi': 'भीषण आंधी-तूफान एवं वज्रपात चेतावनी',
+      'distance': '1.2 km away • Basin Zone',
+      'distanceHi': '1.2 किमी दूर • बेसिन क्षेत्र',
+      'time': 'Updated 2 min ago',
+      'timeHi': '2 मिनट पहले अपडेट',
+      'impact': 'Stay indoors. Avoid open fields, tall trees and electrical poles.',
+      'impactHi': 'घर के अंदर रहें। खुले मैदान, ऊंचे पेड़ और खंभों से दूर रहें।',
+      'badge': 'THUNDERSTORM',
+      'badgeHi': 'वज्रपात चेतावनी',
+      'color': const Color(0xFFD97706),
+    },
+    {
+      'title': 'Bridge & Underpass Inundation Warning',
+      'titleHi': 'पुलिया व अंडरपास जलभराव सूचना',
+      'distance': '3.5 km away • Old Highway',
+      'distanceHi': '3.5 किमी दूर • पुराना हाईवे',
+      'time': 'Updated 12 min ago',
+      'timeHi': '12 मिनट पहले अपडेट',
+      'impact': 'Water height 2.5ft over causeway. Route blocked for light vehicles.',
+      'impactHi': 'पुलिया पर 2.5 फीट पानी। हल्के वाहनों का आवागमन बंद।',
+      'badge': 'ROAD BLOCKED',
+      'badgeHi': 'मार्ग अवरुद्ध',
+      'color': const Color(0xFFDC2626),
     },
   ];
 
@@ -362,18 +388,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Live Disaster Map Preview (~220px high, scrolls with dashboard)
-                _buildMapSection(),
+                // 1. TOP UNIFIED SAFETY STATUS & LIVE MAP CARD (Matches screenshot)
+                _buildUnifiedSafetyMapCard(),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 2. HERO SAFETY STATUS CARD (🟢 SAFE / 🟡 WATCH / 🟠 WARNING / 🔴 CRITICAL)
-                      _buildSafetyStatusHeroCard(),
+                      // 2. QUICK ACTIONS (Exact screenshot design with SOS, Safe Route, Shelter, Medical + More services)
+                      _buildQuickActionGrid(),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       // Simulation Chips (Allows testing all 4 states on demand)
                       _buildThreatLevelSimulatorChips(),
@@ -382,11 +408,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                       // 3. ACTIVE EMERGENCY ALERT CARD
                       _buildActiveAlertCard(),
-
-                      const SizedBox(height: 16),
-
-                      // 4. QUICK ACTIONS (6 TILES)
-                      _buildQuickActionGrid(),
 
                       const SizedBox(height: 18),
 
@@ -782,192 +803,414 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // 2. SABSE IMPORTANT: CURRENT SAFETY STATUS HERO CARD
+  // 2. TOP UNIFIED SAFETY STATUS & LIVE MAP CARD (EXACT SCREENSHOT DESIGN)
   // --------------------------------------------------------------------------
-  Widget _buildSafetyStatusHeroCard() {
-    Color cardColor;
+  Widget _buildUnifiedSafetyMapCard() {
+    Color cardBgColor;
     Color borderColor;
-    Color textColor;
-    IconData icon;
+    Color badgeColor;
+    Color badgeTextColor;
     String statusTitle;
     String riskLabel;
+    Color riskColor;
     String statusDesc;
-    Widget? actionWidget;
+    IconData shieldIcon;
 
     switch (_threatLevel) {
       case CitizenThreatLevel.safe:
-        cardColor = const Color(0xFFEAF8F0);
-        borderColor = const Color(0xFF86EFAC);
-        textColor = const Color(0xFF15945C);
-        icon = Icons.check_circle_rounded;
-        statusTitle = _isHindi ? 'आप सुरक्षित हैं' : 'YOU ARE CURRENTLY SAFE';
-        riskLabel = _isHindi ? 'जोखिम स्तर: निम्न (कम)' : 'Risk Level: LOW';
+        cardBgColor = const Color(0xFFF4FBF7);
+        borderColor = const Color(0xFFD4EFE0);
+        badgeColor = const Color(0xFFDCF5E8);
+        badgeTextColor = const Color(0xFF15803D);
+        statusTitle = _isHindi ? 'आप सुरक्षित हैं' : 'YOU ARE SAFE';
+        riskLabel = _isHindi ? 'कम' : 'LOW';
+        riskColor = const Color(0xFF16A34A);
         statusDesc = _isHindi
-            ? 'वर्तमान में कोई तात्कालिक निकासी की आवश्यकता नहीं है। मौसम और जलस्तर सुरक्षित सीमा में हैं।'
-            : 'No immediate evacuation required. Based on rainfall, river gauge telemetry and local verified reports.';
-        actionWidget = null;
+            ? 'तत्काल निकासी की आवश्यकता नहीं है।'
+            : 'No immediate evacuation required.';
+        shieldIcon = Icons.shield_rounded;
         break;
 
       case CitizenThreatLevel.watch:
-        cardColor = const Color(0xFFFEFCE8);
+        cardBgColor = const Color(0xFFFEFCE8);
         borderColor = const Color(0xFFFDE047);
-        textColor = const Color(0xFFB45309);
-        icon = Icons.visibility_rounded;
-        statusTitle = _isHindi ? 'सतर्क रहें' : 'STAY ALERT (WATCH)';
-        riskLabel = _isHindi ? 'जोखिम स्तर: मध्यम' : 'Risk Level: MODERATE';
+        badgeColor = const Color(0xFFFEF08A);
+        badgeTextColor = const Color(0xFFB45309);
+        statusTitle = _isHindi ? 'सतर्क रहें' : 'STAY ALERT';
+        riskLabel = _isHindi ? 'मध्यम' : 'MODERATE';
+        riskColor = const Color(0xFFD97706);
         statusDesc = _isHindi
-            ? 'आपके क्षेत्र में जलस्तर बढ़ रहा है। सुरक्षा निर्देशों की समीक्षा करें और तैयार रहें।'
-            : 'Water levels are rising near your sector. Review safety instructions and keep essential items ready.';
-        actionWidget = OutlinedButton.icon(
-          onPressed: _showSafetyInstructionsModal,
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Color(0xFFB45309), width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.shield_outlined, size: 16, color: Color(0xFFB45309)),
-          label: Text(
-            _isHindi ? 'सुरक्षा निर्देश देखें' : 'View Safety Instructions',
-            style: const TextStyle(color: Color(0xFFB45309), fontWeight: FontWeight.w800, fontSize: 12),
-          ),
-        );
+            ? 'जलस्तर बढ़ रहा है। तैयार रहें।'
+            : 'Water levels rising. Keep essentials ready.';
+        shieldIcon = Icons.visibility_rounded;
         break;
 
       case CitizenThreatLevel.warning:
-        cardColor = const Color(0xFFFFF7ED);
+        cardBgColor = const Color(0xFFFFF7ED);
         borderColor = const Color(0xFFFDBA74);
-        textColor = const Color(0xFFC2410C);
-        icon = Icons.warning_amber_rounded;
-        statusTitle = _isHindi ? 'निकासी की तैयारी करें' : 'PREPARE TO EVACUATE';
-        riskLabel = _isHindi ? 'जोखिम स्तर: उच्च' : 'Risk Level: HIGH';
+        badgeColor = const Color(0xFFFFEDD5);
+        badgeTextColor = const Color(0xFFC2410C);
+        statusTitle = _isHindi ? 'निकासी की तैयारी' : 'PREPARE TO EVACUATE';
+        riskLabel = _isHindi ? 'उच्च' : 'HIGH';
+        riskColor = const Color(0xFFEA580C);
         statusDesc = _isHindi
-            ? 'निचले क्षेत्रों में बाढ़ का खतरा बढ़ रहा है। सुरक्षित निकासी मार्ग की पहचान करें।'
-            : 'Flood risk increasing rapidly near your location. Identify your designated evacuation corridor.';
-        actionWidget = ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFC2410C),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.alt_route_rounded, size: 16, color: Colors.white),
-          label: Text(
-            _isHindi ? 'सुरक्षित मार्ग देखें' : 'View Safe Route',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
-          ),
-        );
+            ? 'बाढ़ का खतरा बढ़ रहा है। मार्ग पहचानें।'
+            : 'Flood risk increasing. Check safe route.';
+        shieldIcon = Icons.warning_amber_rounded;
         break;
 
       case CitizenThreatLevel.evacuation:
-        cardColor = const Color(0xFFFEF2F2);
+        cardBgColor = const Color(0xFFFEF2F2);
         borderColor = const Color(0xFFFCA5A5);
-        textColor = const Color(0xFFE92828);
-        icon = Icons.crisis_alert_rounded;
+        badgeColor = const Color(0xFFFEE2E2);
+        badgeTextColor = const Color(0xFFDC2626);
         statusTitle = _isHindi ? 'तुरंत सुरक्षित स्थान जाएं' : 'EVACUATE NOW';
-        riskLabel = _isHindi ? 'जोखिम स्तर: गंभीर (क्रिटिकल)' : 'Risk Level: CRITICAL';
+        riskLabel = _isHindi ? 'गंभीर' : 'CRITICAL';
+        riskColor = const Color(0xFFDC2626);
         statusDesc = _isHindi
-            ? 'आपका क्षेत्र उच्च बाढ़ जोखिम में है। तुरंत 1.8 किमी दूर स्थित सरकारी राहत शिविर में पहुंचे।'
-            : 'Your area is at severe flood risk. Move immediately to Government Relief Centre (1.8 km).';
-        actionWidget = SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE92828),
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.directions_run_rounded, color: Colors.white, size: 24),
-            label: Text(
-              _isHindi ? 'तत्काल निकासी शुरू करें' : 'START EVACUATION',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.8),
-            ),
-          ),
-        );
+            ? 'तत्काल राहत शिविर की ओर बढ़ें।'
+            : 'Move to nearest shelter immediately.';
+        shieldIcon = Icons.crisis_alert_rounded;
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: textColor.withValues(alpha: 0.08),
-            blurRadius: 10,
+            color: badgeTextColor.withValues(alpha: 0.08),
+            blurRadius: 18,
+            spreadRadius: 1,
             offset: const Offset(0, 4),
           ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: borderColor),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Left side gets 55% of available width, Map gets 45%
+          final totalWidth = constraints.maxWidth;
+          const gap = 12.0;
+          final leftWidth = (totalWidth - gap) * 0.55;
+          final mapWidth = totalWidth - gap - leftWidth;
+
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Content (55% width): Shield + Status Text + Risk + View Live Map Button
+                SizedBox(
+                  width: leftWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Row: Shield Icon + Status Details
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Shield Icon in rounded square (with checkmark if safe)
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: badgeColor,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: badgeTextColor.withValues(alpha: 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(shieldIcon, color: badgeTextColor, size: 28),
+                                if (_threatLevel == CitizenThreatLevel.safe)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 2),
+                                    child: Icon(Icons.check_rounded, color: Colors.white, size: 14),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+
+                          // Status Title Pill + Circular Arrow
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                                    decoration: BoxDecoration(
+                                      color: badgeColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      statusTitle,
+                                      style: TextStyle(
+                                        color: badgeTextColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.3,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                // Circular forward arrow button
+                                GestureDetector(
+                                  onTap: () => setState(() => _currentTab = 1),
+                                  child: Container(
+                                    width: 26,
+                                    height: 26,
+                                    decoration: BoxDecoration(
+                                      color: badgeColor.withValues(alpha: 0.7),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: badgeTextColor,
+                                      size: 15,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Risk Level Row
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Row(
+                          children: [
+                            Text(
+                              _isHindi ? 'जोखिम स्तर: ' : 'Risk Level: ',
+                              style: const TextStyle(
+                                color: Color(0xFF0F2642),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              riskLabel,
+                              style: TextStyle(
+                                color: riskColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      // Description Subtitle
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Text(
+                          statusDesc,
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // "View Live Map →" Button — sized to 55% column width
+                      Container(
+                        width: double.infinity,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0D47A1), Color(0xFF1976D2)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(21),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0D47A1).withValues(alpha: 0.28),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => setState(() => _currentTab = 1),
+                            borderRadius: BorderRadius.circular(21),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.map_rounded, size: 17, color: Colors.white),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _isHindi ? 'लाइव मैप देखें  →' : 'View Live Map  →',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(icon, color: textColor, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      statusTitle,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
+
+                const SizedBox(width: gap),
+
+                // Right Map: Expanded width (45%) & taller height
+                SizedBox(
+                  width: mapWidth,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _currentTab = 1),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 146),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: const _MiniMapThumbnail(),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      riskLabel,
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            statusDesc,
-            style: const TextStyle(
-              color: Color(0xFF0F2642),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              height: 1.35,
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showMoreServicesModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _isHindi ? 'सभी सेवाएं' : 'All Citizen Services',
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFF5F3FF),
+                    child: Icon(Icons.groups_rounded, color: Color(0xFF7C3AED)),
+                  ),
+                  title: Text(_isHindi ? 'परिवार सुरक्षा' : 'Family Safety'),
+                  subtitle: Text(_isHindi ? 'परिवार को ट्रैक करें' : 'Track and connect with family members'),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showFamilySafetyModal();
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFFFF7ED),
+                    child: Icon(Icons.camera_alt_rounded, color: Color(0xFFEA580C)),
+                  ),
+                  title: Text(_isHindi ? 'आपदा रिपोर्ट' : 'Hazard Report'),
+                  subtitle: Text(_isHindi ? 'घटनाओं या खतरों की रिपोर्ट करें' : 'Submit photo and report hazards'),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => CitizenHazardReportView(isHindi: _isHindi)),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFEFF6FF),
+                    child: Icon(Icons.map_rounded, color: Color(0xFF2563EB)),
+                  ),
+                  title: Text(_isHindi ? 'पूर्ण लाइव मैप' : 'Full Interactive Map'),
+                  subtitle: Text(_isHindi ? 'सभी शेल्टर और रिलीफ कैंप देखें' : 'View full evacuation corridors & relief zones'),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _currentTab = 1);
+                  },
+                ),
+              ],
             ),
           ),
-          if (actionWidget != null) ...[
-            const SizedBox(height: 12),
-            actionWidget,
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1029,156 +1272,348 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // --------------------------------------------------------------------------
   Widget _buildActiveAlertCard() {
     final alert = _activeAlerts[_activeAlertIndex];
+    final Color alertColor = alert['color'] as Color;
+
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFDBA74)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: alert['color'],
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.warning_rounded, color: Colors.white, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isHindi ? alert['badgeHi'] : alert['badge'],
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${_activeAlertIndex + 1} of ${_activeAlerts.length}',
-                style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFF013973), size: 20),
-                onPressed: () {
-                  setState(() {
-                    _activeAlertIndex = (_activeAlertIndex + 1) % _activeAlerts.length;
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _isHindi ? alert['titleHi'] : alert['title'],
-            style: const TextStyle(color: Color(0xFF013973), fontSize: 13.5, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF537392)),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  _isHindi ? alert['distanceHi'] : alert['distance'],
-                  style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF537392)),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  _isHindi ? alert['timeHi'] : alert['time'],
-                  style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _isHindi ? alert['impactHi'] : alert['impact'],
-            style: const TextStyle(color: Color(0xFF0F2642), fontSize: 12),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => setState(() => _currentTab = 2),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    side: const BorderSide(color: Color(0xFF013973)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    _isHindi ? 'अलर्ट विवरण देखें' : 'View Alert',
-                    style: const TextStyle(color: Color(0xFF013973), fontWeight: FontWeight.bold, fontSize: 11),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _showSafetyInstructionsModal,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    backgroundColor: const Color(0xFF013973),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    _isHindi ? 'सुरक्षा निर्देश' : 'Safety Instructions',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                  ),
-                ),
-              ),
-            ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 3),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // Left thick solid accent line
+            Positioned(
+              left: 0,
+              top: 14,
+              bottom: 14,
+              child: Container(
+                width: 4.0,
+                decoration: BoxDecoration(
+                  color: alertColor,
+                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(3)),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Row: Alert Badge + Switcher (< 1 of 4 >)
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: alertColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: alertColor.withValues(alpha: 0.25), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: alertColor, size: 13),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isHindi ? alert['badgeHi'] : alert['badge'],
+                              style: TextStyle(
+                                color: alertColor,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      // Alert Carousel Switcher
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _activeAlertIndex = (_activeAlertIndex - 1 + _activeAlerts.length) % _activeAlerts.length;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: const Padding(
+                                padding: EdgeInsets.all(2),
+                                child: Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFF1E293B)),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '${_activeAlertIndex + 1} / ${_activeAlerts.length}',
+                                style: const TextStyle(
+                                  color: Color(0xFF475569),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _activeAlertIndex = (_activeAlertIndex + 1) % _activeAlerts.length;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: const Padding(
+                                padding: EdgeInsets.all(2),
+                                child: Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF1E293B)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Middle Row: Alert Details (Left) + Small Map Preview (Right)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Content: Title, Distance/Time, Impact
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isHindi ? alert['titleHi'] : alert['title'],
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w900,
+                                height: 1.25,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF64748B)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    _isHindi ? alert['distanceHi'] : alert['distance'],
+                                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF64748B)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    _isHindi ? alert['timeHi'] : alert['time'],
+                                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _isHindi ? alert['impactHi'] : alert['impact'],
+                              style: const TextStyle(
+                                color: Color(0xFF475569),
+                                fontSize: 11.5,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      // Right Content: Small Map Preview ("side mei map chota sa")
+                      GestureDetector(
+                        onTap: () => setState(() => _currentTab = 1),
+                        child: Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: alertColor.withValues(alpha: 0.35),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: alertColor.withValues(alpha: 0.10),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(
+                              children: [
+                                const Positioned.fill(child: _MiniMapThumbnail()),
+                                // Alert Pulse Radar Ring Overlay
+                                Positioned.fill(
+                                  child: Center(
+                                    child: Container(
+                                      width: 46,
+                                      height: 46,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: alertColor.withValues(alpha: 0.15),
+                                        border: Border.all(color: alertColor.withValues(alpha: 0.5), width: 1.5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // LIVE tag in top right
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: alertColor,
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: const Text(
+                                      'LIVE',
+                                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                ),
+                                // Bottom banner to view map
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 2.5),
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.70),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          _isHindi ? 'मैप देखें' : 'View Map',
+                                          style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w700),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 9),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Bottom Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setState(() => _currentTab = 2),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: const BorderSide(color: Color(0xFF1565C0)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            _isHindi ? 'अलर्ट विवरण देखें' : 'View Alert',
+                            style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.w800, fontSize: 11.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _showSafetyInstructionsModal,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            backgroundColor: const Color(0xFF0F172A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            _isHindi ? 'सुरक्षा निर्देश' : 'Safety Instructions',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // --------------------------------------------------------------------------
-  // 4. QUICK ACTIONS (6 TILES - REDESIGNED UI)
+  // 4. QUICK ACTIONS (EXACT SCREENSHOT DESIGN)
   // --------------------------------------------------------------------------
   Widget _buildQuickActionGrid() {
     final List<_QuickActionItem> items = [
       _QuickActionItem(
         title: _isHindi ? 'एसओएस' : 'SOS',
         subtitle: _isHindi
-            ? 'अपने स्थान के साथ आपातकालीन अलर्ट भेजें'
+            ? 'स्थान के साथ आपातकालीन अलर्ट भेजें'
             : 'Send emergency alert with your location',
-        chipLabel: _isHindi ? 'त्वरित पहुंच' : 'Quick Access',
-        icon: Icons.crisis_alert_rounded,
-        chipIcon: Icons.emergency_rounded,
-        accentColor: const Color(0xFFE92828),
-        softBgColor: const Color(0xFFFFECEC),
-        waveColor: const Color(0xFFFEE2E2).withValues(alpha: 0.45),
+        icon: Icons.emergency_rounded,
+        accentColor: const Color(0xFFEF4444),
+        cardBgColor: const Color(0xFFFFF7F7),
+        borderColor: const Color(0xFFFFE0E0),
+        iconCircleColor: const Color(0xFFFFE5E5),
+        watermarkIcon: Icons.crisis_alert_rounded,
         onTap: _showSosConfirmationDialog,
       ),
       _QuickActionItem(
         title: _isHindi ? 'सुरक्षित मार्ग' : 'Safe Route',
         subtitle: _isHindi
-            ? 'अपने गंतव्य के लिए सबसे सुरक्षित मार्ग खोजें'
+            ? 'गंतव्य हेतु सबसे सुरक्षित मार्ग खोजें'
             : 'Find safest route to your destination',
-        chipLabel: _isHindi ? 'सुरक्षित नेविगेट करें' : 'Navigate Safely',
-        icon: Icons.alt_route_rounded,
-        chipIcon: Icons.map_rounded,
-        accentColor: const Color(0xFF059669),
-        softBgColor: const Color(0xFFE6F7F0),
-        waveColor: const Color(0xFFD1FAE5).withValues(alpha: 0.45),
+        icon: Icons.near_me_rounded,
+        accentColor: const Color(0xFF2563EB),
+        cardBgColor: const Color(0xFFF3F8FE),
+        borderColor: const Color(0xFFD6E8FC),
+        iconCircleColor: const Color(0xFFDFEFFF),
+        watermarkIcon: Icons.alt_route_rounded,
         onTap: () {
           Navigator.push(
             context,
@@ -1187,16 +1622,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         },
       ),
       _QuickActionItem(
-        title: _isHindi ? 'राहत शिविर' : 'Shelters',
+        title: _isHindi ? 'आश्रय स्थल' : 'Shelter',
         subtitle: _isHindi
-            ? 'नजदीकी सुरक्षित शिविर व राहत केंद्र खोजें'
-            : 'Find nearby safe shelters and relief centers',
-        chipLabel: _isHindi ? 'पास में देखें' : 'View Nearby',
-        icon: Icons.night_shelter_rounded,
-        chipIcon: Icons.home_rounded,
-        accentColor: const Color(0xFF2563EB),
-        softBgColor: const Color(0xFFEFF6FF),
-        waveColor: const Color(0xFFDBEAFE).withValues(alpha: 0.5),
+            ? 'पास के सुरक्षित राहत शिविर खोजें'
+            : 'Find nearby safe shelters & relief centers',
+        icon: Icons.home_rounded,
+        accentColor: const Color(0xFF10B981),
+        cardBgColor: const Color(0xFFF2FAF5),
+        borderColor: const Color(0xFFD3F2E2),
+        iconCircleColor: const Color(0xFFDCF6E7),
+        watermarkIcon: Icons.holiday_village_rounded,
         onTap: () {
           Navigator.push(
             context,
@@ -1205,42 +1640,42 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         },
       ),
       _QuickActionItem(
-        title: _isHindi ? 'चिकित्सा सहायता' : 'Medical',
+        title: _isHindi ? 'चिकित्सा' : 'Medical',
         subtitle: _isHindi
-            ? 'अस्पताल, क्लीनिक और चिकित्सा सहायता खोजें'
-            : 'Locate hospitals, clinics and medical help',
-        chipLabel: _isHindi ? 'मदद प्राप्त करें' : 'Get Help',
+            ? 'अस्पताल, क्लीनिक व चिकित्सा सहायता खोजें'
+            : 'Locate hospitals, clinics & medical help',
         icon: Icons.add_box_rounded,
-        chipIcon: Icons.medical_services_rounded,
-        accentColor: const Color(0xFF0891B2),
-        softBgColor: const Color(0xFFECFEFF),
-        waveColor: const Color(0xFFCFFAFE).withValues(alpha: 0.5),
+        accentColor: const Color(0xFF8B5CF6),
+        cardBgColor: const Color(0xFFF8F5FE),
+        borderColor: const Color(0xFFE9E0FD),
+        iconCircleColor: const Color(0xFFEDE4FD),
+        watermarkIcon: Icons.favorite_rounded,
         onTap: _showMedicalDetailsModal,
       ),
       _QuickActionItem(
-        title: _isHindi ? 'परिवार सुरक्षा' : 'Family',
+        title: _isHindi ? 'परिवार' : 'Family',
         subtitle: _isHindi
-            ? 'परिवार को ट्रैक करें और जुड़े रहें'
-            : 'Track and stay connected with your family',
-        chipLabel: _isHindi ? 'जुड़े रहें' : 'Stay Connected',
+            ? 'परिवार की सुरक्षा ट्रैक करें और जुड़े रहें'
+            : 'Track and stay connected with family',
         icon: Icons.groups_rounded,
-        chipIcon: Icons.groups_rounded,
         accentColor: const Color(0xFF7C3AED),
-        softBgColor: const Color(0xFFF5F3FF),
-        waveColor: const Color(0xFFEDE9FE).withValues(alpha: 0.5),
+        cardBgColor: const Color(0xFFF5F3FF),
+        borderColor: const Color(0xFFEDE9FE),
+        iconCircleColor: const Color(0xFFEDE4FD),
+        watermarkIcon: Icons.people_outline_rounded,
         onTap: _showFamilySafetyModal,
       ),
       _QuickActionItem(
-        title: _isHindi ? 'आपदा रिपोर्ट' : 'Report',
+        title: _isHindi ? 'रिपोर्ट' : 'Report',
         subtitle: _isHindi
-            ? 'घटनाओं, खतरों या आपात स्थिति की रिपोर्ट करें'
+            ? 'घटनाओं या खतरों की तुरंत रिपोर्ट करें'
             : 'Report incidents, hazards or emergencies',
-        chipLabel: _isHindi ? 'रिपोर्ट भेजें' : 'Submit Report',
         icon: Icons.camera_alt_rounded,
-        chipIcon: Icons.description_rounded,
         accentColor: const Color(0xFFEA580C),
-        softBgColor: const Color(0xFFFFF7ED),
-        waveColor: const Color(0xFFFFEDD5).withValues(alpha: 0.5),
+        cardBgColor: const Color(0xFFFFF7ED),
+        borderColor: const Color(0xFFFFEDD5),
+        iconCircleColor: const Color(0xFFFFEDD5),
+        watermarkIcon: Icons.warning_amber_rounded,
         onTap: () {
           Navigator.push(
             context,
@@ -1253,51 +1688,141 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header row with lightning icon + title + subtitle + More services
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _isHindi ? 'त्वरित कार्य' : 'QUICK ACTIONS',
-              style: const TextStyle(
-                color: Color(0xFF013973),
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.6,
+            // Lightning bolt icon
+            Container(
+              margin: const EdgeInsets.only(top: 2),
+              child: const Icon(
+                Icons.bolt_rounded,
+                color: Color(0xFF1565C0),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _isHindi ? 'त्वरित कार्य' : 'Quick Actions',
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isHindi
+                        ? 'सहायता प्राप्त करें, सुरक्षा पाएं और तुरंत जानकारी पाएं।'
+                        : 'Get help, find safety and stay informed — fast.',
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            InkWell(
+              onTap: _showMoreServicesModal,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _isHindi ? 'अधिक सेवाएं' : 'More services',
+                      style: const TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Color(0xFF1565C0),
+                      size: 14,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            final screenWidth = constraints.maxWidth;
-            final int crossAxisCount;
-            final double childAspectRatio;
-
-            if (screenWidth >= 760) {
-              crossAxisCount = 3;
-              childAspectRatio = 1.32;
-            } else if (screenWidth >= 520) {
-              crossAxisCount = 2;
-              childAspectRatio = 1.25;
+            // Full width expansion across all 6 cards
+            if (constraints.maxWidth >= 720) {
+              // 6 cards in a single row spanning full screen width equally
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (int i = 0; i < items.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(child: _buildQuickActionCard(items[i])),
+                    ],
+                  ],
+                ),
+              );
+            } else if (constraints.maxWidth >= 420) {
+              // 3 columns x 2 rows spanning full screen width equally
+              return Column(
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (int i = 0; i < 3; i++) ...[
+                          if (i > 0) const SizedBox(width: 10),
+                          Expanded(child: _buildQuickActionCard(items[i])),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (int i = 3; i < 6; i++) ...[
+                          if (i > 3) const SizedBox(width: 10),
+                          Expanded(child: _buildQuickActionCard(items[i])),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
             } else {
-              crossAxisCount = 1;
-              childAspectRatio = 2.05;
+              // 2 columns x 3 rows spanning full screen width equally
+              return Column(
+                children: [
+                  for (int row = 0; row < 3; row++) ...[
+                    if (row > 0) const SizedBox(height: 10),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: _buildQuickActionCard(items[row * 2])),
+                          const SizedBox(width: 10),
+                          Expanded(child: _buildQuickActionCard(items[row * 2 + 1])),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              );
             }
-
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: childAspectRatio,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return _buildQuickActionCard(items[index]);
-              },
-            );
           },
         ),
       ],
@@ -1310,302 +1835,514 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
-          width: 1.2,
+          color: const Color(0xFFE2E8F0),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: item.accentColor.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // Top-right subtle pastel organic wave
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _CardWavePainter(color: item.waveColor),
-              ),
-            ),
-
-            // Left vertical accent indicator bar
-            Positioned(
-              left: 0,
-              top: 14,
-              bottom: 14,
-              child: Container(
-                width: 4.5,
-                decoration: BoxDecoration(
-                  color: item.accentColor,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(4),
-                    bottomRight: Radius.circular(4),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: item.onTap,
+            borderRadius: BorderRadius.circular(20),
+            splashColor: item.accentColor.withValues(alpha: 0.08),
+            highlightColor: item.accentColor.withValues(alpha: 0.04),
+            child: Stack(
+              children: [
+                // Organic curved background shape in top-right corner
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _CardCornerWavePainter(
+                      color: item.accentColor.withValues(alpha: 0.08),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            // Card content & ripple tap
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: item.onTap,
-                borderRadius: BorderRadius.circular(20),
-                splashColor: item.accentColor.withValues(alpha: 0.1),
-                highlightColor: item.accentColor.withValues(alpha: 0.05),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 16, 14),
+                // Thick solid accent vertical line along the left border
+                Positioned(
+                  left: 0,
+                  top: 14,
+                  bottom: 14,
+                  child: Container(
+                    width: 4.0,
+                    decoration: BoxDecoration(
+                      color: item.accentColor,
+                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(3)),
+                    ),
+                  ),
+                ),
+
+                // Card Content
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Top icon + title + description
+                      // Top-left circular icon with soft accent tint
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: item.iconCircleColor,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          item.icon,
+                          color: item.accentColor,
+                          size: 23,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: item.softBgColor,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              item.icon,
-                              color: item.accentColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                          // Title
                           Text(
                             item.title,
                             style: const TextStyle(
                               color: Color(0xFF0F172A),
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.2,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.3,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 4),
+                          // Subtitle
                           Text(
                             item.subtitle,
                             style: const TextStyle(
                               color: Color(0xFF64748B),
                               fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
                               height: 1.3,
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-
-                      // Bottom action row: Chip + Arrow button
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: item.softBgColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(item.chipIcon, size: 13, color: item.accentColor),
-                                  const SizedBox(width: 5),
-                                  Flexible(
-                                    child: Text(
-                                      item.chipLabel,
+                          const SizedBox(height: 12),
+                          // Bottom row: "✱ Quick Access" pill on left + circular arrow button on right
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // "✱ Quick Access" pill badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: item.accentColor.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '✱',
                                       style: TextStyle(
                                         color: item.accentColor,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _isHindi ? 'त्वरित पहुंच' : 'Quick Access',
+                                      style: TextStyle(
+                                        color: item.accentColor,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: item.softBgColor,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 15,
-                              color: item.accentColor,
-                            ),
+
+                              // Circular arrow button on right
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: item.accentColor.withValues(alpha: 0.10),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: item.accentColor,
+                                  size: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   // --------------------------------------------------------------------------
-  // 5. NEAREST SAFE SHELTER CARD
+  // --------------------------------------------------------------------------
+  // 5. NEAREST SAFE SHELTER & GOVT RELIEF CENTER CARD
   // --------------------------------------------------------------------------
   Widget _buildNearestSafeShelterCard() {
+    const accentColor = Color(0xFF10B981); // Emerald green for safe shelter
+
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD6E8F7)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Row: Icon + Badge & Titles + Live Open Status
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Shelter Home Icon
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF15945C).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFFE6F4EA),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.night_shelter_rounded, color: Color(0xFF15945C), size: 22),
+                child: const Icon(
+                  Icons.home_rounded,
+                  color: Color(0xFF15945C),
+                  size: 26,
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _isHindi ? 'नजदीकी सुरक्षित शिविर' : 'NEAREST SAFE SHELTER',
-                      style: const TextStyle(color: Color(0xFF537392), fontSize: 10.5, fontWeight: FontWeight.w800),
+                    // NEAREST SAFE SHELTER Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _isHindi ? 'नजदीकी सुरक्षित शिविर' : 'NEAREST SAFE SHELTER',
+                        style: const TextStyle(
+                          color: Color(0xFF15803D),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      _isHindi ? 'सरकारी राहत केंद्र (सेक्टर 4)' : 'Government Relief Centre',
-                      style: const TextStyle(color: Color(0xFF013973), fontSize: 14, fontWeight: FontWeight.w900),
+                      _isHindi ? 'सरकारी राहत केंद्र' : 'Government Relief Centre',
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _isHindi
+                          ? 'सुरक्षित, स्वच्छ और आवश्यक सेवाओं से युक्त राहत केंद्र।'
+                          : 'Safe, clean and fully equipped shelter with essential services.',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              // Live Open Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF8F0),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF15945C), shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
                     Text(
                       _isHindi ? 'खुला है' : 'OPEN',
-                      style: const TextStyle(color: Color(0xFF15945C), fontSize: 10, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        color: Color(0xFF065F46),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: 14),
+
+          // Distance, Location & Occupancy Row
           Row(
             children: [
-              const Icon(Icons.place_rounded, size: 14, color: Color(0xFF007AEB)),
+              const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF007AEB)),
               const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  _isHindi ? '1.8 किमी दूर • सेक्टर 4' : '1.8 km away • Sector 4 High Ground',
-                  style: const TextStyle(color: Color(0xFF0F2642), fontSize: 12, fontWeight: FontWeight.w700),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                _isHindi ? '3.4 किमी दूर' : '3.4 km away',
+                style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
-                _isHindi ? '72 / 100 लोग (72% क्षमता)' : '72 / 100 people (72%)',
-                style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w700),
+                _isHindi ? '  •  सेक्टर 5, हाई ग्राउंड' : '  •  Sector 5, High Ground',
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF007AEB)),
+              const SizedBox(width: 4),
+              Text(
+                _isHindi ? '312 / 500 व्यक्ति (62%)' : '312 / 500 people (62%)',
+                style: const TextStyle(
+                  color: Color(0xFF475569),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: 0.72,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF15945C)),
-            ),
-          ),
+
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildAmenityBadge(Icons.rice_bowl_rounded, _isHindi ? 'भोजन' : 'Food'),
-              _buildAmenityBadge(Icons.water_drop_rounded, _isHindi ? 'स्वच्छ जल' : 'Water'),
-              _buildAmenityBadge(Icons.medical_services_rounded, _isHindi ? 'चिकित्सा' : 'Medical'),
-              _buildAmenityBadge(Icons.bolt_rounded, _isHindi ? 'बिजली' : 'Power'),
-            ],
+
+          // Capacity (50% width) + Food, Water, Medical, Power right next to it
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = constraints.maxWidth;
+              final isWide = cardWidth >= 760;
+
+              final capacityWidget = Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.groups_rounded, size: 18, color: Color(0xFF007AEB)),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isHindi ? 'क्षमता' : 'Capacity',
+                      style: const TextStyle(
+                        color: Color(0xFF0F2642),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: const LinearProgressIndicator(
+                          value: 0.62,
+                          minHeight: 7,
+                          backgroundColor: Color(0xFFE2E8F0),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '62%',
+                      style: TextStyle(
+                        color: Color(0xFF0F2642),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              final supplyChips = [
+                _buildShelterSupplyChip(
+                  icon: Icons.restaurant_rounded,
+                  iconBgColor: const Color(0xFFFEF3C7),
+                  iconColor: const Color(0xFFD97706),
+                  title: _isHindi ? 'भोजन' : 'Food',
+                  status: _isHindi ? 'उपलब्ध' : 'Available',
+                  onTap: _showShelterDetailsModal,
+                ),
+                _buildShelterSupplyChip(
+                  icon: Icons.water_drop_rounded,
+                  iconBgColor: const Color(0xFFE0F2FE),
+                  iconColor: const Color(0xFF0284C7),
+                  title: _isHindi ? 'जल' : 'Water',
+                  status: _isHindi ? 'उपलब्ध' : 'Available',
+                  onTap: _showShelterDetailsModal,
+                ),
+                _buildShelterSupplyChip(
+                  icon: Icons.add_circle_rounded,
+                  iconBgColor: const Color(0xFFFEE2E2),
+                  iconColor: const Color(0xFFEF4444),
+                  title: _isHindi ? 'चिकित्सा' : 'Medical',
+                  status: _isHindi ? 'उपलब्ध' : 'Available',
+                  onTap: _showShelterDetailsModal,
+                ),
+                _buildShelterSupplyChip(
+                  icon: Icons.bolt_rounded,
+                  iconBgColor: const Color(0xFFF3E8FF),
+                  iconColor: const Color(0xFF9333EA),
+                  title: _isHindi ? 'बिजली' : 'Power',
+                  status: _isHindi ? 'उपलब्ध' : 'Available',
+                  onTap: _showShelterDetailsModal,
+                ),
+              ];
+
+              if (isWide) {
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: cardWidth * 0.44,
+                      child: capacityWidget,
+                    ),
+                    const SizedBox(width: 10),
+                    for (int i = 0; i < supplyChips.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      Expanded(child: supplyChips[i]),
+                    ],
+                  ],
+                );
+              } else {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: (cardWidth * 0.50).clamp(180.0, 320.0),
+                        child: capacityWidget,
+                      ),
+                      const SizedBox(width: 8),
+                      for (int i = 0; i < supplyChips.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        supplyChips[i],
+                      ],
+                    ],
+                  ),
+                );
+              }
+            },
           ),
+
           const SizedBox(height: 14),
+
+          // Action Buttons: View Details & Get Directions
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _showShelterDetailsModal,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    side: const BorderSide(color: Color(0xFF013973)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF013973)),
-                  label: Text(
-                    _isHindi ? 'विवरण देखें' : 'View Details',
-                    style: const TextStyle(color: Color(0xFF013973), fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+              OutlinedButton(
+                onPressed: _showShelterDetailsModal,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: const Color(0xFFF0FDF4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.map_outlined, size: 16, color: Color(0xFF059669)),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isHindi ? 'विवरण देखें' : 'View Details',
+                      style: const TextStyle(
+                        color: Color(0xFF059669),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF059669)),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    backgroundColor: const Color(0xFF15945C),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.navigation_rounded, size: 16, color: Colors.white),
-                  label: Text(
-                    _isHindi ? 'नेविगेट करें' : 'Navigate',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.near_me_outlined, size: 15, color: Color(0xFF007AEB)),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isHindi ? 'दिशा-निर्देश' : 'Get Directions',
+                      style: const TextStyle(
+                        color: Color(0xFF007AEB),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1615,17 +2352,70 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     );
   }
 
-  Widget _buildAmenityBadge(IconData icon, String title) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: const Color(0xFF007AEB)),
-        const SizedBox(width: 4),
-        Text(
-          title,
-          style: const TextStyle(color: Color(0xFF013973), fontSize: 11, fontWeight: FontWeight.w700),
+  Widget _buildShelterSupplyChip({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String status,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 14, color: iconColor),
+            ),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  status,
+                  style: const TextStyle(
+                    color: Color(0xFF16A34A),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -3535,31 +4325,143 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 class _QuickActionItem {
   final String title;
   final String subtitle;
-  final String chipLabel;
   final IconData icon;
-  final IconData chipIcon;
   final Color accentColor;
-  final Color softBgColor;
-  final Color waveColor;
+  final Color cardBgColor;
+  final Color borderColor;
+  final Color iconCircleColor;
+  final IconData? watermarkIcon;
   final VoidCallback onTap;
 
   const _QuickActionItem({
     required this.title,
     required this.subtitle,
-    required this.chipLabel,
     required this.icon,
-    required this.chipIcon,
     required this.accentColor,
-    required this.softBgColor,
-    required this.waveColor,
+    required this.cardBgColor,
+    required this.borderColor,
+    required this.iconCircleColor,
+    this.watermarkIcon,
     required this.onTap,
   });
 }
 
-class _CardWavePainter extends CustomPainter {
-  final Color color;
+// ---------------------------------------------------------------------------
+// Mini Map Thumbnail (static illustration for the safety card matching screenshot)
+// ---------------------------------------------------------------------------
+class _MiniMapThumbnail extends StatelessWidget {
+  const _MiniMapThumbnail();
 
-  const _CardWavePainter({required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: const _MiniMapPainter(),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Translucent mint radar circle matching screenshot
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFA7F3D0).withValues(alpha: 0.45),
+              border: Border.all(
+                color: const Color(0xFF6EE7B7).withValues(alpha: 0.70),
+                width: 1.5,
+              ),
+            ),
+          ),
+          // Location pin (blue circle with white center dot as shown in screenshot)
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF007AEB),
+              border: Border.all(color: Colors.white, width: 2.2),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF007AEB).withValues(alpha: 0.4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMapPainter extends CustomPainter {
+  const _MiniMapPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Background – clean light terrain
+    final bgPaint = Paint()..color = const Color(0xFFF3F9F4);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
+    // River / water body – curved blue ribbon along the right
+    final riverPaint = Paint()
+      ..color = const Color(0xFF7DD3FC)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14.0
+      ..strokeCap = StrokeCap.round;
+
+    final riverPath = Path();
+    riverPath.moveTo(size.width * 0.95, -10);
+    riverPath.cubicTo(
+      size.width * 0.82, size.height * 0.28,
+      size.width * 0.68, size.height * 0.65,
+      size.width * 0.92, size.height + 10,
+    );
+    canvas.drawPath(riverPath, riverPaint);
+
+    // Road network lines – subtle light grey & white strokes
+    final roadPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    final roadPaintThin = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    // Roads across terrain
+    canvas.drawLine(Offset(0, size.height * 0.28), Offset(size.width, size.height * 0.24), roadPaint);
+    canvas.drawLine(Offset(0, size.height * 0.62), Offset(size.width, size.height * 0.58), roadPaint);
+    canvas.drawLine(Offset(size.width * 0.32, 0), Offset(size.width * 0.28, size.height), roadPaint);
+    canvas.drawLine(Offset(size.width * 0.65, 0), Offset(size.width * 0.60, size.height), roadPaint);
+
+    canvas.drawLine(Offset(0, size.height * 0.28), Offset(size.width, size.height * 0.24), roadPaintThin);
+    canvas.drawLine(Offset(0, size.height * 0.62), Offset(size.width, size.height * 0.58), roadPaintThin);
+    canvas.drawLine(Offset(size.width * 0.32, 0), Offset(size.width * 0.28, size.height), roadPaintThin);
+    canvas.drawLine(Offset(size.width * 0.65, 0), Offset(size.width * 0.60, size.height), roadPaintThin);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ---------------------------------------------------------------------------
+// Quick Action Card Top-Right Corner Wave Painter (matches exact screenshot design)
+// ---------------------------------------------------------------------------
+class _CardCornerWavePainter extends CustomPainter {
+  final Color color;
+  const _CardCornerWavePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3568,14 +4470,11 @@ class _CardWavePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    path.moveTo(size.width * 0.48, 0);
+    path.moveTo(size.width * 0.46, 0);
     path.cubicTo(
-      size.width * 0.58,
-      size.height * 0.28,
-      size.width * 0.72,
-      size.height * 0.12,
-      size.width,
-      size.height * 0.56,
+      size.width * 0.52, size.height * 0.16,
+      size.width * 0.70, size.height * 0.34,
+      size.width, size.height * 0.58,
     );
     path.lineTo(size.width, 0);
     path.close();
@@ -3584,6 +4483,6 @@ class _CardWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CardWavePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _CardCornerWavePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
-
