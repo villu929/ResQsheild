@@ -876,7 +876,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+      padding: const EdgeInsets.fromLTRB(18, 20, 16, 20),
       decoration: BoxDecoration(
         color: cardBgColor,
         borderRadius: BorderRadius.circular(22),
@@ -995,7 +995,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 14),
 
                       // Risk Level Row
                       Padding(
@@ -1022,7 +1022,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
 
                       // Description Subtitle
                       Padding(
@@ -1040,7 +1040,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 20),
 
                       // "View Live Map →" Button — sized to 55% column width
                       Container(
@@ -1097,7 +1097,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   child: GestureDetector(
                     onTap: () => setState(() => _currentTab = 1),
                     child: Container(
-                      constraints: const BoxConstraints(minHeight: 146),
+                      constraints: const BoxConstraints(minHeight: 210),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2.5),
