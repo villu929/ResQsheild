@@ -386,32 +386,35 @@ class _GetStartedScreenState extends State<GetStartedScreen>
                                                 ],
                                               ),
                                               child: Center(
-                                                child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      'Get Started',
-                                                      style: TextStyle(
-                                                        color: const Color(0xff1263A2),
-                                                        fontSize: btnFontSize,
-                                                        fontWeight: FontWeight.bold,
-                                                        shadows: const [
-                                                          Shadow(
-                                                            color: Colors.white,
-                                                            blurRadius: 2,
-                                                            offset: Offset(0, 1),
-                                                          ),
-                                                        ],
+                                                child: FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        'Get Started',
+                                                        style: TextStyle(
+                                                          color: const Color(0xff1263A2),
+                                                          fontSize: btnFontSize,
+                                                          fontWeight: FontWeight.bold,
+                                                          shadows: const [
+                                                            Shadow(
+                                                              color: Colors.white,
+                                                              blurRadius: 2,
+                                                              offset: Offset(0, 1),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                    ),
-                                                    SizedBox(width: (6.0 * scaleW).clamp(4.0, 8.0)),
-                                                    Icon(
-                                                      Icons.arrow_forward_rounded,
-                                                      color: const Color(0xff1263A2),
-                                                      size: btnIconSize,
-                                                    ),
-                                                  ],
+                                                      SizedBox(width: (6.0 * scaleW).clamp(4.0, 8.0)),
+                                                      Icon(
+                                                        Icons.arrow_forward_rounded,
+                                                        color: const Color(0xff1263A2),
+                                                        size: btnIconSize,
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ),
