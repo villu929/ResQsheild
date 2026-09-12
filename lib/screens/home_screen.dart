@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -185,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
   late Animation<double> _pulseAnim;
 
   // Evacuation Sector A progress
-  int _evacuatedPop = 1920;
+  int _evacuatedPop = 1903;
   final int _totalSectorPop = 2840;
 
   // Operational Lists
@@ -352,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     _shelters = [
       _ShelterItem(
-        name: 'Mawphlang Community Center',
+        name: 'Meenakshipuram Community Center',
         capacity: 100,
         occupied: 72,
         food: 'High',
@@ -370,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen>
         coords: const LatLng(25.5650, 91.8820),
       ),
       _ShelterItem(
-        name: 'Valley Govt High School',
+        name: 'Valley Convent High School',
         capacity: 200,
         occupied: 200,
         food: 'Low',
@@ -380,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _ShelterItem(
         name: 'Northeast Indoor Stadium',
-        capacity: 350,
+        capacity: 250,
         occupied: 120,
         food: 'High',
         water: 'Good',
@@ -3309,95 +3310,97 @@ class _HomeScreenState extends State<HomeScreen>
           const SizedBox(height: 14),
 
           // Search, Filters & Sort Controls Bar
-          Row(
-            children: [
-              // Search input pill
-              Expanded(
-                flex: 3,
-                child: Container(
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _sosSearchController,
-                          onChanged: (val) {
-                            setState(() {
-                              _sosSearchQuery = val.trim();
-                            });
-                          },
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A)),
-                          decoration: const InputDecoration(
-                            hintText: 'Search by location, ID or keyword...',
-                            hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
+          LayoutBuilder(
+            builder: (context, filterConstraints) {
+              final isNarrow = filterConstraints.maxWidth < 850;
+
+              final searchBox = Container(
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _sosSearchController,
+                        onChanged: (val) {
+                          setState(() {
+                            _sosSearchQuery = val.trim();
+                          });
+                        },
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A)),
+                        decoration: const InputDecoration(
+                          hintText: 'Search by location, ID or keyword...',
+                          hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                      if (_sosSearchQuery.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            _sosSearchController.clear();
-                            setState(() {
-                              _sosSearchQuery = '';
-                            });
-                          },
-                          child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
-                        ),
-                    ],
-                  ),
+                    ),
+                    if (_sosSearchQuery.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _sosSearchController.clear();
+                          setState(() {
+                            _sosSearchQuery = '';
+                          });
+                        },
+                        child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
+                      ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
+              );
 
-              // Filter pills
-              _filterTabPill('All', isSelected: _sosFilter == 'All'),
-              const SizedBox(width: 6),
-              _filterTabPill(
-                'Critical',
-                isSelected: _sosFilter == 'Critical',
-                leading: Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 5),
-                  decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+              final filterPills = SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _filterTabPill('All', isSelected: _sosFilter == 'All'),
+                    const SizedBox(width: 6),
+                    _filterTabPill(
+                      'Critical',
+                      isSelected: _sosFilter == 'Critical',
+                      leading: Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: 5),
+                        decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _filterTabPill(
+                      'Medical',
+                      isSelected: _sosFilter == 'Medical',
+                      leading: const Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _filterTabPill(
+                      'Unassigned',
+                      isSelected: _sosFilter == 'Unassigned',
+                      leading: Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: 5),
+                        decoration: const BoxDecoration(color: Color(0xFF64748B), shape: BoxShape.circle),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 6),
-              _filterTabPill(
-                'Medical',
-                isSelected: _sosFilter == 'Medical',
-                leading: const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
-                ),
-              ),
-              const SizedBox(width: 6),
-              _filterTabPill(
-                'Unassigned',
-                isSelected: _sosFilter == 'Unassigned',
-                leading: Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 5),
-                  decoration: const BoxDecoration(color: Color(0xFF64748B), shape: BoxShape.circle),
-                ),
-              ),
+              );
 
-              const Spacer(),
-
-              // Sort dropdown pill
-              Container(
+              final sortDropdown = Container(
                 height: 38,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
@@ -3422,55 +3425,88 @@ class _HomeScreenState extends State<HomeScreen>
                     Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
                   ],
                 ),
-              ),
-            ],
+              );
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    searchBox,
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(child: filterPills),
+                        const SizedBox(width: 8),
+                        sortDropdown,
+                      ],
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(flex: 3, child: searchBox),
+                  const SizedBox(width: 10),
+                  filterPills,
+                  const Spacer(),
+                  sortDropdown,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 14),
 
-          // Triage Table Grid (Horizontal scrollable for perfect column alignment)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 1405),
-              child: Column(
-                children: [
-                  // Table Header
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: const Row(
-                      children: [
-                        SizedBox(width: 55, child: Text('#', style: _tableHeaderStyle)),
-                        SizedBox(width: 200, child: Text('Location', style: _tableHeaderStyle)),
-                        SizedBox(width: 260, child: Text('Details', style: _tableHeaderStyle)),
-                        SizedBox(width: 95, child: Text('Status', style: _tableHeaderStyle)),
-                        SizedBox(width: 175, child: Text('Assigned Team', style: _tableHeaderStyle)),
-                        SizedBox(width: 100, child: Text('Last Updated', style: _tableHeaderStyle)),
-                        SizedBox(width: 520, child: Text('Actions', style: _tableHeaderStyle)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
+          // Triage Table Grid (Fills full container width with horizontal scroll safety)
+          LayoutBuilder(
+            builder: (context, tableConstraints) {
+              final availableWidth = tableConstraints.maxWidth;
+              final tableWidth = math.max(availableWidth, 1250.0);
 
-                  // Rows
-                  if (filteredList.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'No citizen SOS calls match the current search / filter.',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w600),
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Table Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: _buildSosRowContent(
+                          id: const Text('#', style: _tableHeaderStyle),
+                          location: const Text('Location', style: _tableHeaderStyle),
+                          details: const Text('Details', style: _tableHeaderStyle),
+                          status: const Text('Status', style: _tableHeaderStyle),
+                          team: const Text('Assigned Team', style: _tableHeaderStyle),
+                          time: const Text('Last Updated', style: _tableHeaderStyle),
+                          actions: const Text('Actions', style: _tableHeaderStyle),
+                        ),
                       ),
-                    )
-                  else
-                    ...filteredList.map((sos) => _buildSosTableRow(sos)),
-                ],
-              ),
-            ),
+                      const SizedBox(height: 6),
+
+                      // Rows
+                      if (filteredList.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'No citizen SOS calls match the current search / filter.',
+                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        )
+                      else
+                        ...filteredList.map((sos) => _buildSosTableRow(sos)),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 10),
@@ -3552,6 +3588,35 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildSosRowContent({
+    required Widget id,
+    required Widget location,
+    required Widget details,
+    required Widget status,
+    required Widget team,
+    required Widget time,
+    required Widget actions,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(width: 56, child: id),
+        const SizedBox(width: 12),
+        Expanded(flex: 18, child: location),
+        const SizedBox(width: 12),
+        Expanded(flex: 32, child: details),
+        const SizedBox(width: 12),
+        Expanded(flex: 9, child: status),
+        const SizedBox(width: 12),
+        Expanded(flex: 15, child: team),
+        const SizedBox(width: 12),
+        Expanded(flex: 9, child: time),
+        const SizedBox(width: 14),
+        Expanded(flex: 33, child: actions),
+      ],
+    );
+  }
+
   Widget _buildSosTableRow(_SosItem sos) {
     final isUnassigned = sos.assignedTeam == null || sos.assignedTeam!.isEmpty || sos.status == 'Unassigned';
 
@@ -3559,227 +3624,212 @@ class _HomeScreenState extends State<HomeScreen>
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isUnassigned ? const Color(0xFFFEF2F2) : Colors.white,
+        color: isUnassigned ? const Color(0xFFFFF5F5) : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isUnassigned ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
           width: 1.0,
         ),
       ),
-      child: Row(
-        children: [
-          // # ID
-          SizedBox(
-            width: 55,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDC2626),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                sos.id,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-                textAlign: TextAlign.center,
-              ),
+      child: _buildSosRowContent(
+        id: Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDC2626),
+              borderRadius: BorderRadius.circular(6),
             ),
-          ),
-
-          // Location
-          SizedBox(
-            width: 200,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  sos.village,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  sos.district,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // Details
-          SizedBox(
-            width: 260,
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: [
-                _detailBadge(
-                  icon: Icons.people_alt_rounded,
-                  label: '${sos.people} People',
-                  bg: const Color(0xFFEFF6FF),
-                  color: const Color(0xFF2563EB),
-                ),
-                if (sos.elderly > 0)
-                  _detailBadge(
-                    icon: Icons.elderly_rounded,
-                    label: '${sos.elderly} Elderly',
-                    bg: const Color(0xFFFEF2F2),
-                    color: const Color(0xFFDC2626),
-                  ),
-                if (sos.medical)
-                  _detailBadge(
-                    icon: Icons.add_circle_outline_rounded,
-                    label: 'Medical Urgency',
-                    bg: const Color(0xFFFEF2F2),
-                    color: const Color(0xFFDC2626),
-                  ),
-              ],
-            ),
-          ),
-
-          // Status
-          SizedBox(
-            width: 95,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFEE2E2)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFDC2626),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  const Text(
-                    'Active',
-                    style: TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Assigned Team
-          SizedBox(
-            width: 175,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isUnassigned ? const Color(0xFFF1F5F9) : const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isUnassigned ? const Color(0xFFE2E8F0) : const Color(0xFFFEF3C7),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.groups_rounded,
-                    size: 14,
-                    color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      isUnassigned ? 'Unassigned' : sos.assignedTeam!,
-                      style: TextStyle(
-                        color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Last Updated
-          SizedBox(
-            width: 100,
             child: Text(
-              sos.timeAgo,
+              sos.id,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        location: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              sos.village,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              sos.district,
               style: const TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-
-          // Actions
-          SizedBox(
-            width: 520,
-            child: Row(
-              children: [
-                _actionBtn(
-                  icon: Icons.person_add_alt_1_rounded,
-                  label: 'Assign Team',
-                  color: const Color(0xFF0284C7),
-                  onTap: () => _showAssignTeamModal(sos),
-                ),
-                const SizedBox(width: 10),
-                _actionBtn(
-                  icon: Icons.location_on_rounded,
-                  label: 'View Location',
-                  color: const Color(0xFF0284C7),
-                  onTap: () {
-                    _mapController.move(sos.coords, 14.0);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Centered map on SOS ${sos.id} (${sos.village})'),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 10),
-                _actionBtn(
-                  icon: Icons.check_circle_rounded,
-                  label: 'Resolve',
-                  color: const Color(0xFF16A34A),
-                  onTap: () => _markSosResolved(sos),
-                ),
+          ],
+        ),
+        details: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _detailBadge(
+                icon: Icons.people_alt_rounded,
+                label: '${sos.people} People',
+                bg: const Color(0xFFEFF6FF),
+                color: const Color(0xFF2563EB),
+              ),
+              if (sos.elderly > 0) ...[
                 const SizedBox(width: 6),
-                IconButton(
-                  icon: const Icon(Icons.more_horiz_rounded, size: 18, color: Color(0xFF94A3B8)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'More Details',
-                  onPressed: () => _showSosDetailSheet(sos),
+                _detailBadge(
+                  icon: Icons.elderly_rounded,
+                  label: '${sos.elderly} Elderly',
+                  bg: const Color(0xFFFEF2F2),
+                  color: const Color(0xFFDC2626),
+                ),
+              ],
+              if (sos.medical) ...[
+                const SizedBox(width: 6),
+                _detailBadge(
+                  icon: Icons.add_circle_outline_rounded,
+                  label: 'Medical Urgency',
+                  bg: const Color(0xFFFEF2F2),
+                  color: const Color(0xFFDC2626),
+                ),
+              ],
+            ],
+          ),
+        ),
+        status: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFEE2E2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDC2626),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Text(
+                  'Active',
+                  style: TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
+        team: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isUnassigned ? const Color(0xFFF1F5F9) : const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isUnassigned ? const Color(0xFFE2E8F0) : const Color(0xFFFEF3C7),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.groups_rounded,
+                  size: 14,
+                  color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isUnassigned ? 'Unassigned' : sos.assignedTeam!,
+                  style: TextStyle(
+                    color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        time: Text(
+          sos.timeAgo,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _actionBtn(
+                icon: Icons.person_add_alt_1_rounded,
+                label: 'Assign Team',
+                color: const Color(0xFF0284C7),
+                onTap: () => _showAssignTeamModal(sos),
+              ),
+              const SizedBox(width: 10),
+              _actionBtn(
+                icon: Icons.location_on_rounded,
+                label: 'View Location',
+                color: const Color(0xFF0284C7),
+                onTap: () {
+                  _mapController.move(sos.coords, 14.0);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Centered map on SOS ${sos.id} (${sos.village})'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 10),
+              _actionBtn(
+                icon: Icons.check_circle_rounded,
+                label: 'Resolve',
+                color: const Color(0xFF16A34A),
+                onTap: () => _markSosResolved(sos),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.more_horiz_rounded, size: 18, color: Color(0xFF94A3B8)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'More Details',
+                onPressed: () => _showSosDetailSheet(sos),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -3979,162 +4029,533 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ==========================================================================
-  // EVACUATION MANAGEMENT & ROUTES (Section 14 & 21)
+  // 14 & 21. MODERN EVACUATION MANAGEMENT & ROUTES (MATCHING SCREENSHOT)
   // ==========================================================================
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
   Widget _buildEvacuationSection() {
-    final double evacProgress = _evacuatedPop / _totalSectorPop;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+        if (isWide) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 11,
+                  child: _buildEvacuationManagementCard(),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  flex: 9,
+                  child: _buildEvacuationRoutesCard(),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildEvacuationManagementCard(),
+                const SizedBox(height: 12),
+                _buildEvacuationRoutesCard(),
+              ],
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildEvacuationManagementCard() {
+    final double evacProgress = (_evacuatedPop / _totalSectorPop).clamp(0.0, 1.0);
+    final int remainingPop = _totalSectorPop - _evacuatedPop;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: CmdColors.cardBg,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CmdColors.cardBorder, width: 1.2),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE0F2FE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.groups_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'EVACUATION MANAGEMENT (SECTOR A)',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Overall progress of evacuation and relief operations',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFECACA), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(
+                      Icons.notifications_active_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 13,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'HIGH PRIORITY',
+                      style: TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Progress Header: "67% Evacuated" and "1,903 / 2,840" "Remaining: 937"
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${(evacProgress * 100).toInt()}% Evacuated',
+                style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${_formatNumber(_evacuatedPop)} / ${_formatNumber(_totalSectorPop)}',
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'Remaining: ${_formatNumber(remainingPop)}',
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Sleek Rounded Progress Bar
+          Container(
+            height: 10,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: evacProgress,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0284C7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4 Metric Tiles below progress bar
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 460;
+              final tile1 = _buildEvacStatTile(
+                icon: Icons.groups_rounded,
+                iconColor: const Color(0xFF10B981),
+                iconBgColor: const Color(0xFFECFDF5),
+                title: 'People Evacuated',
+                value: _formatNumber(_evacuatedPop),
+                subtext: '↑ +12% from last hour',
+                subtextColor: const Color(0xFF10B981),
+              );
+              final tile2 = _buildEvacStatTile(
+                icon: Icons.person_rounded,
+                iconColor: const Color(0xFFF97316),
+                iconBgColor: const Color(0xFFFFF7ED),
+                title: 'People Remaining',
+                value: _formatNumber(remainingPop),
+                subtext: '↓ -8% from last hour',
+                subtextColor: const Color(0xFFEA580C),
+              );
+              final tile3 = _buildEvacStatTile(
+                icon: Icons.flag_rounded,
+                iconColor: const Color(0xFF8B5CF6),
+                iconBgColor: const Color(0xFFF5F3FF),
+                title: 'Total Capacity',
+                value: _formatNumber(_totalSectorPop),
+                subtext: '',
+                subtextColor: Colors.transparent,
+              );
+              final tile4 = _buildEvacStatTile(
+                icon: Icons.apartment_rounded,
+                iconColor: const Color(0xFF3B82F6),
+                iconBgColor: const Color(0xFFEFF6FF),
+                title: 'Sectors Covered',
+                value: '3 / 5',
+                subtext: 'Sector A - In Progress',
+                subtextColor: const Color(0xFF2563EB),
+              );
+
+              if (compact) {
+                return Column(
+                  children: [
+                    Row(children: [Expanded(child: tile1), const SizedBox(width: 8), Expanded(child: tile2)]),
+                    const SizedBox(height: 8),
+                    Row(children: [Expanded(child: tile3), const SizedBox(width: 8), Expanded(child: tile4)]),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: tile1),
+                  const SizedBox(width: 8),
+                  Expanded(child: tile2),
+                  const SizedBox(width: 8),
+                  Expanded(child: tile3),
+                  const SizedBox(width: 8),
+                  Expanded(child: tile4),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvacStatTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String title,
+    required String value,
+    required String subtext,
+    required Color subtextColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.departure_board_rounded,
-                color: CmdColors.deepBlue,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'EVACUATION MANAGEMENT (SECTOR A)',
-                style: TextStyle(
-                  color: CmdColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: CmdColors.redLight,
-                  borderRadius: BorderRadius.circular(4),
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
                 ),
-                child: const Text(
-                  'ORDER ACTIVE',
+                child: Center(
+                  child: Icon(icon, color: iconColor, size: 16),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (subtext.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtext,
+              style: TextStyle(
+                color: subtextColor,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvacuationRoutesCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE0F2FE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.alt_route_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'EVACUATION ROUTES STATUS',
                   style: TextStyle(
-                    color: CmdColors.criticalRed,
-                    fontSize: 9.5,
+                    color: Color(0xFF0F172A),
+                    fontSize: 13,
                     fontWeight: FontWeight.w900,
+                    letterSpacing: 0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  _mapController.move(const LatLng(25.4720, 91.7750), 12.5);
+                  setState(() => _activeNavIndex = 1);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFBAE6FD), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'View on Map',
+                        style: TextStyle(
+                          color: Color(0xFF0284C7),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Color(0xFF0284C7),
+                        size: 13,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
 
-          // Evacuation Progress Bar
-          Row(
-            children: [
-              Text(
-                '${(evacProgress * 100).toInt()}% Evacuated',
-                style: const TextStyle(
-                  color: CmdColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$_evacuatedPop / $_totalSectorPop (Remaining: ${_totalSectorPop - _evacuatedPop})',
-                style: const TextStyle(
-                  color: CmdColors.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: evacProgress,
-              backgroundColor: CmdColors.bg,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                CmdColors.primaryBlue,
-              ),
-              minHeight: 10,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Evacuation Route Status (Section 21)
-          const Text(
-            'EVACUATION ROUTES STATUS',
-            style: TextStyle(
-              color: CmdColors.textSecondary,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
+          // 3 Route Items
+          _buildModernRouteItem(
+            name: 'Route A  —  Shelter 1 (Nearbying Kott)',
+            dotColor: const Color(0xFF16A34A),
+            badgeText: 'Safe',
+            badgeTextColor: const Color(0xFF15803D),
+            badgeBgColor: const Color(0xFFECFDF5),
+            badgeBorderColor: const Color(0xFFA7F3D0),
+            tagText: 'Recommended >',
+            tagColor: const Color(0xFF15803D),
           ),
-          const SizedBox(height: 6),
-          _routeItem(
-            'Route A → Shelter 01 (Mawphlang North)',
-            '🟢 Safe · Recommended (High Ground)',
-            CmdColors.safeGreen,
+          const SizedBox(height: 8),
+          _buildModernRouteItem(
+            name: 'Route B  —  Shelter 2 (Valley East)',
+            dotColor: const Color(0xFFF59E0B),
+            badgeText: 'Moderate Risk',
+            badgeTextColor: const Color(0xFFB45309),
+            badgeBgColor: const Color(0xFFFFFBEB),
+            badgeBorderColor: const Color(0xFFFDE68A),
+            tagText: 'Use with Caution >',
+            tagColor: const Color(0xFFB45309),
           ),
-          const SizedBox(height: 4),
-          _routeItem(
-            'Route B → Shelter 02 (Valley East)',
-            '🟡 Moderate Risk (15cm Waterlogging)',
-            CmdColors.cautionAmber,
-          ),
-          const SizedBox(height: 4),
-          _routeItem(
-            'Route C → Shelter 03 (River Bridge)',
-            '🔴 Flooded · Impassable',
-            CmdColors.criticalRed,
+          const SizedBox(height: 8),
+          _buildModernRouteItem(
+            name: 'Route C  —  Shelter 3 (River Bridge)',
+            dotColor: const Color(0xFFEF4444),
+            badgeText: 'Blocked',
+            badgeTextColor: const Color(0xFFDC2626),
+            badgeBgColor: const Color(0xFFFEF2F2),
+            badgeBorderColor: const Color(0xFFFECACA),
+            tagText: 'Impassable >',
+            tagColor: const Color(0xFFDC2626),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          // Actions Row
+          // 2 Action Buttons
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: CmdColors.deepBlue,
+                    backgroundColor: const Color(0xFF0A3981),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    elevation: 0,
                   ),
-                  icon: const Icon(Icons.send_rounded, size: 15),
+                  icon: const Icon(Icons.send_rounded, size: 15, color: Colors.white),
                   label: const Text(
                     'NOTIFY CITIZENS',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   onPressed: _showBroadcastAlertModal,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: CmdColors.deepBlue,
-                    side: const BorderSide(color: CmdColors.deepBlue, width: 1.2),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    foregroundColor: const Color(0xFF0A3981),
+                    side: const BorderSide(color: Color(0xFF0A3981), width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  icon: const Icon(Icons.navigation_rounded, size: 15),
+                  icon: const Icon(Icons.map_rounded, size: 15, color: Color(0xFF0A3981)),
                   label: const Text(
                     'VIEW SAFE ROUTE',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   onPressed: () {
                     _mapController.move(const LatLng(25.4720, 91.7750), 12.5);
@@ -4154,233 +4575,426 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _routeItem(String title, String status, Color color) {
+  Widget _buildModernRouteItem({
+    required String name,
+    required Color dotColor,
+    required String badgeText,
+    required Color badgeTextColor,
+    required Color badgeBgColor,
+    required Color badgeBorderColor,
+    required String tagText,
+    required Color tagColor,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: CmdColors.bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: CmdColors.textPrimary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
             ),
           ),
-          Text(
-            status,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // SHELTER, HOSPITAL & RELIEF SECTION (Sections 16, 17, 18, 19, 20)
-  // ==========================================================================
-  Widget _buildShelterAndReliefSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: CmdColors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CmdColors.cardBorder, width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Shelters Header
-          Row(
-            children: [
-              const Icon(
-                Icons.night_shelter_rounded,
-                color: CmdColors.deepBlue,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'SHELTERS & RELIEF RESOURCES',
-                style: TextStyle(
-                  color: CmdColors.textPrimary,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const Spacer(),
-              const Text(
-                '18 Active Shelters',
-                style: TextStyle(
-                  color: CmdColors.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Shelter list items
-          ..._shelters.map((sh) => _shelterTile(sh)),
-
-          const Divider(height: 20, color: CmdColors.cardBorder),
-
-          // Relief Supplies Summary (Section 18 & 19)
-          const Text(
-            'RELIEF INVENTORY & SHORTAGES',
-            style: TextStyle(
-              color: CmdColors.textSecondary,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              _reliefItem(
-                'FOOD MEALS',
-                '$_foodAvailable / $_foodRequired',
-                '🔴 Shortage: 2,600',
-                CmdColors.criticalRed,
-              ),
-              const SizedBox(width: 8),
-              _reliefItem(
-                'POTABLE WATER',
-                '${(_waterAvailable / 1000).toStringAsFixed(0)}k / ${(_waterRequired / 1000).toStringAsFixed(0)}k L',
-                '🟠 Low: 3,000 L',
-                CmdColors.warningOrange,
-              ),
-              const SizedBox(width: 8),
-              _reliefItem(
-                'MED KITS',
-                '$_medKits Kits',
-                '🟢 Sufficient',
-                CmdColors.safeGreen,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Dispatch Action Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: CmdColors.primaryBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: const Icon(Icons.local_shipping_rounded, size: 16),
-              label: const Text(
-                'DISPATCH RELIEF CONVOY TO MAWPHLANG',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-              ),
-              onPressed: _showDispatchReliefDialog,
-            ),
-          ),
-
-          const Divider(height: 20, color: CmdColors.cardBorder),
-
-          // Infrastructure Status (Section 20)
-          const Text(
-            'CRITICAL INFRASTRUCTURE STATUS',
-            style: TextStyle(
-              color: CmdColors.textSecondary,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _infraPill('🚧 Roads', '82 Open · 12 Blocked', CmdColors.warningOrange),
-              const SizedBox(width: 8),
-              _infraPill('🌉 Bridges', '14 Safe · 3 Closed', CmdColors.criticalRed),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _infraPill('⚡ Power', '4 Substations Offline', CmdColors.criticalRed),
-              const SizedBox(width: 8),
-              _infraPill('📡 Telecom', '7 Towers on Battery', CmdColors.cautionAmber),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _shelterTile(_ShelterItem sh) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: CmdColors.bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.home_work_rounded, color: sh.statusColor, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Text(
+              name,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: badgeBgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: badgeBorderColor, width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  sh.name,
-                  style: const TextStyle(
-                    color: CmdColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: badgeTextColor,
+                    shape: BoxShape.circle,
                   ),
                 ),
+                const SizedBox(width: 4),
                 Text(
-                  'Food: ${sh.food} · Water: ${sh.water} · Med: ${sh.medical ? "Yes" : "No"}',
-                  style: const TextStyle(
-                    color: CmdColors.textSecondary,
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeTextColor,
                     fontSize: 10,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          const SizedBox(width: 8),
+          Text(
+            tagText,
+            style: TextStyle(
+              color: tagColor,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // 16-20. MODERN SHELTERS & RELIEF RESOURCES (MATCHING SCREENSHOT)
+  // ==========================================================================
+  Widget _buildShelterAndReliefSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Shelters Header Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE0F2FE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.domain_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'SHELTERS & RELIEF RESOURCES',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Availability and occupancy status of relief centers',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '18 Active Shelters',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  InkWell(
+                    onTap: () => setState(() => _activeNavIndex = 4),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFBAE6FD), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'View All',
+                            style: TextStyle(
+                              color: Color(0xFF0284C7),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Color(0xFF0284C7),
+                            size: 13,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4 Shelter Cards Grid
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 850;
+              final shelterCard1 = _buildModernShelterCard(
+                name: 'Meenakshipuram Community Center',
+                sectorDistance: 'Sector A • 2.3 km',
+                occupied: 72,
+                capacity: 100,
+                iconColor: const Color(0xFF10B981),
+                iconBgColor: const Color(0xFFECFDF5),
+                statusText: 'Available',
+                statusTextColor: const Color(0xFF10B981),
+                statusBgColor: const Color(0xFFECFDF5),
+                statusBorderColor: const Color(0xFFA7F3D0),
+                progressColor: const Color(0xFF10B981),
+              );
+              final shelterCard2 = _buildModernShelterCard(
+                name: 'St. Anthony Relief Hall',
+                sectorDistance: 'Sector B • 4.1 km',
+                occupied: 184,
+                capacity: 200,
+                iconColor: const Color(0xFFF97316),
+                iconBgColor: const Color(0xFFFFF7ED),
+                statusText: 'Near Capacity',
+                statusTextColor: const Color(0xFFD97706),
+                statusBgColor: const Color(0xFFFFFBEB),
+                statusBorderColor: const Color(0xFFFDE68A),
+                progressColor: const Color(0xFFF97316),
+              );
+              final shelterCard3 = _buildModernShelterCard(
+                name: 'Valley Convent High School',
+                sectorDistance: 'Sector C • 6.8 km',
+                occupied: 200,
+                capacity: 200,
+                iconColor: const Color(0xFFEF4444),
+                iconBgColor: const Color(0xFFFEF2F2),
+                statusText: 'Full',
+                statusTextColor: const Color(0xFFDC2626),
+                statusBgColor: const Color(0xFFFEF2F2),
+                statusBorderColor: const Color(0xFFFECACA),
+                progressColor: const Color(0xFFEF4444),
+              );
+              final shelterCard4 = _buildModernShelterCard(
+                name: 'Northeast Indoor Stadium',
+                sectorDistance: 'Sector D • 3.6 km',
+                occupied: 120,
+                capacity: 250,
+                iconColor: const Color(0xFF10B981),
+                iconBgColor: const Color(0xFFECFDF5),
+                statusText: 'Available',
+                statusTextColor: const Color(0xFF10B981),
+                statusBgColor: const Color(0xFFECFDF5),
+                statusBorderColor: const Color(0xFFA7F3D0),
+                progressColor: const Color(0xFF10B981),
+              );
+
+              if (isWide) {
+                return Row(
+                  children: [
+                    Expanded(child: shelterCard1),
+                    const SizedBox(width: 10),
+                    Expanded(child: shelterCard2),
+                    const SizedBox(width: 10),
+                    Expanded(child: shelterCard3),
+                    const SizedBox(width: 10),
+                    Expanded(child: shelterCard4),
+                  ],
+                );
+              } else if (constraints.maxWidth >= 520) {
+                return Column(
+                  children: [
+                    Row(children: [Expanded(child: shelterCard1), const SizedBox(width: 10), Expanded(child: shelterCard2)]),
+                    const SizedBox(height: 10),
+                    Row(children: [Expanded(child: shelterCard3), const SizedBox(width: 10), Expanded(child: shelterCard4)]),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    shelterCard1,
+                    const SizedBox(height: 10),
+                    shelterCard2,
+                    const SizedBox(height: 10),
+                    shelterCard3,
+                    const SizedBox(height: 10),
+                    shelterCard4,
+                  ],
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernShelterCard({
+    required String name,
+    required String sectorDistance,
+    required int occupied,
+    required int capacity,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String statusText,
+    required Color statusTextColor,
+    required Color statusBgColor,
+    required Color statusBorderColor,
+    required Color progressColor,
+  }) {
+    final double ratio = (occupied / capacity).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(Icons.home_rounded, color: iconColor, size: 18),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      sectorDistance,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${sh.occupied} / ${sh.capacity}',
+                '$occupied / $capacity',
                 style: TextStyle(
-                  color: sh.statusColor,
+                  color: statusTextColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              Text(
-                sh.status,
-                style: TextStyle(
-                  color: sh.statusColor,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: ratio,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: progressColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: statusBorderColor, width: 0.8),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusTextColor,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -4390,129 +5004,88 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _reliefItem(String title, String val, String status, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: CmdColors.bg,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(color: CmdColors.textMuted, fontSize: 9),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              val,
-              style: const TextStyle(
-                color: CmdColors.textPrimary,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              status,
-              style: TextStyle(
-                color: color,
-                fontSize: 9.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infraPill(String title, String val, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: CmdColors.bg,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: CmdColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    val,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ==========================================================================
-  // SITREP GENERATOR & AUDIT LOG BAR (Sections 28 & 29)
+  // 28 & 29. MODERN DISASTER OPERATIONS SITREP (MATCHING SCREENSHOT)
   // ==========================================================================
   Widget _buildSitrepAndAuditSection() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 6, 14, 20),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.fromLTRB(14, 6, 14, 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: CmdColors.navy,
+        color: const Color(0xFF0F1E36),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3A5F), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             children: [
-              const Icon(
-                Icons.description_rounded,
-                color: CmdColors.cyanAccent,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'DISASTER OPERATIONS SITREP',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.description_rounded,
+                    color: Color(0xFF38BDF8),
+                    size: 19,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'DISASTER OPERATIONS SITREP',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Latest action updates and critical information',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: CmdColors.cyanAccent,
-                  foregroundColor: CmdColors.navy,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  backgroundColor: const Color(0xFF38BDF8),
+                  foregroundColor: const Color(0xFF0F1E36),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  elevation: 0,
                 ),
-                icon: const Icon(Icons.print_rounded, size: 15),
+                icon: const Icon(Icons.download_rounded, size: 15),
                 label: const Text(
                   'GENERATE SITREP',
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
@@ -4521,42 +5094,212 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'LATEST ACTION AUDIT LOG',
-            style: TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 6),
-          ..._actionLogs.take(3).map(
-                (log) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '• ',
-                        style: TextStyle(color: CmdColors.cyanAccent),
-                      ),
-                      Expanded(
-                        child: Text(
-                          log,
-                          style: const TextStyle(
-                            color: Color(0xFFCBD5E1),
-                            fontSize: 11,
-                          ),
+
+          const SizedBox(height: 16),
+
+          // Content Columns (Timeline Feeds + Weather Alert Box)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 850;
+
+              final feedCol1 = Column(
+                children: [
+                  _buildSitrepTimelineItem(
+                    time: '11:45',
+                    dotColor: const Color(0xFF10B981),
+                    text: 'Rescue team reached Sector C and is assisting 42 residents.',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSitrepTimelineItem(
+                    time: '10:30',
+                    dotColor: const Color(0xFF38BDF8),
+                    text: 'Water level at Damodar River crossed warning mark (8.2m).',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSitrepTimelineItem(
+                    time: '08:15',
+                    dotColor: const Color(0xFFF97316),
+                    text: 'Additional relief supplies dispatched to Valley East.',
+                  ),
+                ],
+              );
+
+              final feedCol2 = Column(
+                children: [
+                  _buildSitrepTimelineItem(
+                    time: '07:50',
+                    dotColor: const Color(0xFF38BDF8),
+                    text: 'Medical team deployed to Shelter 2.',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSitrepTimelineItem(
+                    time: '06:30',
+                    dotColor: const Color(0xFF10B981),
+                    text: 'All primary evacuation routes are operational except Route C.',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSitrepTimelineItem(
+                    time: '05:10',
+                    dotColor: const Color(0xFFF97316),
+                    text: 'Heavy rainfall expected in next 6 hours. Stay alert.',
+                  ),
+                ],
+              );
+
+              final alertBox = Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16253D),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF263D5C), width: 1),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.cloudy_snowing,
+                      color: Color(0xFF38BDF8),
+                      size: 32,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B151E),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF881337), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE11D48),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text(
+                                    'Heavy Rainfall Alert',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Next 6-8 hours',
+                                    style: TextStyle(
+                                      color: Color(0xFFFDA4AF),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
+              );
+
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: feedCol1),
+                    Container(
+                      height: 80,
+                      width: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      color: const Color(0xFF1E3A5F),
+                    ),
+                    Expanded(flex: 5, child: feedCol2),
+                    const SizedBox(width: 14),
+                    Expanded(flex: 4, child: alertBox),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    feedCol1,
+                    const SizedBox(height: 10),
+                    feedCol2,
+                    const SizedBox(height: 12),
+                    alertBox,
+                  ],
+                );
+              }
+            },
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSitrepTimelineItem({
+    required String time,
+    required Color dotColor,
+    required String text,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            time,
+            style: const TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: dotColor,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFFE2E8F0),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
@@ -4629,7 +5372,7 @@ class _HomeScreenState extends State<HomeScreen>
         return _buildAuditLogTab();
       case 0:
       default:
-        // Home Overview Command Dashboard (All 30 Sections integrated)
+        // Home Overview Command Dashboard (Prominently displaying Evacuation, Shelters, and SITREP matching design)
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -4652,16 +5395,16 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ==========================================================================
-  // BOTTOM NAVIGATION BAR
+  // BOTTOM NAVIGATION BAR (MATCHING SCREENSHOT)
   // ==========================================================================
   Widget _buildBottomCommandBar() {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: CmdColors.cardBorder, width: 1)),
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Color(0x0A000000),
             blurRadius: 8,
             offset: Offset(0, -2),
           ),
@@ -4672,36 +5415,62 @@ class _HomeScreenState extends State<HomeScreen>
         onTap: (index) => setState(() => _activeNavIndex = index),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: CmdColors.deepBlue,
-        unselectedItemColor: CmdColors.textMuted,
+        selectedItemColor: const Color(0xFF0066CC),
+        unselectedItemColor: const Color(0xFF64748B),
         selectedLabelStyle: const TextStyle(
-          fontSize: 10.5,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 10,
+          fontSize: 10.5,
           fontWeight: FontWeight.w600,
         ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Command',
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.map_rounded),
-            label: 'GIS Map',
+            label: 'Live Map',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.emergency_rounded),
-            label: 'SOS (27)',
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_rounded),
+                Positioned(
+                  right: -6,
+                  top: -3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 14, minHeight: 12),
+                    child: const Text(
+                      '12',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            label: 'Alerts (12)',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.departure_board_rounded),
-            label: 'Evacuation',
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'Resources',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.night_shelter_rounded),
-            label: 'Shelters',
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.settings_rounded),
+            label: 'Settings',
           ),
         ],
       ),

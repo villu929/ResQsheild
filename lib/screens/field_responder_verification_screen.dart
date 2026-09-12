@@ -384,7 +384,9 @@ class _FieldResponderVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F6FA),
+      backgroundColor: _currentStep == 0
+          ? const Color(0xFFE9F4FB)
+          : const Color(0xFFF0F6FA),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final double w = constraints.maxWidth;
@@ -396,51 +398,24 @@ class _FieldResponderVerificationScreenState
           final double textScale =
               (math.min(w / 390.0, h / 800.0)).clamp(0.70, 1.25);
 
+          final double maxCardWidth = 960.0;
+          final double availableWidth = w - (24.0 * scaleW).clamp(16.0, 48.0);
+          final double cardWidth =
+              math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Ambient Background Image
+              // Exact Background Image from Citizen Login & OTP Screens
               Positioned.fill(
                 child: Image.asset(
-                  'assets/images/screen_bg_2.png',
+                  _currentStep == 0
+                      ? 'assets/images/screen_bg_1.png'
+                      : 'assets/images/screen_bg_2.png',
                   fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                ),
-              ),
-
-              // Tactical Ambient Gradient Glow
-              Positioned(
-                top: -80,
-                right: -60,
-                width: 260,
-                height: 260,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF15945C).withValues(alpha: 0.16),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -100,
-                left: -80,
-                width: 320,
-                height: 320,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF013973).withValues(alpha: 0.12),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
+                  alignment: _currentStep == 0
+                      ? Alignment.topCenter
+                      : Alignment.center,
                 ),
               ),
 
@@ -464,8 +439,8 @@ class _FieldResponderVerificationScreenState
                     );
                   },
                   child: _currentStep == 0
-                      ? _buildFormView(scaleW, scaleH, scaleMin, textScale)
-                      : _buildOtpView(scaleW, scaleH, scaleMin, textScale),
+                      ? _buildFormView(scaleW, scaleH, scaleMin, textScale, cardWidth)
+                      : _buildOtpView(scaleW, scaleH, scaleMin, textScale, cardWidth),
                 ),
               ),
             ],
@@ -483,17 +458,23 @@ class _FieldResponderVerificationScreenState
     double scaleH,
     double scaleMin,
     double textScale,
+    double cardWidth,
   ) {
     return Column(
       key: const ValueKey('responder_form_view'),
       children: [
-        _buildCustomAppBar(
-          title: 'Field Responder Authorization',
-          subtitle: 'Tactical Ground Units • JalGuard',
-          badgeText: 'TACTICAL UNIT',
-          badgeColor: const Color(0xFF15945C),
-          onBack: () => Navigator.pop(context),
-          textScale: textScale,
+        Center(
+          child: SizedBox(
+            width: cardWidth,
+            child: _buildCustomAppBar(
+              title: 'Field Responder Authorization',
+              subtitle: 'Tactical Ground Units • JalGuard',
+              badgeText: 'TACTICAL UNIT',
+              badgeColor: const Color(0xFF15945C),
+              onBack: () => Navigator.pop(context),
+              textScale: textScale,
+            ),
+          ),
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -502,11 +483,14 @@ class _FieldResponderVerificationScreenState
               horizontal: (18 * scaleW).clamp(14.0, 24.0),
               vertical: (8 * scaleH).clamp(6.0, 16.0),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Info Banner
-                Container(
+            child: Center(
+              child: SizedBox(
+                width: cardWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Info Banner
+                    Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 11,
@@ -666,9 +650,11 @@ class _FieldResponderVerificationScreenState
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  ],
+);
+}
 
   // ==========================================================================
   // VIEW 2: TACTICAL OTP VERIFICATION
@@ -678,6 +664,7 @@ class _FieldResponderVerificationScreenState
     double scaleH,
     double scaleMin,
     double textScale,
+    double cardWidth,
   ) {
     final displayPhone = _mobileController.text.trim().isNotEmpty
         ? _mobileController.text.trim()
@@ -689,13 +676,18 @@ class _FieldResponderVerificationScreenState
     return Column(
       key: const ValueKey('responder_otp_view'),
       children: [
-        _buildCustomAppBar(
-          title: 'Tactical OTP Verification',
-          subtitle: 'High-Security 2FA Authentication',
-          badgeText: 'SECURITY STEP 2/2',
-          badgeColor: const Color(0xFF007AEB),
-          onBack: () => setState(() => _currentStep = 0),
-          textScale: textScale,
+        Center(
+          child: SizedBox(
+            width: cardWidth,
+            child: _buildCustomAppBar(
+              title: 'Tactical OTP Verification',
+              subtitle: 'High-Security 2FA Authentication',
+              badgeText: 'SECURITY STEP 2/2',
+              badgeColor: const Color(0xFF007AEB),
+              onBack: () => setState(() => _currentStep = 0),
+              textScale: textScale,
+            ),
+          ),
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -704,139 +696,144 @@ class _FieldResponderVerificationScreenState
               horizontal: (18 * scaleW).clamp(14.0, 24.0),
               vertical: (12 * scaleH).clamp(8.0, 20.0),
             ),
-            child: Column(
-              children: [
-                SizedBox(height: 10 * scaleH),
-                // Tactile Key Shield Icon
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF15945C).withValues(alpha: 0.20),
-                        blurRadius: 18,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.phonelink_lock_rounded,
-                      color: Color(0xFF15945C),
-                      size: 34,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'Enter 6-Digit Tactical OTP',
-                  style: TextStyle(
-                    color: const Color(0xFF013973),
-                    fontSize: (18 * textScale).clamp(16.0, 20.0),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Emergency verification code sent to $maskedPhone',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xFF537392),
-                    fontSize: (12.5 * textScale).clamp(11.0, 14.0),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 24 * scaleH),
-
-                // 6-Digit OTP Boxes
-                _buildOtpBoxes(scaleW, textScale),
-                SizedBox(height: 20 * scaleH),
-
-                // Resend Timer Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            child: Center(
+              child: SizedBox(
+                width: cardWidth,
+                child: Column(
                   children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      size: 16,
-                      color: _secondsRemaining > 0
-                          ? const Color(0xFF537392)
-                          : const Color(0xFF15945C),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _secondsRemaining > 0
-                          ? 'Resend OTP in ${_secondsRemaining}s'
-                          : 'Didn\'t receive OTP?',
-                      style: TextStyle(
-                        color: _secondsRemaining > 0
-                            ? const Color(0xFF537392)
-                            : const Color(0xFF0F172A),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (_secondsRemaining == 0) ...[
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          _startTimer();
-                          _showSnack('New OTP sent to $maskedPhone');
-                        },
-                        child: const Text(
-                          'Resend Now',
-                          style: TextStyle(
-                            color: Color(0xFF15945C),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
+                    SizedBox(height: 10 * scaleH),
+                    // Tactile Key Shield Icon
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF15945C).withValues(alpha: 0.20),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 6),
                           ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.phonelink_lock_rounded,
+                          color: Color(0xFF15945C),
+                          size: 34,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                SizedBox(height: 28 * scaleH),
-
-                // Verify Button
-                _buildSubmitButton(
-                  title: 'Verify & Access Field Portal',
-                  icon: Icons.check_circle_outline_rounded,
-                  isLoading: _isOtpVerifying,
-                  isSuccess: _isOtpSuccess,
-                  onTap: _handleVerifyOtp,
-                  accentColor: const Color(0xFF15945C),
-                  textScale: textScale,
-                ),
-                const SizedBox(height: 18),
-
-                // Security Note
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.lock_rounded,
-                      size: 13,
-                      color: Color(0xFF64748B),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(height: 16),
+
                     Text(
-                      'End-to-end encrypted dispatch network protocol',
+                      'Enter 6-Digit Tactical OTP',
                       style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
+                        color: const Color(0xFF013973),
+                        fontSize: (18 * textScale).clamp(16.0, 20.0),
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Emergency verification code sent to $maskedPhone',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFF537392),
+                        fontSize: (12.5 * textScale).clamp(11.0, 14.0),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    SizedBox(height: 24 * scaleH),
+
+                    // 6-Digit OTP Boxes
+                    _buildOtpBoxes(scaleW, textScale),
+                    SizedBox(height: 20 * scaleH),
+
+                    // Resend Timer Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 16,
+                          color: _secondsRemaining > 0
+                              ? const Color(0xFF537392)
+                              : const Color(0xFF15945C),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _secondsRemaining > 0
+                              ? 'Resend OTP in ${_secondsRemaining}s'
+                              : 'Didn\'t receive OTP?',
+                          style: TextStyle(
+                            color: _secondsRemaining > 0
+                                ? const Color(0xFF537392)
+                                : const Color(0xFF0F172A),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_secondsRemaining == 0) ...[
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              _startTimer();
+                              _showSnack('New OTP sent to $maskedPhone');
+                            },
+                            child: const Text(
+                              'Resend Now',
+                              style: TextStyle(
+                                color: Color(0xFF15945C),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    SizedBox(height: 28 * scaleH),
+
+                    // Verify Button
+                    _buildSubmitButton(
+                      title: 'Verify & Access Field Portal',
+                      icon: Icons.check_circle_outline_rounded,
+                      isLoading: _isOtpVerifying,
+                      isSuccess: _isOtpSuccess,
+                      onTap: _handleVerifyOtp,
+                      accentColor: const Color(0xFF15945C),
+                      textScale: textScale,
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Security Note
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.lock_rounded,
+                          size: 13,
+                          color: Color(0xFF64748B),
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'End-to-end encrypted dispatch network protocol',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
-import 'citizen_localization.dart';
 import 'citizen_safe_route_view.dart';
 import 'citizen_shelters_view.dart';
 import 'citizen_hazard_report_view.dart';
 import 'citizen_alerts_view.dart';
+import '../role_selection_screen.dart';
 
 enum CitizenThreatLevel {
   safe,
@@ -62,6 +62,76 @@ class _DosDisasterInfo {
     required this.imagePath,
     required this.phases,
   });
+}
+
+class _ScenicWatermarkPainter extends CustomPainter {
+  final Color baseColor;
+
+  const _ScenicWatermarkPainter({required this.baseColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final hillPaint1 = Paint()
+      ..color = baseColor.withValues(alpha: 0.035)
+      ..style = PaintingStyle.fill;
+
+    final hillPaint2 = Paint()
+      ..color = baseColor.withValues(alpha: 0.055)
+      ..style = PaintingStyle.fill;
+
+    final treePaint = Paint()
+      ..color = baseColor.withValues(alpha: 0.09)
+      ..style = PaintingStyle.fill;
+
+    // Distant hill curve
+    final path1 = Path();
+    path1.moveTo(0, size.height * 0.40);
+    path1.quadraticBezierTo(size.width * 0.20, size.height * 0.22, size.width * 0.45, size.height * 0.50);
+    path1.quadraticBezierTo(size.width * 0.70, size.height * 0.75, size.width, size.height * 0.65);
+    path1.lineTo(size.width, size.height);
+    path1.lineTo(0, size.height);
+    path1.close();
+    canvas.drawPath(path1, hillPaint1);
+
+    // Midground hill curve
+    final path2 = Path();
+    path2.moveTo(0, size.height * 0.62);
+    path2.quadraticBezierTo(size.width * 0.16, size.height * 0.42, size.width * 0.38, size.height * 0.68);
+    path2.quadraticBezierTo(size.width * 0.60, size.height * 0.88, size.width * 0.82, size.height);
+    path2.lineTo(0, size.height);
+    path2.close();
+    canvas.drawPath(path2, hillPaint2);
+
+    // Stylized conifer pine trees on bottom left
+    void drawPineTree(double x, double baseY, double treeWidth, double treeHeight) {
+      final p = Path();
+      p.moveTo(x, baseY - treeHeight);
+      p.lineTo(x + treeWidth * 0.32, baseY - treeHeight * 0.58);
+      p.lineTo(x + treeWidth * 0.18, baseY - treeHeight * 0.58);
+      p.lineTo(x + treeWidth * 0.40, baseY - treeHeight * 0.28);
+      p.lineTo(x + treeWidth * 0.25, baseY - treeHeight * 0.28);
+      p.lineTo(x + treeWidth * 0.50, baseY);
+      p.lineTo(x - treeWidth * 0.50, baseY);
+      p.lineTo(x - treeWidth * 0.25, baseY - treeHeight * 0.28);
+      p.lineTo(x - treeWidth * 0.40, baseY - treeHeight * 0.28);
+      p.lineTo(x - treeWidth * 0.18, baseY - treeHeight * 0.58);
+      p.lineTo(x - treeWidth * 0.32, baseY - treeHeight * 0.58);
+      p.close();
+      canvas.drawPath(p, treePaint);
+    }
+
+    drawPineTree(size.width * 0.02, size.height * 0.98, 20, 38);
+    drawPineTree(size.width * 0.055, size.height * 0.95, 16, 30);
+    drawPineTree(size.width * 0.09, size.height * 0.99, 22, 44);
+    drawPineTree(size.width * 0.13, size.height * 0.94, 15, 28);
+    drawPineTree(size.width * 0.17, size.height * 0.97, 19, 36);
+    drawPineTree(size.width * 0.22, size.height * 0.99, 14, 26);
+    drawPineTree(size.width * 0.27, size.height * 0.96, 13, 24);
+    drawPineTree(size.width * 0.33, size.height * 0.98, 12, 20);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScenicWatermarkPainter oldDelegate) => oldDelegate.baseColor != baseColor;
 }
 
 final List<_DosDisasterInfo> _dosDisasterList = [
@@ -367,6 +437,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   CitizenThreatLevel _threatLevel = CitizenThreatLevel.safe;
   bool _isSosActive = false;
   int _activeAlertIndex = 0;
+  double _alertMapZoom = 1.0;
+  bool _alertMapSatellite = false;
 
   // Do's and Don'ts Carousel State (Auto-slides every 3.5s)
   int _dosDisasterIdx = 0; // 0: Flood, 1: Cyclone, 2: Landslide, 3: Lightning
@@ -376,6 +448,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // Map Controllers
   late final MapController _mapController;
   late final MapController _fullMapController;
+  late final MapController _rainMapController;
+  bool _showRainRadar = true;
   String _fullMapFilter = 'All';
 
   // Key Coordinates (Local Basin)
@@ -414,6 +488,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'districtHi': 'जिला: नदी बेसिन',
       'riskLevel': 'Risk Level: High',
       'riskLevelHi': 'जोखिम: उच्च',
+      'riskStep': 2,
       'color': const Color(0xFFDC2626),
     },
     {
@@ -433,6 +508,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'districtHi': 'जिला: ऊपरी घाटी',
       'riskLevel': 'Risk Level: Moderate',
       'riskLevelHi': 'जोखिम: मध्यम',
+      'riskStep': 1,
       'color': const Color(0xFFF39A20),
     },
     {
@@ -452,6 +528,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'districtHi': 'जिला: उत्तरी कटक',
       'riskLevel': 'Risk Level: High',
       'riskLevelHi': 'जोखिम: उच्च',
+      'riskStep': 2,
       'color': const Color(0xFFD97706),
     },
     {
@@ -471,6 +548,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'districtHi': 'जिला: हाईवे सेक्टर 4',
       'riskLevel': 'Risk Level: Critical',
       'riskLevelHi': 'जोखिम: गंभीर',
+      'riskStep': 3,
       'color': const Color(0xFFDC2626),
     },
   ];
@@ -505,6 +583,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     super.initState();
     _mapController = MapController();
     _fullMapController = MapController();
+    _rainMapController = MapController();
     if (!_isTestEnvironment()) {
       _startDosTimer();
     }
@@ -523,7 +602,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _startDosTimer() {
     _dosAutoSlideTimer?.cancel();
     if (_isTestEnvironment()) return;
-    _dosAutoSlideTimer = Timer.periodic(const Duration(milliseconds: 3500), (_) {
+    _dosAutoSlideTimer = Timer.periodic(const Duration(milliseconds: 4500), (_) {
       if (!mounted) return;
       _advanceDosSlide();
     });
@@ -588,13 +667,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // ==========================================================================
   // MAIN BUILD
   // ==========================================================================
+  void _navigateToRoles() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE9F4FB),
-      appBar: _buildTopAppBar(),
-      body: _buildCurrentTabBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _navigateToRoles();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFE9F4FB),
+        appBar: _buildTopAppBar(),
+        body: _buildCurrentTabBody(),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
     );
   }
 
@@ -623,11 +718,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       elevation: 0,
       backgroundColor: Colors.white,
       titleSpacing: 8,
-      leadingWidth: 42,
+      leadingWidth: 44,
       leading: IconButton(
-        icon: const Icon(Icons.swap_horiz_rounded, color: Color(0xFF0F172A), size: 20),
-        tooltip: CitizenStrings.get('changeRole', isHindi: _isHindi),
-        onPressed: () => Navigator.maybePop(context),
+        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
+        tooltip: _isHindi ? 'भूमिका चयन' : 'Back to Roles',
+        onPressed: _navigateToRoles,
       ),
       title: Row(
         mainAxisSize: MainAxisSize.min,
@@ -925,8 +1020,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 18),
+          const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wifi_off_rounded, color: Color(0xFFF87171), size: 15),
+                const SizedBox(width: 5),
+                Text(
+                  _isHindi ? 'ऑफलाइन कार्यशील' : 'Works offline',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 16),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -995,7 +1109,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
     switch (_threatLevel) {
       case CitizenThreatLevel.safe:
-        cardBgColor = const Color(0xFFF4FBF7);
+        cardBgColor = Colors.white;
         borderColor = const Color(0xFFD4EFE0);
         badgeColor = const Color(0xFFDCFCE7);
         badgeTextColor = const Color(0xFF065F46);
@@ -1007,7 +1121,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         break;
 
       case CitizenThreatLevel.watch:
-        cardBgColor = const Color(0xFFFEFCE8);
+        cardBgColor = Colors.white;
         borderColor = const Color(0xFFFDE047);
         badgeColor = const Color(0xFFFEF08A);
         badgeTextColor = const Color(0xFFB45309);
@@ -1019,7 +1133,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         break;
 
       case CitizenThreatLevel.warning:
-        cardBgColor = const Color(0xFFFFF7ED);
+        cardBgColor = Colors.white;
         borderColor = const Color(0xFFFDBA74);
         badgeColor = const Color(0xFFFFEDD5);
         badgeTextColor = const Color(0xFFC2410C);
@@ -1031,7 +1145,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         break;
 
       case CitizenThreatLevel.evacuation:
-        cardBgColor = const Color(0xFFFEF2F2);
+        cardBgColor = Colors.white;
         borderColor = const Color(0xFFFCA5A5);
         badgeColor = const Color(0xFFFEE2E2);
         badgeTextColor = const Color(0xFFDC2626);
@@ -1045,7 +1159,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardBgColor,
         borderRadius: BorderRadius.circular(22),
@@ -1064,213 +1177,225 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 640;
-
-          final leftContent = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top Row: Circular Badge + STAY INFORMED + Main Title
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: badgeColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: badgeTextColor.withValues(alpha: 0.18),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(shieldIcon, color: badgeTextColor, size: 30),
-                        if (_threatLevel == CitizenThreatLevel.safe)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 2),
-                            child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isHindi ? 'सतर्क रहें। सुरक्षित रहें।' : 'STAY INFORMED. STAY SAFE.',
-                          style: const TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          statusTitle,
-                          style: TextStyle(
-                            color: badgeTextColor,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // Location Pin + No Immediate Threat / Subtitle Block
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 1),
-                    child: Icon(
-                      Icons.location_on_rounded,
-                      color: Color(0xFF1E3A8A),
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusDesc,
-                          style: const TextStyle(
-                            color: Color(0xFF0F172A),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _isHindi
-                              ? 'अपडेट रहें और आधिकारिक अलर्ट का पालन करें।'
-                              : 'Stay updated and follow official alerts.',
-                          style: const TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Last Updated Pill Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5.5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF6EE7B7), width: 1.2),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.access_time_rounded,
-                      color: Color(0xFF059669),
-                      size: 15,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isHindi ? 'अंतिम अपडेट: 12 सितं 2026, 12:05 पूर्वाह्न' : 'Last updated: 12 Sep 2026, 12:05 AM',
-                      style: const TextStyle(
-                        color: Color(0xFF065F46),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(21),
+        child: Stack(
+          children: [
+            // Background Watermark: Scenic Rolling Hills & Pine Trees (Matches Screenshot)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _ScenicWatermarkPainter(
+                  baseColor: badgeTextColor,
                 ),
               ),
+            ),
 
-              const SizedBox(height: 16),
+            // Card Foreground Content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 600;
 
-              // "View live map →" Button
-              Container(
-                width: isWide ? 250 : double.infinity,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0052CC),
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0052CC).withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => setState(() => _currentTab = 1),
-                    borderRadius: BorderRadius.circular(22),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  final leftContent = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Top Row: Squircle / Circular Badge + STAY INFORMED + Main Title
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.map_rounded, size: 19, color: Colors.white),
-                          const SizedBox(width: 10),
-                          Text(
-                            _isHindi ? 'लाइव मैप देखें' : 'View live map',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: badgeColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: badgeTextColor.withValues(alpha: 0.16),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(shieldIcon, color: badgeTextColor, size: 32),
+                                if (_threatLevel == CitizenThreatLevel.safe)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 2),
+                                    child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                                  ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward_rounded, size: 17, color: Colors.white),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isHindi ? 'सतर्क रहें। सुरक्षित रहें।' : 'STAY INFORMED. STAY SAFE.',
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  statusTitle,
+                                  style: TextStyle(
+                                    color: badgeTextColor,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
 
-          if (isWide) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(flex: 6, child: leftContent),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 4,
-                  child: GestureDetector(
+                      const SizedBox(height: 14),
+
+                      // Location Pin + No Immediate Threat / Subtitle Block
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.location_on_rounded,
+                              color: Color(0xFF1E3A8A),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  statusDesc,
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _isHindi
+                                      ? 'अपडेट रहें और आधिकारिक अलर्ट का पालन करें।'
+                                      : 'Stay updated and follow official alerts.',
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Last Updated Pill Badge (FittedBox ensures zero overflow on any device or in tests)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF6EE7B7), width: 1.2),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.access_time_rounded,
+                                color: Color(0xFF059669),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isHindi ? 'अंतिम अपडेट: 12 सितं 2026, 12:05 पूर्वाह्न' : 'Last updated: 12 Sep 2026, 12:05 AM',
+                                style: const TextStyle(
+                                  color: Color(0xFF065F46),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // "View live map →" Button
+                      Container(
+                        width: double.infinity,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0052CC),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0052CC).withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => setState(() => _currentTab = 1),
+                            borderRadius: BorderRadius.circular(22),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.map_rounded, size: 18, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isHindi ? 'लाइव मैप देखें' : 'View live map',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+
+                  final mapBox = GestureDetector(
                     onTap: () => setState(() => _currentTab = 1),
                     child: Container(
-                      height: 200,
+                      height: isWide ? 210 : 190,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2.5),
+                        border: Border.all(color: Colors.white, width: 2.5),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF2563EB).withValues(alpha: 0.12),
@@ -1284,14 +1409,32 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         child: _buildSafetyLiveMiniMap(),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          } else {
-            return leftContent;
-          }
-        },
+                  );
+
+                  if (isWide) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(flex: 55, child: leftContent),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 45, child: mapBox),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        leftContent,
+                        const SizedBox(height: 14),
+                        mapBox,
+                      ],
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1300,22 +1443,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // LIVE MINI MAP (REAL FLUTTER_MAP FOR THE SAFETY CARD)
   // --------------------------------------------------------------------------
   Widget _buildSafetyLiveMiniMap() {
-    Color ringColor;
-    switch (_threatLevel) {
-      case CitizenThreatLevel.safe:
-        ringColor = const Color(0xFF10B981);
-        break;
-      case CitizenThreatLevel.watch:
-        ringColor = const Color(0xFFF59E0B);
-        break;
-      case CitizenThreatLevel.warning:
-        ringColor = const Color(0xFFF97316);
-        break;
-      case CitizenThreatLevel.evacuation:
-        ringColor = const Color(0xFFEF4444);
-        break;
-    }
-
     return Stack(
       children: [
         // 1. Live FlutterMap with real OpenStreetMap tiles
@@ -1323,7 +1450,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: _userPos,
-            initialZoom: 14.2,
+            initialZoom: 14.3,
             minZoom: 10.0,
             maxZoom: 18.0,
             interactionOptions: const InteractionOptions(
@@ -1336,117 +1463,156 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               userAgentPackageName: 'com.resqshield.app',
               maxZoom: 19,
             ),
-            // Safe zone radius buffer
+            // Concentric pulsing location circles
             CircleLayer(
               circles: [
                 CircleMarker(
                   point: _userPos,
                   radius: 46,
                   useRadiusInMeter: false,
-                  color: ringColor.withValues(alpha: 0.22),
-                  borderColor: ringColor.withValues(alpha: 0.75),
-                  borderStrokeWidth: 2.0,
+                  color: const Color(0xFF0066FF).withValues(alpha: 0.12),
+                  borderColor: const Color(0xFF0066FF).withValues(alpha: 0.35),
+                  borderStrokeWidth: 1.5,
+                ),
+                CircleMarker(
+                  point: _userPos,
+                  radius: 26,
+                  useRadiusInMeter: false,
+                  color: const Color(0xFF0066FF).withValues(alpha: 0.22),
+                  borderColor: const Color(0xFF0066FF).withValues(alpha: 0.60),
+                  borderStrokeWidth: 1.5,
                 ),
               ],
             ),
-            // Evacuation corridor line to shelter
+            // Highlighted Route / Corridor Line
             PolylineLayer(
               polylines: [
                 Polyline(
                   points: [_userPos, _waypointPos, _shelterPos1],
-                  color: const Color(0xFF15945C),
-                  strokeWidth: 4.0,
-                  borderColor: Colors.white,
-                  borderStrokeWidth: 1.0,
+                  color: const Color(0xFFFDBA74).withValues(alpha: 0.85),
+                  strokeWidth: 6.0,
+                  borderColor: const Color(0xFFEA580C),
+                  borderStrokeWidth: 1.2,
                 ),
               ],
             ),
             // Markers
             MarkerLayer(
               markers: [
-                // Shelter Marker
+                // Red emergency checkpoint markers along roads (as seen in screenshot)
                 Marker(
-                  point: _shelterPos1,
-                  width: 32,
-                  height: 32,
+                  point: const LatLng(25.5825, 91.8890),
+                  width: 20,
+                  height: 20,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: const Color(0xFFDC2626),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2.2),
+                      border: Border.all(color: Colors.white, width: 1.8),
                       boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
+                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.night_shelter_rounded,
-                      color: Colors.white,
-                      size: 17,
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.white, size: 12),
+                    ),
+                  ),
+                ),
+                Marker(
+                  point: const LatLng(25.5780, 91.8990),
+                  width: 20,
+                  height: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.8),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.white, size: 12),
+                    ),
+                  ),
+                ),
+                Marker(
+                  point: const LatLng(25.5745, 91.9045),
+                  width: 20,
+                  height: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.8),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.white, size: 12),
                     ),
                   ),
                 ),
                 // Secondary Shelter Marker
                 Marker(
                   point: _shelterPos2,
-                  width: 26,
-                  height: 26,
+                  width: 20,
+                  height: 20,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF28F16),
+                      color: const Color(0xFF10B981),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: Colors.white, width: 1.8),
                     ),
                     child: const Icon(
                       Icons.night_shelter_rounded,
                       color: Colors.white,
-                      size: 14,
+                      size: 11,
                     ),
                   ),
                 ),
                 // Rescue Team Pin
                 Marker(
                   point: _rescueTeamPos,
-                  width: 26,
-                  height: 26,
+                  width: 20,
+                  height: 20,
                   child: Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFF0284C7),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: Colors.white, width: 1.8),
                     ),
                     child: const Icon(
                       Icons.support_rounded,
                       color: Colors.white,
-                      size: 14,
+                      size: 11,
                     ),
                   ),
                 ),
-                // Citizen Current Location Pin
+                // Citizen Current Location Pin (Pulsing center blue dot with white ring)
                 Marker(
                   point: _userPos,
-                  width: 38,
-                  height: 38,
+                  width: 24,
+                  height: 24,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF007AEB),
+                      color: const Color(0xFF0066FF),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2.8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF007AEB).withValues(alpha: 0.45),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.my_location_rounded,
-                      color: Colors.white,
-                      size: 20,
+                    child: Center(
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1455,43 +1621,37 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           ],
         ),
 
-        // 2. Top-Right "LIVE GIS" Badge
+        // 2. Top-Left Floating Badge: "• Live Map (Offline)"
         Positioned(
-          top: 8,
-          right: 8,
+          top: 10,
+          left: 10,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.80),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white24, width: 0.8),
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
+                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
               ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 6,
-                  height: 6,
+                  width: 7,
+                  height: 7,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF22C55E),
+                    color: Color(0xFF16A34A),
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Text(
-                  'LIVE GIS',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
+                const SizedBox(width: 6),
+                Text(
+                  _isHindi ? 'लाइव मैप (ऑफलाइन)' : 'Live Map (Offline)',
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -1499,72 +1659,135 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           ),
         ),
 
-        // 3. Bottom-Right Expand / Fullscreen Button
+        // 3. Bottom-Left Floating Badge: "• Your location"
         Positioned(
-          bottom: 8,
-          right: 8,
+          bottom: 10,
+          left: 10,
           child: Container(
-            width: 28,
-            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.open_in_full_rounded,
-              size: 15,
-              color: Color(0xFF013973),
-            ),
-          ),
-        ),
-
-        // 4. Bottom-Left Safe Zone Badge
-        Positioned(
-          bottom: 8,
-          left: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
+                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
               ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _threatLevel == CitizenThreatLevel.safe
-                      ? Icons.shield_rounded
-                      : Icons.warning_amber_rounded,
-                  size: 11,
-                  color: ringColor,
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0066FF),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                const SizedBox(width: 3),
+                const SizedBox(width: 6),
                 Text(
-                  _threatLevel == CitizenThreatLevel.safe
-                      ? (_isHindi ? 'सुरक्षित क्षेत्र' : 'Safe Zone')
-                      : (_isHindi ? 'अलर्ट क्षेत्र' : 'Alert Zone'),
-                  style: TextStyle(
-                    color: ringColor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
+                  _isHindi ? 'आपकी स्थिति' : 'Your location',
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+
+        // 4. Right-Side Floating Map Controls (Layers, Zoom In/Out, Locate)
+        Positioned(
+          top: 10,
+          right: 8,
+          bottom: 10,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Layers Button
+              Material(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(8),
+                elevation: 2,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    _showMessage(_isHindi ? 'मैप लेयर स्विच की गई' : 'Map layers toggled');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.layers_rounded, size: 18, color: Color(0xFF334155)),
+                        SizedBox(height: 1),
+                        Text(
+                          'Layers',
+                          style: TextStyle(
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Zoom In / Out Pill
+              Material(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(8),
+                elevation: 2,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                      onTap: () {
+                        final currentZoom = _mapController.camera.zoom;
+                        _mapController.move(_mapController.camera.center, (currentZoom + 1).clamp(10.0, 18.0));
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        child: Icon(Icons.add, size: 16, color: Color(0xFF334155)),
+                      ),
+                    ),
+                    Container(width: 20, height: 1, color: Colors.black12),
+                    InkWell(
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+                      onTap: () {
+                        final currentZoom = _mapController.camera.zoom;
+                        _mapController.move(_mapController.camera.center, (currentZoom - 1).clamp(10.0, 18.0));
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        child: Icon(Icons.remove, size: 16, color: Color(0xFF334155)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Re-center / Locate Arrow Button
+              Material(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(8),
+                elevation: 2,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    _mapController.move(_userPos, 14.5);
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(7),
+                    child: Icon(Icons.near_me_rounded, size: 16, color: Color(0xFF334155)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1710,23 +1933,24 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // 3. ACTIVE EMERGENCY ALERT CARD
+  // 3. ACTIVE EMERGENCY ALERT CARD (EXACT SCREENSHOT REDESIGN)
   // --------------------------------------------------------------------------
   Widget _buildActiveAlertCard() {
     final alert = _activeAlerts[_activeAlertIndex];
     final Color alertColor = alert['color'] as Color? ?? const Color(0xFFDC2626);
+    final int activeRiskStep = alert['riskStep'] as int? ?? 2;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: alertColor.withValues(alpha: 0.2),
+          color: const Color(0xFFFFD1D5),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: alertColor.withValues(alpha: 0.06),
+            color: alertColor.withValues(alpha: 0.05),
             blurRadius: 18,
             spreadRadius: 1,
             offset: const Offset(0, 4),
@@ -1740,9 +1964,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 700;
+          final isWide = constraints.maxWidth >= 760;
 
-          // Alert Badge with Red Glow and Top-Right Indicator Dot
+          // Red Alert Circular Badge with glowing halo + small red indicator dot
           Widget alertBadge = Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
@@ -1750,30 +1974,38 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               Container(
                 width: 52,
                 height: 52,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFEE2E2),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0x33DC2626),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.20),
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 22),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x33DC2626),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 22),
+                ),
               ),
               Positioned(
                 top: 1,
@@ -1791,11 +2023,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ],
           );
 
-          // Middle Alert Info
+          // Middle Alert Information: Badge, Title, Subtitle, Chips
           Widget middleInfo = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Red Pill Badge (e.g. FLOOD WARNING)
+              // Red Pill Badge (FLOOD WARNING)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
@@ -1827,7 +2059,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 _isHindi ? alert['titleHi'] : (alert['title'] ?? 'Heavy Rainfall + Rising River Alert'),
                 style: const TextStyle(
                   color: Color(0xFF0F172A),
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.2,
                 ),
@@ -1907,7 +2139,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     '${_activeAlertIndex + 1} of ${_activeAlerts.length}',
                     style: const TextStyle(
@@ -1933,129 +2165,141 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           );
 
-          // 1. Top Section
-          Widget topSection = isWide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    alertBadge,
-                    const SizedBox(width: 14),
-                    Expanded(child: middleInfo),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        switcherCapsule,
-                        const SizedBox(height: 10),
-                        _buildAlertMiniRiverMap(),
-                      ],
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        alertBadge,
-                        switcherCapsule,
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    middleInfo,
-                    const SizedBox(height: 12),
-                    Center(child: _buildAlertMiniRiverMap()),
-                  ],
-                );
+          // Risk Level Gauge (Safe, Low Risk, High Risk, Danger)
+          Widget riskMeter = _buildAlertRiskMeter(activeRiskStep);
 
-          // 2. Step Progress Timeline
-          Widget timelineWidget = _buildAlertProgressTimeline();
-
-          // 3. Action Buttons
-          Widget actionButtons = Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          // Action Buttons: View Alert → (Solid Blue) and Safety Instructions > (Outlined Blue)
+          Widget actionButtons = Row(
             children: [
-              // View Alert Button
-              ElevatedButton.icon(
-                onPressed: () => setState(() => _currentTab = 2),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AEB),
-                  foregroundColor: Colors.white,
-                  elevation: 1.5,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                ),
-                icon: const Icon(Icons.visibility_rounded, size: 16, color: Colors.white),
-                label: Text(
-                  _isHindi ? 'अलर्ट देखें →' : 'View Alert →',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
+              // View Alert Button (Expanded Width)
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _currentTab = 2),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0066EE),
+                    foregroundColor: Colors.white,
+                    elevation: 1.5,
+                    minimumSize: const Size.fromHeight(48),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  ),
+                  icon: const Icon(Icons.visibility_rounded, size: 16, color: Colors.white),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _isHindi ? 'अलर्ट देखें →' : 'View Alert →',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              // Safety Instructions Button
-              OutlinedButton.icon(
-                onPressed: _showSafetyInstructionsModal,
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF007AEB),
-                  side: const BorderSide(color: Color(0xFF007AEB), width: 1.2),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                ),
-                icon: const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF007AEB)),
-                label: Text(
-                  _isHindi ? 'सुरक्षा निर्देश >' : 'Safety Instructions >',
-                  style: const TextStyle(
-                    color: Color(0xFF007AEB),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
+              const SizedBox(width: 12),
+              // Safety Instructions Button (Expanded Width)
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _showSafetyInstructionsModal,
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0066EE),
+                    side: const BorderSide(color: Color(0xFF0066EE), width: 1.5),
+                    minimumSize: const Size.fromHeight(48),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  ),
+                  icon: const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF0066EE)),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _isHindi ? 'सुरक्षा निर्देश >' : 'Safety Instructions >',
+                      style: const TextStyle(
+                        color: Color(0xFF0066EE),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           );
 
+          // Full right-side Map widget
+          Widget fullMap = _buildFullAlertMap(context, height: isWide ? 235 : 210);
+
           return Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                topSection,
-                const SizedBox(height: 16),
-                // Divider line before timeline
-                Container(
-                  height: 1,
-                  color: const Color(0xFFF1F5F9),
-                ),
-                const SizedBox(height: 14),
-                // Bottom row: Timeline on left, Action Buttons on right (or stacked if mobile)
-                if (isWide)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(child: timelineWidget),
-                      const SizedBox(width: 16),
-                      actionButtons,
-                    ],
+            child: isWide
+                ? IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Left Section: Aligned to stretch so actionButtons sit right at the bottom
+                        Expanded(
+                          flex: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      alertBadge,
+                                      const SizedBox(width: 14),
+                                      Expanded(child: middleInfo),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  riskMeter,
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              actionButtons,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        // Right Section: Switcher on top, Map below filling remaining space
+                        Expanded(
+                          flex: 11,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              switcherCapsule,
+                              const SizedBox(height: 10),
+                              fullMap,
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   )
-                else
-                  Column(
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      timelineWidget,
-                      const SizedBox(height: 14),
-                      Center(child: actionButtons),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          alertBadge,
+                          switcherCapsule,
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      middleInfo,
+                      const SizedBox(height: 16),
+                      riskMeter,
+                      const SizedBox(height: 18),
+                      fullMap,
+                      const SizedBox(height: 20),
+                      actionButtons,
                     ],
                   ),
-              ],
-            ),
           );
         },
       ),
@@ -2063,165 +2307,557 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // ALERT MINI RIVER MAP WITH CONCENTRIC RADAR WAVES
+  // 4-STEP RISK LEVEL GAUGE (Safe, Low Risk, High Risk, Danger)
   // --------------------------------------------------------------------------
-  Widget _buildAlertMiniRiverMap() {
-    return GestureDetector(
-      onTap: () => setState(() => _currentTab = 1),
-      child: Container(
-        width: 128,
-        height: 74,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEFFCF3),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+  Widget _buildAlertRiskMeter(int activeStep) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Segmented Track Line running horizontally through circle centers
+          Positioned(
+            top: 12,
+            left: 20,
+            right: 20,
+            child: Row(
+              children: [
+                // Segment 1: Safe -> Low Risk (Green to Amber)
+                Expanded(
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA7F3D0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Segment 2: Low Risk -> High Risk (Amber to Light Red)
+                Expanded(
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDE68A),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Segment 3: High Risk -> Danger (Light Red)
+                Expanded(
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFECACA),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(13),
-          child: Stack(
-            alignment: Alignment.center,
+          ),
+          // 4 Interactive / Informational Nodes
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Custom painted river and grid lines
-              CustomPaint(
-                size: const Size(128, 74),
-                painter: _AlertRiverMapPainter(),
+              _buildRiskNode(
+                index: 0,
+                label: _isHindi ? 'सुरक्षित' : 'Safe',
+                color: const Color(0xFF16A34A),
+                isActive: activeStep == 0,
               ),
-
-              // Outer Radar Wave Ring
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.30),
-                    width: 1,
-                  ),
-                ),
+              _buildRiskNode(
+                index: 1,
+                label: _isHindi ? 'कम जोखिम' : 'Low Risk',
+                color: const Color(0xFFEAB308),
+                isActive: activeStep == 1,
               ),
-
-              // Middle Radar Wave Ring
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.22),
-                  border: Border.all(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.45),
-                    width: 1.2,
-                  ),
-                ),
+              _buildRiskNode(
+                index: 2,
+                label: _isHindi ? 'उच्च जोखिम' : 'High Risk',
+                color: const Color(0xFFEF4444),
+                isActive: activeStep == 2,
               ),
-
-              // Center Alert Marker Pin
-              Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDC2626),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                  ],
-                ),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 12),
+              _buildRiskNode(
+                index: 3,
+                label: _isHindi ? 'खतरा' : 'Danger',
+                color: const Color(0xFF991B1B),
+                isActive: activeStep == 3,
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  // --------------------------------------------------------------------------
-  // ALERT 4-STEP PROGRESS TIMELINE
-  // --------------------------------------------------------------------------
-  Widget _buildAlertProgressTimeline() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: SizedBox(
-        width: 460,
-        child: Row(
-          children: [
-            // Step 1: Alert Issued (Active Red)
-            _buildTimelineStep(
-              label: _isHindi ? 'अलर्ट जारी' : 'Alert Issued',
-              isActive: true,
-              activeColor: const Color(0xFFDC2626),
-            ),
-            _buildTimelineConnector(),
-            // Step 2: Monitoring
-            _buildTimelineStep(
-              label: _isHindi ? 'निगरानी' : 'Monitoring',
-              isActive: false,
-              activeColor: const Color(0xFF94A3B8),
-            ),
-            _buildTimelineConnector(),
-            // Step 3: Rising Levels
-            _buildTimelineStep(
-              label: _isHindi ? 'जलस्तर वृद्धि' : 'Rising Levels',
-              isActive: false,
-              activeColor: const Color(0xFF94A3B8),
-            ),
-            _buildTimelineConnector(),
-            // Step 4: High Risk
-            _buildTimelineStep(
-              label: _isHindi ? 'उच्च जोखिम' : 'High Risk',
-              isActive: false,
-              activeColor: const Color(0xFF94A3B8),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimelineStep({
+  Widget _buildRiskNode({
+    required int index,
     required String label,
+    required Color color,
     required bool isActive,
-    required Color activeColor,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(
-            color: activeColor,
-            shape: BoxShape.circle,
-            border: isActive ? Border.all(color: const Color(0xFFFEE2E2), width: 2) : null,
-          ),
+          width: 26,
+          height: 26,
+          alignment: Alignment.center,
+          child: isActive
+              ? Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withValues(alpha: 0.22),
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.50),
+                      width: 1.2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 13,
+                    height: 13,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                    ),
+                  ),
+                )
+              : Container(
+                  width: 13,
+                  height: 13,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                  ),
+                ),
         ),
         const SizedBox(height: 5),
         Text(
           label,
           style: TextStyle(
-            color: isActive ? activeColor : const Color(0xFF64748B),
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+            color: isActive
+                ? (color == const Color(0xFFEF4444) ? const Color(0xFFDC2626) : color)
+                : const Color(0xFF334155),
+            fontSize: 11.5,
+            fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTimelineConnector() {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 15, left: 4, right: 4),
-        height: 1.5,
-        color: const Color(0xFFCBD5E1),
+  // --------------------------------------------------------------------------
+  // FULL RIGHT-SIDE ALERT MAP (WITH TERRAIN, RIVER, RADAR, CONTROLS)
+  // --------------------------------------------------------------------------
+  Widget _buildFullAlertMap(BuildContext context, {required double height}) {
+    String scaleText;
+    if (_alertMapZoom >= 2.0) {
+      scaleText = '500 m';
+    } else if (_alertMapZoom >= 1.5) {
+      scaleText = '1 km';
+    } else if (_alertMapZoom >= 1.2) {
+      scaleText = '1.5 km';
+    } else if (_alertMapZoom >= 0.9) {
+      scaleText = '2 km';
+    } else {
+      scaleText = '3 km';
+    }
+
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBAE6FD), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0284C7).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            // 1. Real Detailed FlutterMap with OpenStreetMap Tiles & Doppler Radar
+            Positioned.fill(
+              child: FlutterMap(
+                mapController: _rainMapController,
+                options: const MapOptions(
+                  initialCenter: LatLng(25.5788, 91.8933),
+                  initialZoom: 12.2,
+                  interactionOptions: InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: _alertMapSatellite
+                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.resqshield.app',
+                  ),
+
+                  // Doppler Rain & River Flood Radar Circles
+                  if (_showRainRadar)
+                    CircleLayer(
+                      circles: [
+                        // Broad precipitation cloud
+                        CircleMarker(
+                          point: const LatLng(25.5850, 91.8900),
+                          radius: 4500,
+                          useRadiusInMeter: true,
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.22),
+                          borderColor: const Color(0xFF0284C7).withValues(alpha: 0.55),
+                          borderStrokeWidth: 1.5,
+                        ),
+                        // Intense river basin flood cell
+                        CircleMarker(
+                          point: const LatLng(25.5720, 91.9050),
+                          radius: 2600,
+                          useRadiusInMeter: true,
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.28),
+                          borderColor: const Color(0xFFDC2626).withValues(alpha: 0.65),
+                          borderStrokeWidth: 2.0,
+                        ),
+                        // Moderate rain area
+                        CircleMarker(
+                          point: const LatLng(25.5600, 91.8700),
+                          radius: 3500,
+                          useRadiusInMeter: true,
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
+                          borderColor: const Color(0xFF0284C7).withValues(alpha: 0.45),
+                          borderStrokeWidth: 1.5,
+                        ),
+                      ],
+                    ),
+
+                  // Telemetry & Alert Location Markers
+                  MarkerLayer(
+                    markers: [
+                      // Damodar River Alert Marker
+                      Marker(
+                        point: const LatLng(25.5720, 91.9050),
+                        width: 146,
+                        height: 34,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDC2626),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+                            ],
+                          ),
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.waves_rounded, color: Colors.white, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Damodar: 214.6m [High]',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Cloudburst 68 mm/h Pin
+                      Marker(
+                        point: const LatLng(25.5620, 91.8820),
+                        width: 96,
+                        height: 28,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F2D59),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF38BDF8), width: 1.2),
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          ),
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.thunderstorm_rounded, color: Color(0xFF38BDF8), size: 13),
+                                SizedBox(width: 3),
+                                Text(
+                                  '68 mm/h',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // User Location Marker
+                      Marker(
+                        point: const LatLng(25.5788, 91.8933),
+                        width: 22,
+                        height: 22,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF2563EB),
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. Top-Left: Live Doppler Radar Badge
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.7), width: 1),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isHindi ? 'लाइव डॉपलर रडार' : 'LIVE DOPPLER RADAR',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 3. Floating Bottom-Left: • Your location
+            Positioned(
+              left: 10,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x12000000), blurRadius: 5, offset: Offset(0, 1)),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2563EB)),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _isHindi ? 'आपकी स्थिति' : 'Your location',
+                      style: const TextStyle(color: Color(0xFF1E293B), fontSize: 10.5, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 4. Floating Top-Right Control Toolbar: Layers, Zoom In (+), Zoom Out (-), Radar Toggle, Recenter
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Layers toggle
+                    InkWell(
+                      onTap: () => setState(() => _alertMapSatellite = !_alertMapSatellite),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        child: Column(
+                          children: [
+                            Icon(
+                              _alertMapSatellite ? Icons.layers : Icons.layers_outlined,
+                              size: 15,
+                              color: _alertMapSatellite ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              _isHindi ? 'परतें' : 'Layers',
+                              style: TextStyle(
+                                fontSize: 8.0,
+                                color: _alertMapSatellite ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+
+                    // Zoom In (+)
+                    InkWell(
+                      key: const Key('alert_map_zoom_in'),
+                      onTap: () {
+                        setState(() {
+                          _alertMapZoom = (_alertMapZoom + 0.25).clamp(0.75, 2.5);
+                        });
+                        try {
+                          final currentZoom = _rainMapController.camera.zoom;
+                          _rainMapController.move(_rainMapController.camera.center, currentZoom + 1.0);
+                        } catch (_) {}
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(Icons.add, size: 16, color: Color(0xFF0F2D59)),
+                      ),
+                    ),
+                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+
+                    // Zoom Out (-)
+                    InkWell(
+                      key: const Key('alert_map_zoom_out'),
+                      onTap: () {
+                        setState(() {
+                          _alertMapZoom = (_alertMapZoom - 0.25).clamp(0.75, 2.5);
+                        });
+                        try {
+                          final currentZoom = _rainMapController.camera.zoom;
+                          _rainMapController.move(_rainMapController.camera.center, currentZoom - 1.0);
+                        } catch (_) {}
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(Icons.remove, size: 16, color: Color(0xFF0F2D59)),
+                      ),
+                    ),
+                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+
+                    // Radar Toggle
+                    InkWell(
+                      key: const Key('rain_map_radar_toggle'),
+                      onTap: () => setState(() => _showRainRadar = !_showRainRadar),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.radar_rounded,
+                          size: 16,
+                          color: _showRainRadar ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ),
+                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+
+                    // Recenter / Navigation
+                    InkWell(
+                      key: const Key('rain_map_recenter'),
+                      onTap: () {
+                        setState(() {
+                          _alertMapZoom = 1.0;
+                        });
+                        try {
+                          _rainMapController.move(const LatLng(25.5788, 91.8933), 12.2);
+                        } catch (_) {}
+                      },
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(Icons.my_location_rounded, size: 15, color: Color(0xFF0F2D59)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 5. Floating Bottom-Right Scale Indicator: |____| scaleText
+            Positioned(
+              right: 10,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: Color(0xFF334155), width: 1.5),
+                          bottom: BorderSide(color: Color(0xFF334155), width: 1.5),
+                          right: BorderSide(color: Color(0xFF334155), width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      scaleText,
+                      style: const TextStyle(
+                        color: Color(0xFF334155),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2848,14 +3484,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
           const SizedBox(height: 12),
 
-          // Capacity (50% width) + Food, Water, Medical, Power right next to it
+          // Capacity (60% width) + Food, Water, Medical, Power in 4 equal widths (40% width)
           LayoutBuilder(
             builder: (context, constraints) {
               final cardWidth = constraints.maxWidth;
-              final isWide = cardWidth >= 760;
+              final isWide = cardWidth >= 700;
 
               final capacityWidget = Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
@@ -2863,34 +3500,34 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.groups_rounded, size: 16, color: Color(0xFF007AEB)),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.groups_rounded, size: 18, color: Color(0xFF007AEB)),
+                    const SizedBox(width: 6),
                     Text(
                       _isHindi ? 'क्षमता' : 'Capacity',
                       style: const TextStyle(
                         color: Color(0xFF0F2642),
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(7),
                         child: const LinearProgressIndicator(
                           value: 0.62,
-                          minHeight: 6,
+                          minHeight: 14,
                           backgroundColor: Color(0xFFE2E8F0),
                           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     const Text(
                       '62%',
                       style: TextStyle(
                         color: Color(0xFF0F2642),
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -2936,34 +3573,39 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               if (isWide) {
                 return Row(
                   children: [
-                    SizedBox(
-                      width: cardWidth * 0.44,
+                    Expanded(
+                      flex: 60,
                       child: capacityWidget,
                     ),
                     const SizedBox(width: 10),
-                    for (int i = 0; i < supplyChips.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 8),
-                      Expanded(child: supplyChips[i]),
-                    ],
+                    Expanded(
+                      flex: 40,
+                      child: Row(
+                        children: [
+                          for (int i = 0; i < supplyChips.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 6),
+                            Expanded(child: supplyChips[i]),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 );
               } else {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: (cardWidth * 0.50).clamp(195.0, 320.0),
-                        child: capacityWidget,
-                      ),
-                      const SizedBox(width: 8),
-                      for (int i = 0; i < supplyChips.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        supplyChips[i],
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    capacityWidget,
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        for (int i = 0; i < supplyChips.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 6),
+                          Expanded(child: supplyChips[i]),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               }
             },
@@ -3051,7 +3693,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -3064,43 +3707,47 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                shape: BoxShape.circle,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 14, color: iconColor),
               ),
-              child: Icon(icon, size: 14, color: iconColor),
-            ),
-            const SizedBox(width: 6),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+              const SizedBox(width: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                Text(
-                  status,
-                  style: const TextStyle(
-                    color: Color(0xFF16A34A),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                  Text(
+                    status,
+                    style: const TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF94A3B8)),
-          ],
+                ],
+              ),
+              const SizedBox(width: 3),
+              const Icon(Icons.chevron_right_rounded, size: 13, color: Color(0xFF94A3B8)),
+            ],
+          ),
         ),
       ),
     );
@@ -3224,76 +3871,151 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD6E8F7)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD6E8F7), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A013973),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── HEADER: CIRCULAR PIN + TITLE + LIVE REPORT BADGE ──
           Row(
             children: [
-              const Icon(Icons.explore_rounded, color: Color(0xFF007AEB), size: 18),
-              const SizedBox(width: 6),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE0F2FE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_on_rounded,
+                    color: Color(0xFF007AEB),
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _isHindi ? 'आपके क्षेत्र की स्थिति' : 'LOCAL CONDITIONS (YOUR AREA)',
-                  style: const TextStyle(color: Color(0xFF013973), fontSize: 12, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Color(0xFF013973),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _isHindi ? 'लाइव रिपोर्ट' : 'Live Report',
-                style: const TextStyle(color: Color(0xFF15945C), fontSize: 10, fontWeight: FontWeight.w800),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF16A34A),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x6616A34A),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _isHindi ? 'लाइव रिपोर्ट' : 'Live Report',
+                      style: const TextStyle(
+                        color: Color(0xFF15803D),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
+
+          const SizedBox(height: 14),
+
+          // ── 4 CONDITION TILES (2x2 GRID MATCHING SCREENSHOT) ──
+          Column(
             children: [
-              Expanded(
-                child: _buildConditionTile(
-                  icon: Icons.water_drop_rounded,
-                  iconColor: const Color(0xFF007AEB),
-                  title: _isHindi ? 'बारिश' : 'Rainfall',
-                  value: _isHindi ? 'भारी (Heavy)' : 'Heavy',
-                  subtitle: _isHindi ? 'निरंतर जारी' : 'Continuous',
-                ),
+              Row(
+                children: [
+                  // Tile 1: Rainfall
+                  Expanded(
+                    child: _buildConditionTile(
+                      icon: Icons.cloudy_snowing,
+                      iconColor: const Color(0xFF0284C7),
+                      iconBgColor: const Color(0xFFE0F2FE),
+                      title: _isHindi ? 'बारिश' : 'Rainfall',
+                      value: _isHindi ? 'भारी (Heavy)' : 'Heavy',
+                      subtitle: _isHindi ? 'निरंतर जारी' : 'Continuous',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Tile 2: River Level
+                  Expanded(
+                    child: _buildConditionTile(
+                      icon: Icons.waves_rounded,
+                      iconColor: const Color(0xFFE11D48),
+                      iconBgColor: const Color(0xFFFFE4E6),
+                      title: _isHindi ? 'नदी जलस्तर' : 'River Level',
+                      value: _isHindi ? 'तेजी से बढ़ रहा' : 'Rising rapidly',
+                      subtitle: _isHindi ? 'दामोदर नदी' : 'Damodar River',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildConditionTile(
-                  icon: Icons.waves_rounded,
-                  iconColor: const Color(0xFFE92828),
-                  title: _isHindi ? 'नदी जलस्तर' : 'River Level',
-                  value: _isHindi ? 'तेजी से बढ़ रहा' : 'Rising rapidly',
-                  subtitle: _isHindi ? 'दामोदर नदी' : 'Damodar River',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildConditionTile(
-                  icon: Icons.thermostat_rounded,
-                  iconColor: const Color(0xFFF39A20),
-                  title: _isHindi ? 'तापमान' : 'Temperature',
-                  value: '24°C',
-                  subtitle: _isHindi ? 'नमी: 94%' : 'Humidity: 94%',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildConditionTile(
-                  icon: Icons.air_rounded,
-                  iconColor: const Color(0xFF537392),
-                  title: _isHindi ? 'हवा की गति' : 'Wind Speed',
-                  value: '18 km/h',
-                  subtitle: _isHindi ? 'हवा का रुख: पूर्व' : 'Heading East',
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  // Tile 3: Temperature
+                  Expanded(
+                    child: _buildConditionTile(
+                      icon: Icons.thermostat_rounded,
+                      iconColor: const Color(0xFFD97706),
+                      iconBgColor: const Color(0xFFFEF3C7),
+                      title: _isHindi ? 'तापमान' : 'Temperature',
+                      value: '24°C',
+                      subtitle: _isHindi ? 'नमी: 94%' : 'Humidity: 94%',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Tile 4: Wind Speed
+                  Expanded(
+                    child: _buildConditionTile(
+                      icon: Icons.air_rounded,
+                      iconColor: const Color(0xFF0284C7),
+                      iconBgColor: const Color(0xFFE0F2FE),
+                      title: _isHindi ? 'हवा की गति' : 'Wind Speed',
+                      value: '18 km/h',
+                      subtitle: _isHindi ? 'हवा का रुख: पूर्व' : 'Heading East',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -3305,39 +4027,76 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   Widget _buildConditionTile({
     required IconData icon,
     required Color iconColor,
+    required Color iconBgColor,
     required String title,
     required String value,
     required String subtitle,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: const TextStyle(color: Color(0xFF537392), fontSize: 10.5, fontWeight: FontWeight.w700),
-              ),
-            ],
+          // Circular Avatar Icon
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(color: Color(0xFF013973), fontSize: 13, fontWeight: FontWeight.w900),
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            subtitle,
-            style: const TextStyle(color: Color(0xFF537392), fontSize: 9.5, fontWeight: FontWeight.w600),
+          const SizedBox(width: 12),
+
+          // Content Column (Category Title, Primary Value, Subtext)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -3623,6 +4382,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         ),
                       ],
                     ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 4-Hour Rainfall Forecast Outlook
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: _buildHourlyRain('Now', '🌧️🌧️', '35 mm/h', 'High')),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildHourlyRain('+1 hr', '🌧️🌧️🌧️', '48 mm/h', 'Peak')),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildHourlyRain('+2 hr', '🌧️🌧️', '30 mm/h', 'High')),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildHourlyRain('+3 hr', '🌧️', '14 mm/h', 'Moderate')),
+                    ],
                   ),
                 ],
               ),
@@ -4553,133 +5328,175 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     ),
                   ),
 
-                  // 3B. CARD BODY WITH ANIMATED SWITCHER (SLIDE + FADE TRANSITION)
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 420),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (Widget child, Animation<double> animation) {
-                      final slideIn = Tween<Offset>(
-                        begin: const Offset(0.08, 0.0),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(position: slideIn, child: child),
-                      );
-                    },
-                    child: LayoutBuilder(
-                      key: ValueKey('dos-${currentDisaster.id}-$_dosPhaseIdx'),
-                      builder: (context, constraints) {
-                        final isWide = constraints.maxWidth >= 600;
-                        final tips = _isHindi ? currentPhase.tipsHi : currentPhase.tipsEn;
+                  // 3B. CARD BODY (TIPS TEXT SLIDES ON PHASE; IMAGE ONLY SLIDES ON DISASTER CHANGE)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 600;
+                      final tips = _isHindi ? currentPhase.tipsHi : currentPhase.tipsEn;
 
-                        final tipsContent = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Phase Badge Pill
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0F2FE),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFBAE6FD)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
+                      // 1. Tips content: AnimatedSwitcher keyed by Phase + Disaster
+                      // Slow, silky-smooth horizontal conveyor slide animation (950ms, full 1.0 travel, Curves.easeInOutCubic)
+                      // No abrupt fade-out so text remains visible while physically sliding across
+                      final tipsContent = AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 950),
+                        switchInCurve: Curves.easeInOutCubic,
+                        switchOutCurve: Curves.easeInOutCubic,
+                        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                          return Stack(
+                            alignment: Alignment.topLeft,
+                            children: <Widget>[
+                              ...previousChildren,
+                              ?currentChild,
+                            ],
+                          );
+                        },
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          final isEntering = (child.key == ValueKey('tips-${currentDisaster.id}-$_dosPhaseIdx'));
+                          final slideTween = isEntering
+                              ? Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                              : Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero);
+
+                          return ClipRect(
+                            child: SlideTransition(
+                              position: slideTween.animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOutCubic,
+                              )),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: SizedBox(
+                          key: ValueKey('tips-${currentDisaster.id}-$_dosPhaseIdx'),
+                          width: double.infinity,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: isWide ? 230 : 205),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Phase Badge Pill (clean without any dot)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                                  ),
+                                  child: Text(
+                                    _isHindi ? currentPhase.badgeHi : currentPhase.badgeEn,
+                                    style: const TextStyle(
                                       color: Color(0xFF0284C7),
-                                      shape: BoxShape.circle,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      _isHindi ? currentPhase.badgeHi : currentPhase.badgeEn,
-                                      style: const TextStyle(
-                                        color: Color(0xFF0284C7),
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 12,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Bullet Checkmarks
-                            ...tips.map(
-                              (tip) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 2),
-                                      child: Icon(
-                                        Icons.check_circle_rounded,
-                                        color: Color(0xFF0284C7),
-                                        size: 17,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 9),
-                                    Expanded(
-                                      child: Text(
-                                        tip,
-                                        style: const TextStyle(
-                                          color: Color(0xFF1E293B),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          height: 1.35,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                            ),
+                                const SizedBox(height: 14),
 
-                            const SizedBox(height: 8),
-
-                            // View Full Guide Button
-                            ElevatedButton(
-                              onPressed: _showSafetyInstructionsModal,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F172A),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _isHindi ? 'पूरी गाइड देखें' : 'View Full Guide',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                // Bullet Checkmarks
+                                ...tips.map(
+                                  (tip) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 2),
+                                          child: Icon(
+                                            Icons.check_circle_rounded,
+                                            color: Color(0xFF0284C7),
+                                            size: 17,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 9),
+                                        Expanded(
+                                          child: Text(
+                                            tip,
+                                            style: const TextStyle(
+                                              color: Color(0xFF1E293B),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward_rounded, size: 15),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
+                                ),
 
-                        final imageWidget = ClipRRect(
+                                const SizedBox(height: 8),
+
+                                // View Full Guide Button
+                                ElevatedButton(
+                                  onPressed: _showSafetyInstructionsModal,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0F172A),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _isHindi ? 'पूरी गाइड देखें' : 'View Full Guide',
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.arrow_forward_rounded, size: 15),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+
+                      // 2. Image widget: AnimatedSwitcher keyed ONLY by Disaster ID
+                      // Stays completely still when changing phases (Before/During/After);
+                      // Slides & updates with smooth 950ms duration ONLY when the disaster type changes!
+                      final imageWidget = AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 950),
+                        switchInCurve: Curves.easeInOutCubic,
+                        switchOutCurve: Curves.easeInOutCubic,
+                        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              ...previousChildren,
+                              ?currentChild,
+                            ],
+                          );
+                        },
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          final isEntering = (child.key == ValueKey('img-${currentDisaster.id}'));
+                          final slideTween = isEntering
+                              ? Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                              : Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero);
+
+                          return ClipRect(
+                            child: SlideTransition(
+                              position: slideTween.animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOutCubic,
+                              )),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          key: ValueKey('img-${currentDisaster.id}'),
                           borderRadius: BorderRadius.circular(16),
                           child: Image.asset(
                             currentDisaster.imagePath,
                             height: isWide ? 230 : 175,
-                            width: isWide ? double.infinity : double.infinity,
+                            width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) => Container(
                               height: isWide ? 230 : 175,
@@ -4687,30 +5504,30 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                               child: Icon(currentDisaster.icon, size: 48, color: const Color(0xFF94A3B8)),
                             ),
                           ),
-                        );
+                        ),
+                      );
 
-                        return Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: isWide
-                              ? Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(flex: 6, child: tipsContent),
-                                    const SizedBox(width: 18),
-                                    Expanded(flex: 5, child: imageWidget),
-                                  ],
-                                )
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    tipsContent,
-                                    const SizedBox(height: 16),
-                                    imageWidget,
-                                  ],
-                                ),
-                        );
-                      },
-                    ),
+                      return Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: isWide
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(flex: 6, child: tipsContent),
+                                  const SizedBox(width: 18),
+                                  Expanded(flex: 5, child: imageWidget),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  tipsContent,
+                                  const SizedBox(height: 16),
+                                  imageWidget,
+                                ],
+                              ),
+                      );
+                    },
                   ),
 
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -4832,7 +5649,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFFE0F2FE) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
@@ -4840,27 +5657,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               color: isSelected ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  fontSize: 11,
-                ),
-              ),
-            ],
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
         ),
       ),
@@ -6486,53 +7289,5 @@ class _CardCornerWavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CardCornerWavePainter oldDelegate) =>
       oldDelegate.color != color;
-}
-
-// ---------------------------------------------------------------------------
-// Alert River Mini-Map Custom Painter (matches exact screenshot design)
-// ---------------------------------------------------------------------------
-class _AlertRiverMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 1. Subtle terrain grid lines
-    final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.80)
-      ..strokeWidth = 1.0;
-
-    for (double x = 16; x < size.width; x += 18) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 14; y < size.height; y += 16) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // 2. Smooth curving river ribbon (Cyan / Blue)
-    final riverOuterPaint = Paint()
-      ..color = const Color(0xFF38BDF8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12.0
-      ..strokeCap = StrokeCap.round;
-
-    final riverPath = Path();
-    riverPath.moveTo(size.width * 0.74, 0);
-    riverPath.quadraticBezierTo(
-      size.width * 0.65,
-      size.height * 0.45,
-      size.width * 0.42,
-      size.height,
-    );
-    canvas.drawPath(riverPath, riverOuterPaint);
-
-    // Inner bright river flow line
-    final riverInnerPaint = Paint()
-      ..color = const Color(0xFFBAE6FD)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(riverPath, riverInnerPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 

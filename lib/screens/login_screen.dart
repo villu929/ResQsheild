@@ -287,12 +287,12 @@ class _LoginScreenState extends State<LoginScreen>
                       // ── BIG CENTERED LOGO + RESQSHIELD + 1-LINE MOTTO ──
                       _buildCenteredBrandHeader(scaleW, scaleH, scaleMin, textScale),
 
-                      const Spacer(flex: 2),
+                      SizedBox(height: (12.0 * scaleH).clamp(8.0, 18.0)),
 
                       // ── LOGIN CARD / SUCCESS CARD ──
-                      _buildLoginCard(scaleW, scaleH, scaleMin, textScale),
+                      _buildLoginCard(scaleW, scaleH, scaleMin, textScale, screenWidth: w),
 
-                      const Spacer(flex: 2),
+                      const Spacer(flex: 3),
                     ],
                   ),
                 ),
@@ -505,32 +505,50 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   // LOGIN CARD / SUCCESS TRANSITION
   // --------------------------------------------------------------------------
-  Widget _buildLoginCard(double scaleW, double scaleH, double scaleMin, double textScale) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOut,
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: (16.0 * scaleW).clamp(12.0, 22.0),
-        vertical: (16.0 * scaleH).clamp(12.0, 22.0),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular((20.0 * scaleMin).clamp(16.0, 24.0)),
-        border: Border.all(color: const Color(0xFFE0EEF8), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14013973),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+  Widget _buildLoginCard(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale, {
+    required double screenWidth,
+  }) {
+    // Doubled container width (up to 960px, 2x of previous 480px cap),
+    // safely bounded by available screen width so there is zero overflow on mobile/tablet,
+    // and strictly center aligned.
+    final double maxCardWidth = 960.0;
+    final double availableWidth = screenWidth - (24.0 * scaleW).clamp(16.0, 48.0);
+    final double cardWidth = math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+
+    return Center(
+      child: SizedBox(
+        width: cardWidth,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+          width: cardWidth,
+          padding: EdgeInsets.symmetric(
+            horizontal: (22.0 * scaleW).clamp(16.0, 32.0),
+            vertical: (20.0 * scaleH).clamp(16.0, 26.0),
           ),
-        ],
-      ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
-        child: _isSuccess
-            ? _buildSuccessCardContent(scaleW, scaleH, scaleMin, textScale)
-            : _buildLoginFormContent(scaleW, scaleH, scaleMin, textScale),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular((20.0 * scaleMin).clamp(16.0, 24.0)),
+            border: Border.all(color: const Color(0xFFE0EEF8), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14013973),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: _isSuccess
+                ? _buildSuccessCardContent(scaleW, scaleH, scaleMin, textScale)
+                : _buildLoginFormContent(scaleW, scaleH, scaleMin, textScale),
+          ),
+        ),
       ),
     );
   }
@@ -694,77 +712,91 @@ class _LoginScreenState extends State<LoginScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Remember Me
-            GestureDetector(
-              onTap: () => setState(() => _rememberMe = !_rememberMe),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: (15.0 * scaleMin).clamp(12.0, 17.0),
-                    height: (15.0 * scaleMin).clamp(12.0, 17.0),
-                    decoration: BoxDecoration(
-                      color: _rememberMe
-                          ? const Color(0xFF007AEB)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: _rememberMe
-                            ? const Color(0xFF007AEB)
-                            : const Color(0xFFCBD5E1),
-                        width: 1.4,
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => setState(() => _rememberMe = !_rememberMe),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: (17.0 * scaleMin).clamp(14.0, 19.0),
+                        height: (17.0 * scaleMin).clamp(14.0, 19.0),
+                        decoration: BoxDecoration(
+                          color: _rememberMe
+                              ? const Color(0xFF007AEB)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(4.5),
+                          border: Border.all(
+                            color: _rememberMe
+                                ? const Color(0xFF007AEB)
+                                : const Color(0xFFCBD5E1),
+                            width: 1.4,
+                          ),
+                        ),
+                        child: _rememberMe
+                            ? Icon(Icons.check, size: (12.0 * scaleMin).clamp(10.0, 14.0), color: Colors.white)
+                            : null,
                       ),
-                    ),
-                    child: _rememberMe
-                        ? Icon(Icons.check, size: (11.0 * scaleMin).clamp(9.0, 13.0), color: Colors.white)
-                        : null,
+                      SizedBox(width: (6.0 * scaleW).clamp(4.0, 8.0)),
+                      Text(
+                        'Remember me',
+                        style: TextStyle(
+                          color: const Color(0xFF334155),
+                          fontSize: (12.5 * textScale).clamp(11.0, 14.5),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: (6.0 * scaleW).clamp(4.0, 8.0)),
-                  Text(
-                    'Remember me',
-                    style: TextStyle(
-                      color: const Color(0xFF475569),
-                      fontSize: (10.5 * textScale).clamp(8.5, 12.0),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
 
+            const SizedBox(width: 8),
+
             // Forgot Password Link
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Password reset instructions sent'),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Password reset instructions sent'),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: const Color(0xFF007AEB),
+                      fontSize: (12.0 * textScale).clamp(10.5, 14.0),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                );
-              },
-              child: Text(
-                'Forgot Password?',
-                style: TextStyle(
-                  color: const Color(0xFF007AEB),
-                  fontSize: (10.5 * textScale).clamp(8.5, 12.0),
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
         ),
 
-        SizedBox(height: (10.0 * scaleH).clamp(6.0, 14.0)),
+        SizedBox(height: (11.0 * scaleH).clamp(7.0, 15.0)),
 
         // ── LOGIN BUTTON (3 CLEAN STATES) ──
         _buildLoginButton(scaleW, scaleH, scaleMin, textScale),
 
-        SizedBox(height: (7.0 * scaleH).clamp(4.0, 10.0)),
+        SizedBox(height: (8.0 * scaleH).clamp(5.0, 12.0)),
 
         // ── OR DIVIDER ──
         Row(
@@ -778,8 +810,8 @@ class _LoginScreenState extends State<LoginScreen>
                 'OR',
                 style: TextStyle(
                   color: const Color(0xFF94A3B8),
-                  fontSize: (9.5 * textScale).clamp(8.0, 11.5),
-                  fontWeight: FontWeight.w600,
+                  fontSize: (10.0 * textScale).clamp(8.5, 12.0),
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -789,7 +821,7 @@ class _LoginScreenState extends State<LoginScreen>
           ],
         ),
 
-        SizedBox(height: (7.0 * scaleH).clamp(4.0, 10.0)),
+        SizedBox(height: (8.0 * scaleH).clamp(5.0, 12.0)),
 
         // ── SOCIAL LOGIN BUTTONS ROW ──
         Row(
@@ -817,7 +849,7 @@ class _LoginScreenState extends State<LoginScreen>
                 label: 'Apple',
                 iconWidget: Icon(
                   Icons.apple,
-                  size: (18.5 * scaleMin).clamp(15.0, 22.0),
+                  size: (21.5 * scaleMin).clamp(18.0, 25.0),
                   color: Colors.black,
                 ),
                 onTap: () => _handleLogin(),
@@ -1130,7 +1162,7 @@ class _LoginScreenState extends State<LoginScreen>
         scale: _buttonPressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 140),
         child: Container(
-          height: (44.0 * scaleH).clamp(38.0, 48.0),
+          height: (50.0 * scaleH).clamp(46.0, 56.0),
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -1138,7 +1170,7 @@ class _LoginScreenState extends State<LoginScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius: BorderRadius.circular((18.0 * scaleMin).clamp(14.0, 22.0)),
+            borderRadius: BorderRadius.circular((16.0 * scaleMin).clamp(13.0, 20.0)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x38007AEB),
@@ -1157,10 +1189,10 @@ class _LoginScreenState extends State<LoginScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          width: (15.0 * scaleMin).clamp(12.0, 16.0),
-                          height: (15.0 * scaleMin).clamp(12.0, 16.0),
+                          width: (16.0 * scaleMin).clamp(13.0, 18.0),
+                          height: (16.0 * scaleMin).clamp(13.0, 18.0),
                           child: const CircularProgressIndicator(
-                            strokeWidth: 2.0,
+                            strokeWidth: 2.2,
                             valueColor: AlwaysStoppedAnimation(Colors.white),
                           ),
                         ),
@@ -1169,8 +1201,8 @@ class _LoginScreenState extends State<LoginScreen>
                           'Logging in...',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: (13.0 * textScale).clamp(11.0, 15.0),
-                            fontWeight: FontWeight.w600,
+                            fontSize: (14.5 * textScale).clamp(12.5, 17.0),
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -1184,16 +1216,16 @@ class _LoginScreenState extends State<LoginScreen>
                           'Login',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: (13.5 * textScale).clamp(11.5, 15.5),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.2,
+                            fontSize: (15.5 * textScale).clamp(14.0, 18.0),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 7),
                         Icon(
                           Icons.arrow_forward_rounded,
                           color: Colors.white,
-                          size: (15.0 * scaleMin).clamp(12.0, 17.0),
+                          size: (17.5 * scaleMin).clamp(15.0, 20.0),
                         ),
                       ],
                     ),
@@ -1219,16 +1251,16 @@ class _LoginScreenState extends State<LoginScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: (39.0 * scaleH).clamp(34.0, 48.0),
+        height: (48.0 * scaleH).clamp(44.0, 54.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular((12.0 * scaleMin).clamp(10.0, 15.0)),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+          borderRadius: BorderRadius.circular((14.0 * scaleMin).clamp(12.0, 17.0)),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x06000000),
-              blurRadius: 4,
-              offset: Offset(0, 1),
+              color: Color(0x08000000),
+              blurRadius: 5,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -1244,8 +1276,9 @@ class _LoginScreenState extends State<LoginScreen>
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: const Color(0xFF1E293B),
-                  fontSize: (12.5 * textScale).clamp(11.0, 15.0),
-                  fontWeight: FontWeight.w600,
+                  fontSize: (14.5 * textScale).clamp(13.0, 17.0),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
                 ),
               ),
             ),
@@ -1259,7 +1292,7 @@ class _LoginScreenState extends State<LoginScreen>
   // GOOGLE 'G' ICON
   // --------------------------------------------------------------------------
   Widget _buildGoogleIcon(double scaleMin) {
-    final double dim = (17.5 * scaleMin).clamp(14.0, 20.0);
+    final double dim = (20.5 * scaleMin).clamp(18.0, 24.0);
     return CustomPaint(
       size: Size(dim, dim),
       painter: _GoogleIconPainter(),

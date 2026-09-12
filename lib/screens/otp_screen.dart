@@ -367,6 +367,7 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
           // Reference viewport: 390w x 844h
           final double scaleW = (w / 390.0).clamp(0.65, 1.45);
           final double scaleH = (h / 844.0).clamp(0.60, 1.35);
+          final double scaleMin = math.min(scaleW, scaleH);
           final double textScale = (w / 390.0).clamp(0.70, 1.35);
 
           // Sleek, well-proportioned dimensions (not crowded / not "bhra bhra")
@@ -375,21 +376,34 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
           final double qFontSize = (21.5 * textScale).clamp(17.0, 27.0);
           final double taglineFontSize = (8.5 * textScale).clamp(7.0, 10.5);
 
-          final double cardPaddingH = (18.0 * scaleW).clamp(14.0, 22.0);
-          final double cardPaddingV = (14.0 * scaleH).clamp(10.0, 18.0);
-          final double cardTitleSize = (17.5 * textScale).clamp(14.5, 21.0);
-          final double cardSubtitleSize = (11.5 * textScale).clamp(9.5, 13.5);
-          final double cardPhoneSize = (12.5 * textScale).clamp(10.5, 14.5);
+          // Card width standardized to citizen login screen with slight increase
+          final double maxCardWidth = 940.0;
+          final double availableWidth = w - (24.0 * scaleW).clamp(16.0, 48.0);
+          final double cardWidth =
+              math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+          final bool isWide = cardWidth >= 580;
+
+          final double cardPaddingH = isWide
+              ? (26.0 * scaleW).clamp(20.0, 34.0)
+              : (16.0 * scaleW).clamp(12.0, 20.0);
+          final double cardPaddingV = isWide
+              ? (28.0 * scaleH).clamp(22.0, 36.0)
+              : (18.0 * scaleH).clamp(14.0, 24.0);
+          final double cardTitleSize = (20.0 * textScale).clamp(17.0, 23.0);
+          final double cardSubtitleSize = (12.5 * textScale).clamp(11.0, 14.0);
+          final double cardPhoneSize = (13.5 * textScale).clamp(12.0, 15.0);
 
           // 6 OTP boxes responsive width & height (sleek 3D rounded boxes)
+          final double leftAvailableWidth = isWide
+              ? ((cardWidth - (2 * cardPaddingH) - 36.0) * (11.0 / 19.0))
+              : (cardWidth - (2 * cardPaddingH));
           final double boxWidth =
-              ((w - (36.0 * scaleW).clamp(26.0, 46.0) - (2 * cardPaddingH) - (5 * 5.0)) / 6)
-                  .clamp(37.0, 48.0);
-          final double boxHeight = (boxWidth * 1.14).clamp(42.0, 54.0);
+              ((leftAvailableWidth - (5 * 10.0)) / 6).clamp(38.0, 52.0);
+          final double boxHeight = (boxWidth * 1.20).clamp(46.0, 62.0);
           final double digitSize = (16.5 * textScale).clamp(13.5, 20.0);
 
           final double timerSize = (11.5 * textScale).clamp(9.5, 13.5);
-          final double btnHeight = (40.0 * scaleH).clamp(36.0, 44.0);
+          final double btnHeight = (42.0 * scaleH).clamp(38.0, 46.0);
           final double btnFontSize = (13.5 * textScale).clamp(12.0, 15.5);
           final double btnIconSize = (15.0 * textScale).clamp(13.0, 17.0);
 
@@ -438,8 +452,10 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
 
                       // ── 2. OTP VERIFICATION CARD (FITS 1 SCREEN) ──
                       _buildOtpCard(
+                        cardWidth: cardWidth,
                         scaleW: scaleW,
                         scaleH: scaleH,
+                        scaleMin: scaleMin,
                         textScale: textScale,
                         paddingH: cardPaddingH,
                         paddingV: cardPaddingV,
@@ -609,11 +625,14 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
   }
 
   // --------------------------------------------------------------------------
-  // MAIN OTP CARD (FITS 1 SCREEN)
+  // --------------------------------------------------------------------------
+  // MAIN OTP CARD (FITS 1 SCREEN, 2-COLUMN ON DESKTOP/WIDE VIEWPORT)
   // --------------------------------------------------------------------------
   Widget _buildOtpCard({
+    required double cardWidth,
     required double scaleW,
     required double scaleH,
+    required double scaleMin,
     required double textScale,
     required double paddingH,
     required double paddingV,
@@ -628,146 +647,807 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
     required double btnFontSize,
     required double btnIconSize,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: paddingV),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular((22.0 * scaleW).clamp(16.0, 26.0)),
-        border: Border.all(color: const Color(0xFFE2EDF5), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C013973),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+    final bool isWide = cardWidth >= 580;
+
+    return Center(
+      child: SizedBox(
+        width: cardWidth,
+        child: Container(
+          width: cardWidth,
+          padding: EdgeInsets.symmetric(horizontal: paddingH, vertical: paddingV),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular((24.0 * scaleW).clamp(18.0, 28.0)),
+            border: Border.all(color: const Color(0xFFE2EDF5), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0C013973),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
-        ],
+          child: isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left Column: Verify Form, OTP Boxes & Actions
+                    Expanded(
+                      flex: 11,
+                      child: _buildLeftOtpForm(
+                        scaleW: scaleW,
+                        scaleH: scaleH,
+                        scaleMin: scaleMin,
+                        textScale: textScale,
+                        titleSize: titleSize,
+                        subtitleSize: subtitleSize,
+                        phoneSize: phoneSize,
+                        boxWidth: boxWidth,
+                        boxHeight: boxHeight,
+                        digitSize: digitSize,
+                        timerSize: timerSize,
+                        btnHeight: btnHeight,
+                        btnFontSize: btnFontSize,
+                        btnIconSize: btnIconSize,
+                      ),
+                    ),
+
+                    // Vertical Divider Line
+                    Container(
+                      height: 340,
+                      width: 1.2,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: (22.0 * scaleW).clamp(14.0, 28.0),
+                      ),
+                      color: const Color(0xFFEDF2F7),
+                    ),
+
+                    // Right Column: Graphic Illustration & Security Reassurance
+                    Expanded(
+                      flex: 8,
+                      child: _buildRightSecuritySection(
+                        scaleMin,
+                        textScale,
+                        scaleH,
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildLeftOtpForm(
+                      scaleW: scaleW,
+                      scaleH: scaleH,
+                      scaleMin: scaleMin,
+                      textScale: textScale,
+                      titleSize: titleSize,
+                      subtitleSize: subtitleSize,
+                      phoneSize: phoneSize,
+                      boxWidth: boxWidth,
+                      boxHeight: boxHeight,
+                      digitSize: digitSize,
+                      timerSize: timerSize,
+                      btnHeight: btnHeight,
+                      btnFontSize: btnFontSize,
+                      btnIconSize: btnIconSize,
+                    ),
+                  ],
+                ),
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Text(
-            'Verify OTP',
-            style: TextStyle(
-              color: const Color(0xFF0F172A),
-              fontSize: titleSize,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.2,
-            ),
-          ),
+    );
+  }
 
-          SizedBox(height: (4.0 * scaleH).clamp(2.0, 6.0)),
-
-          // Subtitle
-          Text(
-            "We've sent a 6-digit code to",
-            style: TextStyle(
-              color: const Color(0xFF64748B),
-              fontSize: subtitleSize,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
-          SizedBox(height: (2.0 * scaleH).clamp(1.0, 4.0)),
-
-          // Phone Row with Edit Icon
-          Row(
-            children: [
-              Text(
-                _phoneNumber,
-                style: TextStyle(
-                  color: const Color(0xFF0F172A),
-                  fontSize: phoneSize,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
+  // --------------------------------------------------------------------------
+  // LEFT COLUMN: FORM, OTP BOXES, TIMER, BUTTON & RESEND FOOTER
+  // --------------------------------------------------------------------------
+  Widget _buildLeftOtpForm({
+    required double scaleW,
+    required double scaleH,
+    required double scaleMin,
+    required double textScale,
+    required double titleSize,
+    required double subtitleSize,
+    required double phoneSize,
+    required double boxWidth,
+    required double boxHeight,
+    required double digitSize,
+    required double timerSize,
+    required double btnHeight,
+    required double btnFontSize,
+    required double btnIconSize,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── TOP ROW: CIRCULAR SHIELD BADGE + TITLE & PHONE ──
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: (48.0 * scaleMin).clamp(40.0, 52.0),
+              height: (48.0 * scaleMin).clamp(40.0, 52.0),
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8F3FD),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.shield_outlined,
+                  color: const Color(0xFF0077C8),
+                  size: (24.0 * scaleMin).clamp(20.0, 26.0),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _showEditPhoneDialog,
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.all(3.0),
-                  child: Icon(
-                    Icons.edit_outlined,
-                    size: (15.0 * scaleW).clamp(13.0, 18.0),
-                    color: const Color(0xFF0077C8).withValues(alpha: 0.9),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Verify OTP',
+                    style: TextStyle(
+                      color: const Color(0xFF0F172A),
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
                   ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "We've sent a 6-digit code to",
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontSize: subtitleSize,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    onTap: _showEditPhoneDialog,
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _phoneNumber,
+                          style: TextStyle(
+                            color: const Color(0xFF0F172A),
+                            fontSize: phoneSize,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.edit_rounded,
+                          size: (15.0 * scaleW).clamp(13.0, 17.0),
+                          color: const Color(0xFF0077C8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: (18.0 * scaleH).clamp(14.0, 24.0)),
+
+        // ── 6 OTP BOXES (ANIMATED, 3D CLAYMORPHIC KEYCAPS) ──
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(_otpLength, (index) {
+            return _buildSingleOtpBox(index, boxWidth, boxHeight, digitSize);
+          }),
+        ),
+
+        SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
+
+        // ── RESEND OTP TIMER ROW ──
+        _buildResendSection(timerSize),
+
+        SizedBox(height: (16.0 * scaleH).clamp(12.0, 22.0)),
+
+        // ── VERIFY & CONTINUE BUTTON ──
+        IgnorePointer(
+          ignoring: _verifyState == VerifyButtonState.idle && _currentOtp.length < _otpLength,
+          child: AnimatedOpacity(
+            opacity: _verifyState != VerifyButtonState.idle
+                ? 1.0
+                : _currentOtp.length / _otpLength,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _buildVerifyButton(btnHeight, btnFontSize, btnIconSize),
+          ),
+        ),
+
+        SizedBox(height: (16.0 * scaleH).clamp(12.0, 20.0)),
+
+        // ── DIVIDER: "Didn't receive the code?" ──
+        Row(
+          children: [
+            const Expanded(child: Divider(color: Color(0xFFE2EDF5), thickness: 1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                "Didn't receive the code?",
+                style: TextStyle(
+                  color: const Color(0xFF64748B),
+                  fontSize: (11.0 * textScale).clamp(9.5, 12.0),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Expanded(child: Divider(color: Color(0xFFE2EDF5), thickness: 1)),
+          ],
+        ),
+
+        SizedBox(height: (8.0 * scaleH).clamp(6.0, 12.0)),
+
+        // ── REFRESH ICON + RESEND OTP ──
+        GestureDetector(
+          onTap: _handleResend,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.refresh_rounded,
+                size: (16.0 * textScale).clamp(14.0, 18.0),
+                color: _secondsRemaining == 0
+                    ? const Color(0xFF0077C8)
+                    : const Color(0xFF0077C8).withValues(alpha: 0.65),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Resend OTP',
+                style: TextStyle(
+                  color: _secondsRemaining == 0
+                      ? const Color(0xFF0077C8)
+                      : const Color(0xFF0077C8).withValues(alpha: 0.65),
+                  fontSize: (12.5 * textScale).clamp(11.0, 14.0),
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
 
-          SizedBox(height: (14.0 * scaleH).clamp(8.0, 20.0)),
+  // --------------------------------------------------------------------------
+  // RIGHT COLUMN: SECURITY ILLUSTRATION & MESSAGE
+  // --------------------------------------------------------------------------
+  Widget _buildRightSecuritySection(
+    double scaleMin,
+    double textScale,
+    double scaleH,
+  ) {
+    final bool isUnlocked =
+        _currentOtp.length == _otpLength || _verifyState == VerifyButtonState.success;
 
-          // ── 6 OTP BOXES ──
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_otpLength, (index) {
-              return _buildSingleOtpBox(index, boxWidth, boxHeight, digitSize);
-            }),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _buildRealisticPhoneMockup(scaleMin, scaleH),
+        SizedBox(height: (16.0 * scaleH).clamp(10.0, 20.0)),
+        Text(
+          isUnlocked ? 'Identity Confirmed' : 'Your Security Matters',
+          style: TextStyle(
+            color: isUnlocked ? const Color(0xFF047857) : const Color(0xFF0F172A),
+            fontSize: (16.5 * textScale).clamp(14.5, 18.5),
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
           ),
+        ),
+        SizedBox(height: (6.0 * scaleH).clamp(4.0, 10.0)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            isUnlocked
+                ? 'OTP verified! Tap "Verify & Continue" to proceed safely.'
+                : 'Please enter the OTP to verify your identity and continue safely.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: (12.0 * textScale).clamp(10.5, 13.5),
+              fontWeight: FontWeight.w500,
+              height: 1.38,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-          SizedBox(height: (12.0 * scaleH).clamp(6.0, 16.0)),
+  // --------------------------------------------------------------------------
+  // REALISTIC SMARTPHONE MOCKUP (INTERACTIVE LOCK / UNLOCK ANIMATION)
+  // --------------------------------------------------------------------------
+  Widget _buildRealisticPhoneMockup(double scaleMin, double scaleH) {
+    final bool isUnlocked =
+        _currentOtp.length == _otpLength || _verifyState == VerifyButtonState.success;
+    final double phoneW = (144.0 * scaleMin).clamp(130.0, 156.0);
+    final double phoneH = (260.0 * scaleH).clamp(236.0, 276.0);
 
-          // ── RESEND OTP SECTION ──
-          _buildResendSection(timerSize),
-
-          SizedBox(height: (14.0 * scaleH).clamp(8.0, 18.0)),
-
-          // ── VERIFY & CONTINUE BUTTON ──
-          IgnorePointer(
-            ignoring: _verifyState == VerifyButtonState.idle && _currentOtp.length < _otpLength,
-            child: AnimatedOpacity(
-              opacity: _verifyState != VerifyButtonState.idle
-                  ? 1.0
-                  : _currentOtp.length / _otpLength,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: _buildVerifyButton(btnHeight, btnFontSize, btnIconSize),
+    return SizedBox(
+      width: phoneW + 36,
+      height: phoneH + 16,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // 1. Radiant Background Halo / Aura
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOut,
+            width: phoneW + (isUnlocked ? 28 : 14),
+            height: phoneH + (isUnlocked ? 28 : 14),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isUnlocked
+                  ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                  : const Color(0xFF0077C8).withValues(alpha: 0.10),
             ),
           ),
 
-          SizedBox(height: (10.0 * scaleH).clamp(6.0, 14.0)),
-
-          // ── DIDN'T RECEIVE THE CODE? RESEND OTP ──
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Didn't receive the code?",
-                  style: TextStyle(
-                    color: const Color(0xFF64748B),
-                    fontSize: (11.5 * textScale).clamp(9.5, 13.0),
-                    fontWeight: FontWeight.w500,
-                  ),
+          // 2. Hardware Buttons (Volume Keys Left, Power Key Right)
+          // Volume Up (Left)
+          Positioned(
+            left: 11,
+            top: (phoneH * 0.26),
+            child: Container(
+              width: 3,
+              height: 18,
+              decoration: const BoxDecoration(
+                color: Color(0xFF94A3B8),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(2),
+                  bottomLeft: Radius.circular(2),
                 ),
-                const SizedBox(height: 2),
-                GestureDetector(
-                  onTap: _handleResend,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-                    child: Text(
-                      'Resend OTP',
-                      style: TextStyle(
-                        color: _secondsRemaining == 0
-                            ? const Color(0xFF0077C8)
-                            : const Color(0xFF0077C8).withValues(alpha: 0.75),
-                        fontSize: (12.5 * textScale).clamp(10.5, 14.0),
-                        fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          // Volume Down (Left)
+          Positioned(
+            left: 11,
+            top: (phoneH * 0.26) + 24,
+            child: Container(
+              width: 3,
+              height: 18,
+              decoration: const BoxDecoration(
+                color: Color(0xFF94A3B8),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(2),
+                  bottomLeft: Radius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          // Power Button (Right)
+          Positioned(
+            right: 11,
+            top: (phoneH * 0.30),
+            child: Container(
+              width: 3,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: Color(0xFF94A3B8),
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(2),
+                  bottomRight: Radius.circular(2),
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Realistic Smartphone Chassis
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            width: phoneW,
+            height: phoneH,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isUnlocked
+                    ? const Color(0xFF10B981).withValues(alpha: 0.85)
+                    : const Color(0xFF334155),
+                width: 3.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isUnlocked
+                      ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                      : const Color(0xFF0F172A).withValues(alpha: 0.24),
+                  blurRadius: isUnlocked ? 28 : 20,
+                  offset: const Offset(0, 10),
+                  spreadRadius: isUnlocked ? 2 : 0,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF0077C8).withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                children: [
+                  // OLED Glass Screen Gradient
+                  Positioned.fill(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 450),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: isUnlocked
+                              ? const [
+                                  Color(0xFF062D24),
+                                  Color(0xFF0A1E29),
+                                  Color(0xFF041818),
+                                ]
+                              : const [
+                                  Color(0xFF0F172A),
+                                  Color(0xFF0B192C),
+                                  Color(0xFF030D1A),
+                                ],
+                        ),
                       ),
                     ),
                   ),
+
+                  // Diagonal Reflection Gloss
+                  Positioned(
+                    top: -20,
+                    right: -20,
+                    width: phoneW * 0.9,
+                    height: phoneH * 0.65,
+                    child: Transform.rotate(
+                      angle: -0.5,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.08),
+                              Colors.white.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Phone Screen Content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Top Status Bar: Clock + Notch + Battery/WiFi
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '9:41',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 8.0,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            // Dynamic Island / Camera Notch
+                            Container(
+                              width: 36,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: const Color(0xFF1E293B),
+                                  width: 0.6,
+                                ),
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: 3.5,
+                                  height: 3.5,
+                                  margin: const EdgeInsets.only(left: 18),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF334155),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.wifi, size: 9, color: Colors.white70),
+                                SizedBox(width: 3),
+                                Icon(Icons.battery_full_rounded, size: 10, color: Colors.white70),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const Spacer(),
+
+                        // ── CENTER LOCK / UNLOCK INTERACTIVE DISPLAY ──
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          switchInCurve: Curves.easeOutBack,
+                          switchOutCurve: Curves.easeInBack,
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                              scale: animation,
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: isUnlocked
+                              ? _buildPhoneUnlockedContent()
+                              : _buildPhoneLockedContent(),
+                        ),
+
+                        const Spacer(),
+
+                        // Bottom Home Indicator Bar
+                        Container(
+                          width: 44,
+                          height: 3.5,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 4. Floating Badge (Shield when locked, Verified when unlocked)
+          Positioned(
+            top: 24,
+            right: 6,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: isUnlocked ? 1.0 : 0.7,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: isUnlocked ? const Color(0xFF10B981) : const Color(0xFF0077C8),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isUnlocked ? const Color(0xFF10B981) : const Color(0xFF0077C8))
+                          .withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
+                child: Icon(
+                  isUnlocked ? Icons.verified_user_rounded : Icons.shield_rounded,
+                  color: Colors.white,
+                  size: 13,
+                ),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // PHONE LOCKED CONTENT (BIG LOCK ICON + REAL-TIME PASSCODE DOTS)
+  // --------------------------------------------------------------------------
+  Widget _buildPhoneLockedContent() {
+    final int digitsTyped = _currentOtp.length;
+
+    return Column(
+      key: const ValueKey('phone_locked_state'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Big Lock Icon Badge
+        Container(
+          width: 58,
+          height: 58,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.50),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: const Color(0xFF60A5FA).withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.lock_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // "LOCKED" status text
+        const Text(
+          'DEVICE LOCKED',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Live OTP Code Dots on Phone Screen (fills as user types!)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_otpLength, (i) {
+            final bool filled = i < digitsTyped;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              margin: const EdgeInsets.symmetric(horizontal: 2.2),
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: filled ? const Color(0xFF38BDF8) : Colors.white.withValues(alpha: 0.18),
+                boxShadow: filled
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.8),
+                          blurRadius: 4,
+                        ),
+                      ]
+                    : null,
+                border: filled
+                    ? null
+                    : Border.all(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        width: 0.8,
+                      ),
+              ),
+            );
+          }),
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          digitsTyped == 0
+              ? 'Enter 6-digit OTP'
+              : '$digitsTyped/$_otpLength digits entered',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.60),
+            fontSize: 8.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // PHONE UNLOCKED CONTENT (BIG TICK / UNLOCKED BADGE + VERIFIED CONFIRMATION)
+  // --------------------------------------------------------------------------
+  Widget _buildPhoneUnlockedContent() {
+    return Column(
+      key: const ValueKey('phone_unlocked_state'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Big Unlocked / Green Tick Badge
+        Container(
+          width: 62,
+          height: 62,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF10B981), Color(0xFF059669)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.70),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: const Color(0xFF6EE7B7),
+              width: 2.0,
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.check_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Unlocked pill chip
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: const Color(0xFF34D399),
+              width: 1.0,
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_open_rounded,
+                color: Color(0xFF6EE7B7),
+                size: 10,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'UNLOCKED',
+                style: TextStyle(
+                  color: Color(0xFF6EE7B7),
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        const Text(
+          'Identity Verified ✓',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 
@@ -859,7 +1539,9 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
                           const Color(0xFFF4F8FC),
                           const Color(0xFFFAFCFE),
                         ]),
-              stops: const [0.0, 0.42, 1.0],
+              stops: isFocused
+                  ? const [0.0, 1.0]
+                  : const [0.0, 0.42, 1.0],
             ),
             border: Border.all(
               color: isFocused
@@ -1062,7 +1744,7 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
           decoration: BoxDecoration(
             color: btnBgColor,
             gradient: btnGradient,
-            borderRadius: BorderRadius.circular(24.0),
+            borderRadius: BorderRadius.circular(14.0),
             boxShadow: [
               BoxShadow(
                 color: (_verifyState == VerifyButtonState.success
@@ -1090,20 +1772,23 @@ class _WaterWavesScreenState extends State<WaterWavesScreen>
       case VerifyButtonState.idle:
         return Row(
           key: const ValueKey('idle'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Verify & Continue',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: btnFontSize,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+            SizedBox(width: btnIconSize + 14),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Verify & Continue',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: btnFontSize,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
             Icon(Icons.arrow_forward_rounded, color: Colors.white, size: btnIconSize),
+            const SizedBox(width: 14),
           ],
         );
 

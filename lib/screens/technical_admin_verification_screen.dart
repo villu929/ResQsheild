@@ -209,7 +209,9 @@ class _TechnicalAdminVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F2F8),
+      backgroundColor: _currentStep == 0
+          ? const Color(0xFFE9F4FB)
+          : const Color(0xFFF0F6FA),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final double w = constraints.maxWidth;
@@ -221,51 +223,25 @@ class _TechnicalAdminVerificationScreenState
           final double textScale =
               (math.min(w / 390.0, h / 800.0)).clamp(0.70, 1.25);
 
+          // Standardize card width to match citizen login screen
+          final double maxCardWidth = 960.0;
+          final double availableWidth = w - (24.0 * scaleW).clamp(16.0, 48.0);
+          final double cardWidth =
+              math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Ambient Background Image
+              // Exact Background Image from Citizen Login & OTP Screens
               Positioned.fill(
                 child: Image.asset(
-                  'assets/images/screen_bg_2.png',
+                  _currentStep == 0
+                      ? 'assets/images/screen_bg_1.png'
+                      : 'assets/images/screen_bg_2.png',
                   fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                ),
-              ),
-
-              // Cyber Violet & Indigo Ambient Lighting
-              Positioned(
-                top: -80,
-                right: -60,
-                width: 280,
-                height: 280,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF7351D8).withValues(alpha: 0.18),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -100,
-                left: -80,
-                width: 320,
-                height: 320,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF0F172A).withValues(alpha: 0.12),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
+                  alignment: _currentStep == 0
+                      ? Alignment.topCenter
+                      : Alignment.center,
                 ),
               ),
 
@@ -289,8 +265,8 @@ class _TechnicalAdminVerificationScreenState
                     );
                   },
                   child: _currentStep == 0
-                      ? _buildFormView(scaleW, scaleH, scaleMin, textScale)
-                      : _buildOtpView(scaleW, scaleH, scaleMin, textScale),
+                      ? _buildFormView(scaleW, scaleH, scaleMin, textScale, cardWidth)
+                      : _buildOtpView(scaleW, scaleH, scaleMin, textScale, cardWidth),
                 ),
               ),
             ],
@@ -308,17 +284,23 @@ class _TechnicalAdminVerificationScreenState
     double scaleH,
     double scaleMin,
     double textScale,
+    double cardWidth,
   ) {
     return Column(
       key: const ValueKey('admin_form_view'),
       children: [
-        _buildCustomAppBar(
-          title: 'Technical Admin Console',
-          subtitle: 'Telemetry, Sensors, Satellite & AI Engine',
-          badgeText: 'SYSADMIN AUTH',
-          badgeColor: const Color(0xFF7351D8),
-          onBack: () => Navigator.pop(context),
-          textScale: textScale,
+        Center(
+          child: SizedBox(
+            width: cardWidth,
+            child: _buildCustomAppBar(
+              title: 'Technical Admin Console',
+              subtitle: 'Telemetry, Sensors, Satellite & AI Engine',
+              badgeText: 'SYSADMIN AUTH',
+              badgeColor: const Color(0xFF7351D8),
+              onBack: () => Navigator.pop(context),
+              textScale: textScale,
+            ),
+          ),
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -327,9 +309,12 @@ class _TechnicalAdminVerificationScreenState
               horizontal: (18 * scaleW).clamp(14.0, 24.0),
               vertical: (10 * scaleH).clamp(8.0, 18.0),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: Center(
+              child: SizedBox(
+                width: cardWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 // Info Banner
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -447,9 +432,11 @@ class _TechnicalAdminVerificationScreenState
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  ],
+);
+}
 
   // ==========================================================================
   // VIEW 2: 6-DIGIT ADMIN MFA / OTP VERIFICATION
@@ -459,6 +446,7 @@ class _TechnicalAdminVerificationScreenState
     double scaleH,
     double scaleMin,
     double textScale,
+    double cardWidth,
   ) {
     final email = _emailController.text.trim().isNotEmpty
         ? _emailController.text.trim()
@@ -467,13 +455,18 @@ class _TechnicalAdminVerificationScreenState
     return Column(
       key: const ValueKey('admin_otp_view'),
       children: [
-        _buildCustomAppBar(
-          title: 'Admin MFA Verification',
-          subtitle: 'High-Privilege Security Clearance',
-          badgeText: 'MFA STEP 2/2',
-          badgeColor: const Color(0xFF7351D8),
-          onBack: () => setState(() => _currentStep = 0),
-          textScale: textScale,
+        Center(
+          child: SizedBox(
+            width: cardWidth,
+            child: _buildCustomAppBar(
+              title: 'Admin MFA Verification',
+              subtitle: 'High-Privilege Security Clearance',
+              badgeText: 'MFA STEP 2/2',
+              badgeColor: const Color(0xFF7351D8),
+              onBack: () => setState(() => _currentStep = 0),
+              textScale: textScale,
+            ),
+          ),
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -482,8 +475,11 @@ class _TechnicalAdminVerificationScreenState
               horizontal: (18 * scaleW).clamp(14.0, 24.0),
               vertical: (14 * scaleH).clamp(10.0, 22.0),
             ),
-            child: Column(
-              children: [
+            child: Center(
+              child: SizedBox(
+                width: cardWidth,
+                child: Column(
+                  children: [
                 SizedBox(height: 12 * scaleH),
                 // Cyber Key Shield Icon
                 Container(
@@ -619,9 +615,11 @@ class _TechnicalAdminVerificationScreenState
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  ],
+);
+}
 
   // ==========================================================================
   // WIDGET HELPERS: APPBAR, INPUTS, DROPDOWN, OTP BOXES, BUTTON

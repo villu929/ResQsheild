@@ -23,12 +23,12 @@ class _AuthorityVerificationScreenState
   // FORM CONTROLLERS & FOCUS NODES
   // --------------------------------------------------------------------------
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _aadhaarController = TextEditingController();
 
   final FocusNode _nameFocus = FocusNode();
+  final FocusNode _phoneFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
-  final FocusNode _aadhaarFocus = FocusNode();
 
   String _selectedDepartment = 'NDRF Quick Response Team (QRT)';
   final List<String> _departments = [
@@ -40,7 +40,7 @@ class _AuthorityVerificationScreenState
   ];
 
   // Attached Document file names
-  String? _aadhaarPhotoName;
+  String? _govIdPhotoName;
   String? _officerPhotoName;
 
   bool _isFormSubmitting = false;
@@ -69,14 +69,15 @@ class _AuthorityVerificationScreenState
   @override
   void initState() {
     super.initState();
-    _aadhaarController.addListener(_formatAadhaar);
+    _phoneController.addListener(_formatPhone);
 
     // Rebuild listeners for dynamic border outline & soft light glow
     _nameFocus.addListener(_onFieldUpdate);
+    _phoneFocus.addListener(_onFieldUpdate);
     _emailFocus.addListener(_onFieldUpdate);
-    _aadhaarFocus.addListener(_onFieldUpdate);
 
     _nameController.addListener(_onFieldUpdate);
+    _phoneController.addListener(_onFieldUpdate);
     _emailController.addListener(_onFieldUpdate);
 
     for (final f in _otpFocusNodes) {
@@ -95,11 +96,11 @@ class _AuthorityVerificationScreenState
   void dispose() {
     _countdownTimer?.cancel();
     _nameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
-    _aadhaarController.dispose();
     _nameFocus.dispose();
+    _phoneFocus.dispose();
     _emailFocus.dispose();
-    _aadhaarFocus.dispose();
     for (final c in _otpControllers) {
       c.dispose();
     }
@@ -110,29 +111,14 @@ class _AuthorityVerificationScreenState
   }
 
   // --------------------------------------------------------------------------
-  // AADHAAR FORMATTER: XXXX XXXX XXXX
+  // PHONE FORMATTER: 10 DIGIT LIMIT
   // --------------------------------------------------------------------------
-  void _formatAadhaar() {
-    final raw = _aadhaarController.text.replaceAll(' ', '');
-    if (raw.length > 12) {
-      _aadhaarController.text = raw.substring(0, 12);
-      _aadhaarController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _aadhaarController.text.length),
-      );
-      return;
-    }
-    final buffer = StringBuffer();
-    for (int i = 0; i < raw.length; i++) {
-      if (i > 0 && i % 4 == 0) {
-        buffer.write(' ');
-      }
-      buffer.write(raw[i]);
-    }
-    final formatted = buffer.toString();
-    if (formatted != _aadhaarController.text) {
-      _aadhaarController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
+  void _formatPhone() {
+    final raw = _phoneController.text.replaceAll(' ', '');
+    if (raw.length > 10) {
+      _phoneController.text = raw.substring(0, 10);
+      _phoneController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _phoneController.text.length),
       );
     }
   }
@@ -342,13 +328,13 @@ class _AuthorityVerificationScreenState
     if (_nameController.text.trim().isEmpty) {
       _nameController.text = 'Rajesh Kumar Sharma';
     }
+    if (_phoneController.text.trim().isEmpty) {
+      _phoneController.text = '9876543210';
+    }
     if (_emailController.text.trim().isEmpty) {
       _emailController.text = 'officer.ndrf@gov.in';
     }
-    if (_aadhaarController.text.trim().isEmpty) {
-      _aadhaarController.text = '5489 7721 8841';
-    }
-    _aadhaarPhotoName ??= 'aadhaar_card_doc.jpg';
+    _govIdPhotoName ??= 'official_govt_id.jpg';
     _officerPhotoName ??= 'officer_verification_photo.jpg';
 
     setState(() => _isFormSubmitting = true);
@@ -359,7 +345,7 @@ class _AuthorityVerificationScreenState
       _currentStep = 1;
     });
     _startTimer();
-    _showSnack('Aadhaar OTP sent to linked mobile number');
+    _showSnack('Verification OTP sent to Official Government ID phone number');
     Future.delayed(const Duration(milliseconds: 250), () {
       if (mounted && _otpFocusNodes[0].canRequestFocus) {
         _otpFocusNodes[0].requestFocus();
@@ -415,6 +401,11 @@ class _AuthorityVerificationScreenState
           final double scaleMin = math.min(scaleW, scaleH);
           final double textScale = (math.min(w / 390.0, h / 800.0)).clamp(0.70, 1.25);
 
+          final double maxCardWidth = 960.0;
+          final double availableWidth = w - (24.0 * scaleW).clamp(16.0, 48.0);
+          final double cardWidth =
+              math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -432,7 +423,13 @@ class _AuthorityVerificationScreenState
                 child: Column(
                   children: [
                     // Header Bar with Back Button
-                    _buildHeaderBar(scaleW, scaleH, scaleMin, textScale),
+                    Center(
+                      child: SizedBox(
+                        width: cardWidth,
+                        child: _buildHeaderBar(
+                            scaleW, scaleH, scaleMin, textScale),
+                      ),
+                    ),
 
                     // Content Area (Form or OTP)
                     Expanded(
@@ -442,15 +439,21 @@ class _AuthorityVerificationScreenState
                           horizontal: (18.0 * scaleW).clamp(14.0, 26.0),
                           vertical: (10.0 * scaleH).clamp(6.0, 16.0),
                         ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 320),
-                          transitionBuilder: (child, animation) =>
-                              FadeTransition(opacity: animation, child: child),
-                          child: _currentStep == 0
-                              ? _buildAuthorizationForm(
-                                  scaleW, scaleH, scaleMin, textScale)
-                              : _buildAadhaarOtpSection(
-                                  scaleW, scaleH, scaleMin, textScale),
+                        child: Center(
+                          child: SizedBox(
+                            width: cardWidth,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 320),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                      opacity: animation, child: child),
+                              child: _currentStep == 0
+                                  ? _buildAuthorizationForm(
+                                      scaleW, scaleH, scaleMin, textScale)
+                                  : _buildAadhaarOtpSection(
+                                      scaleW, scaleH, scaleMin, textScale),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -655,7 +658,28 @@ class _AuthorityVerificationScreenState
 
           SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
 
-          // 2. Department Selection
+          // 2. Phone Number as per Official Government ID (Placed right below name)
+          _buildFieldLabel('PHONE NUMBER AS PER OFFICIAL GOV ID',
+              Icons.phone_android_rounded, scaleMin, textScale),
+          SizedBox(height: (6.0 * scaleH).clamp(4.0, 8.0)),
+          _buildTextInput(
+            controller: _phoneController,
+            focusNode: _phoneFocus,
+            hint: '+91 98765 43210',
+            keyboardType: TextInputType.phone,
+            icon: Icons.phone_android_rounded,
+            scaleH: scaleH,
+            scaleMin: scaleMin,
+            textScale: textScale,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
+          ),
+
+          SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
+
+          // 3. Department Selection
           _buildFieldLabel('COMMAND UNIT / DEPARTMENT',
               Icons.account_balance_outlined, scaleMin, textScale),
           SizedBox(height: (6.0 * scaleH).clamp(4.0, 8.0)),
@@ -703,7 +727,7 @@ class _AuthorityVerificationScreenState
 
           SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
 
-          // 3. Official Government Email Address
+          // 4. Official Government Email Address
           _buildFieldLabel('OFFICIAL GOVERNMENT EMAIL',
               Icons.mail_outline_rounded, scaleMin, textScale),
           SizedBox(height: (6.0 * scaleH).clamp(4.0, 8.0)),
@@ -718,45 +742,24 @@ class _AuthorityVerificationScreenState
             textScale: textScale,
           ),
 
-          SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
-
-          // 4. Aadhaar Card Number
-          _buildFieldLabel('AADHAAR CARD NUMBER',
-              Icons.credit_card_rounded, scaleMin, textScale),
-          SizedBox(height: (6.0 * scaleH).clamp(4.0, 8.0)),
-          _buildTextInput(
-            controller: _aadhaarController,
-            focusNode: _aadhaarFocus,
-            hint: 'XXXX  XXXX  XXXX',
-            keyboardType: TextInputType.number,
-            icon: Icons.lock_outline_rounded,
-            scaleH: scaleH,
-            scaleMin: scaleMin,
-            textScale: textScale,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(12),
-            ],
-          ),
-
           SizedBox(height: (16.0 * scaleH).clamp(12.0, 20.0)),
 
-          // 5. Upload Aadhaar Photo & Officer Verification Photo
+          // 5. Upload Official Government ID Photo & Officer Verification Photo
           Row(
             children: [
-              // Aadhaar Card Photo
+              // Official Government ID Photo
               Expanded(
                 child: _buildUploadCard(
-                  title: 'Aadhaar Photo',
-                  subtitle: _aadhaarPhotoName ?? 'Tap to Upload',
-                  isUploaded: _aadhaarPhotoName != null,
-                  icon: Icons.document_scanner_rounded,
+                  title: 'Official Gov ID',
+                  subtitle: _govIdPhotoName ?? 'Tap to Upload ID',
+                  isUploaded: _govIdPhotoName != null,
+                  icon: Icons.badge_rounded,
                   color: const Color(0xFF007AEB),
                   onTap: () {
                     _showImagePickerModal(
-                      title: 'Aadhaar Card Photo',
+                      title: 'Official Government ID Photo',
                       onSelected: (name) =>
-                          setState(() => _aadhaarPhotoName = name),
+                          setState(() => _govIdPhotoName = name),
                     );
                   },
                   scaleMin: scaleMin,
@@ -796,7 +799,7 @@ class _AuthorityVerificationScreenState
   }
 
   // --------------------------------------------------------------------------
-  // STEP 2: AADHAAR OTP VERIFICATION SECTION
+  // STEP 2: OFFICIAL ID PHONE OTP VERIFICATION SECTION
   // --------------------------------------------------------------------------
   Widget _buildAadhaarOtpSection(
     double scaleW,
@@ -804,10 +807,10 @@ class _AuthorityVerificationScreenState
     double scaleMin,
     double textScale,
   ) {
-    final aadhaarRaw = _aadhaarController.text.replaceAll(' ', '');
-    final last4 = aadhaarRaw.length >= 4
-        ? aadhaarRaw.substring(aadhaarRaw.length - 4)
-        : '8841';
+    final phoneRaw = _phoneController.text.replaceAll(' ', '');
+    final last4 = phoneRaw.length >= 4
+        ? phoneRaw.substring(phoneRaw.length - 4)
+        : '3210';
 
     return Container(
       key: const ValueKey('otp_section'),
@@ -831,7 +834,7 @@ class _AuthorityVerificationScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Aadhaar Shield Icon
+          // Official Verification Shield Icon
           Container(
             width: (60.0 * scaleMin).clamp(50.0, 72.0),
             height: (60.0 * scaleMin).clamp(50.0, 72.0),
@@ -841,7 +844,7 @@ class _AuthorityVerificationScreenState
               border: Border.all(color: const Color(0xFF013973), width: 1.5),
             ),
             child: Icon(
-              Icons.shield_rounded,
+              Icons.verified_user_rounded,
               size: (30.0 * scaleMin).clamp(24.0, 36.0),
               color: const Color(0xFF013973),
             ),
@@ -850,7 +853,7 @@ class _AuthorityVerificationScreenState
           SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
 
           Text(
-            'UIDAI Aadhaar e-KYC',
+            'Official ID Phone Verification',
             style: TextStyle(
               color: const Color(0xFF013973),
               fontSize: (18.5 * textScale).clamp(16.0, 22.0),
@@ -860,7 +863,7 @@ class _AuthorityVerificationScreenState
           ),
           const SizedBox(height: 4),
           Text(
-            'One-Time Password has been sent to the mobile number registered with Aadhaar (•••• •••• $last4).',
+            'One-Time Password has been sent to the mobile number registered as per Official Government ID (+91 ••••• •$last4).',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: const Color(0xFF537392),
@@ -912,7 +915,7 @@ class _AuthorityVerificationScreenState
                       c.clear();
                     }
                     _startTimer();
-                    _showSnack('New Aadhaar OTP sent to registered number');
+                    _showSnack('New OTP sent to registered official mobile number');
                   },
                   child: Text(
                     'Resend Now',
@@ -1289,42 +1292,50 @@ class _AuthorityVerificationScreenState
     double scaleMin,
     double textScale,
   ) {
-    return ElevatedButton(
-      onPressed: _isFormSubmitting ? null : _handleContinueToOtp,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF013973),
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(
-          vertical: (14.0 * scaleH).clamp(11.0, 17.0),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isFormSubmitting ? null : _handleContinueToOtp,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF013973),
+          foregroundColor: Colors.white,
+          minimumSize: Size(double.infinity, (48.0 * scaleH).clamp(44.0, 56.0)),
+          padding: EdgeInsets.symmetric(
+            vertical: (14.0 * scaleH).clamp(12.0, 18.0),
+            horizontal: 16,
+          ),
+          elevation: 3,
+          shadowColor: const Color(0xFF013973).withValues(alpha: 0.35),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        elevation: 3,
-        shadowColor: const Color(0xFF013973).withValues(alpha: 0.35),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child: _isFormSubmitting
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.4,
-                color: Colors.white,
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Continue to Aadhaar OTP',
-                  style: TextStyle(
-                    fontSize: (14.5 * textScale).clamp(12.5, 16.5),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                  ),
+        child: _isFormSubmitting
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: Colors.white,
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_rounded, size: 18),
-              ],
-            ),
+              )
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue to Phone OTP',
+                      style: TextStyle(
+                        fontSize: (15.0 * textScale).clamp(13.0, 17.0),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_rounded, size: 19),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 
@@ -1334,58 +1345,66 @@ class _AuthorityVerificationScreenState
     double scaleMin,
     double textScale,
   ) {
-    return ElevatedButton(
-      onPressed: _isOtpVerifying ? null : _handleVerifyOtp,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _isOtpSuccess
-            ? const Color(0xFF16A34A)
-            : const Color(0xFF013973),
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(
-          vertical: (14.0 * scaleH).clamp(11.0, 17.0),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isOtpVerifying ? null : _handleVerifyOtp,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isOtpSuccess
+              ? const Color(0xFF16A34A)
+              : const Color(0xFF013973),
+          foregroundColor: Colors.white,
+          minimumSize: Size(double.infinity, (48.0 * scaleH).clamp(44.0, 56.0)),
+          padding: EdgeInsets.symmetric(
+            vertical: (14.0 * scaleH).clamp(12.0, 18.0),
+            horizontal: 16,
+          ),
+          elevation: 3,
+          shadowColor: const Color(0xFF013973).withValues(alpha: 0.35),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        elevation: 3,
-        shadowColor: const Color(0xFF013973).withValues(alpha: 0.35),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child: _isOtpVerifying
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.4,
-                color: Colors.white,
-              ),
-            )
-          : _isOtpSuccess
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.check_circle_rounded,
-                        size: 20, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Access Granted ✓',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                    ),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Verify & Access Command Center',
-                      style: TextStyle(
-                        fontSize: (14.0 * textScale).clamp(12.0, 16.0),
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.lock_open_rounded, size: 18),
-                  ],
+        child: _isOtpVerifying
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: Colors.white,
                 ),
+              )
+            : _isOtpSuccess
+                ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_rounded,
+                          size: 20, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Access Granted ✓',
+                        style:
+                            TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  )
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Verify & Access Command Center',
+                          style: TextStyle(
+                            fontSize: (14.5 * textScale).clamp(12.5, 16.5),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.lock_open_rounded, size: 19),
+                      ],
+                    ),
+                  ),
+      ),
     );
   }
 }
