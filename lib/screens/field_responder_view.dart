@@ -8,6 +8,8 @@ import 'role_selection_screen.dart';
 import '../models/incident_models.dart';
 import '../services/incident_coordinator.dart';
 import '../widgets/role_quick_switcher.dart';
+import 'citizen/citizen_shelters_view.dart';
+import 'relief_camp_detail_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN SYSTEM & THEME CONSTANTS (JalGuard Official Palette)
@@ -736,7 +738,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
           backgroundColor: const Color(0xFF0F172A),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'VIEW',
+            textColor: const Color(0xFF38BDF8),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CitizenSheltersView(isResponder: true),
+                ),
+              );
+            },
+          ),
         ),
       );
     }
@@ -4619,11 +4633,87 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
         // ── Asset list / grid ───────────────────────────────────────────────
         Expanded(
-          child: _assetGridView
-              ? GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(12),
+            children: [
+              // ── Shelter Camps Quick Access Banner ──────────────────────────
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CitizenSheltersView(isResponder: true),
+                  ),
+                ),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF005EA8), Color(0xFF0B2341)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF005EA8).withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.night_shelter_rounded, color: Colors.white, size: 22),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Nearby Shelter Camps',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${IncidentCoordinator.instance.shelters.where((s) => s.status.toUpperCase() == "OPEN" || s.available > 0).length} open camps with food, water & medical',
+                              style: const TextStyle(
+                                color: Color(0xFF93C5FD),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Asset list or grid ──────────────────────────────────────────
+              if (_assetGridView)
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 1.1,
                     crossAxisSpacing: 10,
@@ -4632,11 +4722,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   itemCount: filtered.length,
                   itemBuilder: (_, i) => _buildAssetGridCard(filtered[i]),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) => _buildAssetCard(filtered[i]),
-                ),
+              else
+                ...filtered.map((asset) => _buildAssetCard(asset)).toList(),
+            ],
+          ),
         ),
       ],
     );
