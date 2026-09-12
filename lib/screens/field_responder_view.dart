@@ -718,6 +718,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
     if (event.type == LiveEventType.teamAssigned) {
       final mission = event.payload as MissionAssignment;
       _showIncomingMissionAlert(mission);
+    } else if (event.type == LiveEventType.shelterUpdated) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.night_shelter_rounded, color: Color(0xFF38BDF8), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${event.title}: ${event.message}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF0F172A),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
