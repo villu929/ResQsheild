@@ -240,6 +240,9 @@ class _LiveFloodMapWidgetState extends State<LiveFloodMapWidget>
                       initialZoom: 10.5,
                       minZoom: 4.0,
                       maxZoom: 16.0,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+                      ),
                     ),
                     children: [
                       // Base OpenStreetMap Tile Layer

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,15 @@ import 'authority/dam_coordination_screen.dart';
 import 'authority/coordination_log_screen.dart';
 import 'authority/widgets/animated_ring_chart.dart';
 import 'authority/widgets/animated_trend_graph.dart';
+import 'citizen/citizen_shelters_view.dart';
+import 'relief_camp_detail_screen.dart';
+import '../models/incident_models.dart';
+import '../models/evacuation_models.dart';
+import '../services/flood_api_service.dart';
+import '../services/medical_api_service.dart';
+import '../services/incident_coordinator.dart';
+import '../widgets/dos_donts_section.dart';
+import '../widgets/role_quick_switcher.dart';
 
 // ============================================================================
 // COLOR PALETTE — GOVERNMENT & COMMAND CENTER GRADE
@@ -47,100 +57,12 @@ class CmdColors {
   static const Color textPrimary = Color(0xFF0F172A);
   static const Color textSecondary = Color(0xFF475569);
   static const Color textMuted = Color(0xFF94A3B8);
+  static const Color divider = Color(0xFFE2E8F0);
 }
 
 // ============================================================================
-// DATA MODELS FOR AUTHORITY OPERATIONS
+// MAIN AUTHORITY COMMAND DASHBOARD SCREEN — (Data models are in incident_models.dart)
 // ============================================================================
-class _SosItem {
-  final String id;
-  final String village;
-  final String district;
-  final int people;
-  final int elderly;
-  final int children;
-  final bool medical;
-  final String timeAgo;
-  String status; // 'Unassigned', 'Team Assigned', 'In Progress', 'Resolved', 'Active'
-  String? assignedTeam;
-  final LatLng coords;
-  final String severity; // 'Critical', 'High', 'Normal'
-
-  _SosItem({
-    required this.id,
-    required this.village,
-    this.district = 'East Khasi Hills',
-    required this.people,
-    required this.elderly,
-    required this.children,
-    required this.medical,
-    required this.timeAgo,
-    required this.status,
-    this.assignedTeam,
-    required this.coords,
-    required this.severity,
-  });
-}
-
-class _RescueTeam {
-  final String id;
-  final String name;
-  final String unit;
-  String status; // 'Available', 'On Mission', 'Offline'
-  final int members;
-  final int boats;
-  final int ambulances;
-  final String location;
-  String mission;
-  final String eta;
-
-  _RescueTeam({
-    required this.id,
-    required this.name,
-    required this.unit,
-    required this.status,
-    required this.members,
-    required this.boats,
-    required this.ambulances,
-    required this.location,
-    required this.mission,
-    required this.eta,
-  });
-}
-
-class _ShelterItem {
-  final String name;
-  final int capacity;
-  int occupied;
-  final String food;
-  final String water;
-  final bool medical;
-  final LatLng coords;
-
-  _ShelterItem({
-    required this.name,
-    required this.capacity,
-    required this.occupied,
-    required this.food,
-    required this.water,
-    required this.medical,
-    required this.coords,
-  });
-
-  String get status {
-    final ratio = occupied / capacity;
-    if (ratio >= 1.0) return 'Full';
-    if (ratio >= 0.85) return 'Near Capacity';
-    return 'Available';
-  }
-
-  Color get statusColor {
-    final ratio = occupied / capacity;
-    if (ratio >= 1.0) return CmdColors.criticalRed;
-    if (ratio >= 0.85) return CmdColors.warningOrange;
-    return CmdColors.safeGreen;
-  }
-}
 
 // ============================================================================
 // MAIN AUTHORITY COMMAND DASHBOARD SCREEN
@@ -190,10 +112,7 @@ class _HomeScreenState extends State<HomeScreen>
   final int _totalSectorPop = 2840;
 
   // Operational Lists
-  late List<_SosItem> _sosList;
-  late List<_RescueTeam> _rescueTeams;
-  late List<_ShelterItem> _shelters;
-  late List<String> _actionLogs;
+        late List<String> _actionLogs;
 
   // SOS Triage Filter & Search
   String _sosFilter = 'All'; // 'All', 'Critical', 'Medical', 'Unassigned'
@@ -207,6 +126,8 @@ class _HomeScreenState extends State<HomeScreen>
   final int _waterRequired = 15000;
   final int _medKits = 450;
 
+  StreamSubscription<LiveEvent>? _coordEventSub;
+
   @override
   void initState() {
     super.initState();
@@ -219,177 +140,134 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     _initData();
+
+    IncidentCoordinator.instance.addListener(_onIncidentCoordUpdate);
+    _coordEventSub = IncidentCoordinator.instance.eventStream.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    IncidentCoordinator.instance.removeListener(_onIncidentCoordUpdate);
+    _coordEventSub?.cancel();
     _pulseController.dispose();
     _sosSearchController.dispose();
     super.dispose();
   }
 
-  void _initData() {
-    _sosList = [
-      _SosItem(
-        id: '#284',
-        village: 'Mawphlang Riverfront',
-        district: 'East Khasi Hills',
-        people: 6,
-        elderly: 1,
-        children: 0,
-        medical: true,
-        timeAgo: '4 min ago',
-        status: 'Active',
-        assignedTeam: 'Team 02 (SDRF Bravo)',
-        coords: const LatLng(25.4512, 91.7589),
-        severity: 'Critical',
-      ),
-      _SosItem(
-        id: '#281',
-        village: 'Nongstoin Valley Lowland',
-        district: 'West Khasi Hills',
-        people: 4,
-        elderly: 0,
-        children: 2,
-        medical: false,
-        timeAgo: '8 min ago',
-        status: 'Active',
-        assignedTeam: null,
-        coords: const LatLng(25.5230, 91.2680),
-        severity: 'Critical',
-      ),
-      _SosItem(
-        id: '#279',
-        village: 'Pynursla Riverbed Sector',
-        district: 'East Khasi Hills',
-        people: 11,
-        elderly: 3,
-        children: 1,
-        medical: true,
-        timeAgo: '15 min ago',
-        status: 'Active',
-        assignedTeam: 'Team 01 (NDRF Alpha)',
-        coords: const LatLng(25.3094, 91.9022),
-        severity: 'High',
-      ),
-      _SosItem(
-        id: '#275',
-        village: 'Cherrapunjee Foothills',
-        people: 3,
-        elderly: 1,
-        children: 0,
-        medical: false,
-        timeAgo: '24 min ago',
-        status: 'In Progress',
-        assignedTeam: 'Team 03 (Civil Defense)',
-        coords: const LatLng(25.2986, 91.7324),
-        severity: 'High',
-      ),
-      _SosItem(
-        id: '#270',
-        village: 'Mawkdok Bridge Junction',
-        people: 2,
-        elderly: 0,
-        children: 0,
-        medical: false,
-        timeAgo: '35 min ago',
-        status: 'Resolved',
-        assignedTeam: 'Team 01 (NDRF Alpha)',
-        coords: const LatLng(25.4120, 91.7912),
-        severity: 'Normal',
-      ),
-    ];
+  void _onIncidentCoordUpdate() {
+    if (!mounted) return;
+    setState(() {});
+  }
 
-    _rescueTeams = [
-      _RescueTeam(
-        id: 'T-01',
-        name: 'Team 01',
-        unit: 'NDRF Unit Alpha',
-        status: 'Available',
-        members: 8,
-        boats: 2,
-        ambulances: 1,
-        location: 'Sector 1 Staging Ground',
-        mission: 'Standby for priority evacuation',
-        eta: 'Immediate',
+  void _showCriticalSosPopup(SOSRequest sos) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFDC2626), width: 2),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.warning_rounded,
+                  color: Color(0xFFDC2626), size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🔴 NEW CRITICAL SOS ${sos.id}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    'Received ${sos.timeAgoFormatted}',
+                    style:
+                        const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Location: ${sos.village}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Trapped: ${sos.peopleCount} people (${sos.elderlyCount} elderly, ${sos.childrenCount} children)',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Medical Urgency: ${sos.hasMedical ? "YES - Critical" : "None reported"}',
+              style: TextStyle(
+                color: sos.hasMedical
+                    ? const Color(0xFFF87171)
+                    : const Color(0xFF34D399),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Coordinates: ${sos.coordinatesFormatted}',
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _mapController.move(LatLng(sos.latitude, sos.longitude), 14.0);
+            },
+            child: const Text('View Location',
+                style: TextStyle(color: Color(0xFF38BDF8))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final sosItem = IncidentCoordinator.instance.sosRequests.firstWhere(
+                (s) => s.id == sos.id,
+                orElse: () => IncidentCoordinator.instance.sosRequests.first,
+              );
+              _showAssignTeamModal(sosItem);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Assign Team',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
-      _RescueTeam(
-        id: 'T-02',
-        name: 'Team 02',
-        unit: 'SDRF Bravo',
-        status: 'On Mission',
-        members: 10,
-        boats: 3,
-        ambulances: 1,
-        location: 'En route Mawphlang',
-        mission: 'Assigned to SOS #284 (Mawphlang)',
-        eta: '8 min',
-      ),
-      _RescueTeam(
-        id: 'T-03',
-        name: 'Team 03',
-        unit: 'Civil Defense Quick Team',
-        status: 'Available',
-        members: 6,
-        boats: 1,
-        ambulances: 0,
-        location: 'Staging Area North',
-        mission: 'Clear road obstruction on bypass',
-        eta: 'Standby',
-      ),
-      _RescueTeam(
-        id: 'T-04',
-        name: 'Team 04',
-        unit: 'Army Quick Response',
-        status: 'Offline',
-        members: 12,
-        boats: 2,
-        ambulances: 2,
-        location: 'Base Camp (Transit)',
-        mission: 'Heavy amphibious transport',
-        eta: '25 min',
-      ),
-    ];
+    );
+  }
 
-    _shelters = [
-      _ShelterItem(
-        name: 'Meenakshipuram Community Center',
-        capacity: 100,
-        occupied: 72,
-        food: 'High',
-        water: 'Good',
-        medical: true,
-        coords: const LatLng(25.4550, 91.7620),
-      ),
-      _ShelterItem(
-        name: 'St. Anthony Relief Hall',
-        capacity: 200,
-        occupied: 184,
-        food: 'Moderate',
-        water: 'Low',
-        medical: true,
-        coords: const LatLng(25.5650, 91.8820),
-      ),
-      _ShelterItem(
-        name: 'Valley Convent High School',
-        capacity: 200,
-        occupied: 200,
-        food: 'Low',
-        water: 'Critical',
-        medical: false,
-        coords: const LatLng(25.5180, 91.2750),
-      ),
-      _ShelterItem(
-        name: 'Northeast Indoor Stadium',
-        capacity: 250,
-        occupied: 120,
-        food: 'High',
-        water: 'Good',
-        medical: true,
-        coords: const LatLng(25.5890, 91.9050),
-      ),
-    ];
-
+    void _initData() {
     _actionLogs = [
       '19:42 — Evacuation order broadcast issued for Mawphlang Sector by Capt. R. Sharma',
       '19:37 — Team 02 (SDRF Bravo) assigned to SOS #284 (Medical Emergency)',
@@ -1128,7 +1006,7 @@ class _HomeScreenState extends State<HomeScreen>
 
           const SizedBox(height: 12),
 
-          // Situation Stats Quick Grid (Full width 5-column layout with vertical dividers matching reference design)
+          // Situation Stats Quick Grid
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 14),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
@@ -1239,7 +1117,7 @@ class _HomeScreenState extends State<HomeScreen>
                       letterSpacing: 0.5,
                     ),
                   ),
-                  onPressed: _showIssueEvacuationDialog,
+                  onPressed: () => _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94),
                 ),
               ],
             ),
@@ -1429,7 +1307,7 @@ class _HomeScreenState extends State<HomeScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: CmdColors.cardBg,
           borderRadius: BorderRadius.circular(12),
@@ -1442,60 +1320,69 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: borderColor, width: 1),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 16),
-                ),
-                const Spacer(),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 1.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        color: iconColor,
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderColor, width: 1.5),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                color: CmdColors.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: CmdColors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: CmdColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: CmdColors.textSecondary,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -1517,13 +1404,11 @@ class _HomeScreenState extends State<HomeScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 60% Map Container (Map + Satellite Intelligence Feed)
                   Expanded(
                     flex: 6,
                     child: _buildLiveDisasterMapSection(isEmbedded: true),
                   ),
                   const SizedBox(width: 12),
-                  // 40% 4 Pie Charts in 2x2 Grid with matching bottom height
                   Expanded(
                     flex: 4,
                     child: _buildRingChartsOverviewPanel(isFlexible: true),
@@ -1566,7 +1451,6 @@ class _HomeScreenState extends State<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
           Row(
             children: [
               Container(
@@ -1627,8 +1511,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 10),
 
-          // 2x2 Grid of 4 Animated Ring Charts (2 per line)
-          // Row 1 (2 charts)
           if (isFlexible)
             Expanded(
               child: Row(
@@ -1710,7 +1592,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           const SizedBox(height: 10),
 
-          // Row 2 (2 charts)
           if (isFlexible)
             Expanded(
               child: Row(
@@ -1822,7 +1703,6 @@ class _HomeScreenState extends State<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Map Header & Action Bar
           if (!isFullScreen)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
@@ -1844,7 +1724,6 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                   const Spacer(),
-                  // Fullscreen toggle button
                   IconButton(
                     icon: const Icon(
                       Icons.fullscreen_rounded,
@@ -1860,7 +1739,6 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
 
-          // Layer Toggle Pills (Section 4 left filters)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -1926,7 +1804,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 6),
 
-          // Interactive FlutterMap
           if (isFullScreen)
             Expanded(child: _buildFlutterMapWidget())
           else
@@ -1939,7 +1816,6 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
 
-          // Satellite Intelligence Overlay Card (Section 5)
           if (!isFullScreen) _buildSatelliteIntelligenceBar(),
         ],
       ),
@@ -1984,19 +1860,19 @@ class _HomeScreenState extends State<HomeScreen>
             initialZoom: 11.2,
             minZoom: 6.0,
             maxZoom: 17.0,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+            ),
           ),
           children: [
-            // Standard Base OpenStreetMap Tiles
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.resqshield.app',
             ),
 
-            // Flood Inundation Polygon Overlays (Section 4)
             if (_layerFlood)
               PolygonLayer(
                 polygons: [
-                  // Mawphlang River Inundation Area
                   Polygon(
                     points: const [
                       LatLng(25.4450, 91.7480),
@@ -2009,7 +1885,6 @@ class _HomeScreenState extends State<HomeScreen>
                     borderColor: CmdColors.criticalRed,
                     borderStrokeWidth: 2.2,
                   ),
-                  // Umiam Basin High Water Spread
                   Polygon(
                     points: const [
                       LatLng(25.6500, 91.8700),
@@ -2024,11 +1899,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
 
-            // Evacuation Routes Polylines (Section 21)
             if (_layerRoads)
               PolylineLayer(
                 polylines: [
-                  // Route A (Safe Recommended - Green)
                   Polyline(
                     points: const [
                       LatLng(25.4512, 91.7589),
@@ -2039,7 +1912,6 @@ class _HomeScreenState extends State<HomeScreen>
                     color: CmdColors.safeGreen,
                     strokeWidth: 4.0,
                   ),
-                  // Route C (Flooded Blocked - Red dashed feel)
                   Polyline(
                     points: const [
                       LatLng(25.4512, 91.7589),
@@ -2052,16 +1924,14 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
 
-            // Markers Layer (SOS, Shelters, Teams, Hazards)
             MarkerLayer(
               markers: [
-                // 1. Critical SOS Markers
                 if (_layerSos)
-                  ..._sosList
-                      .where((s) => s.status != 'Resolved')
+                  ...IncidentCoordinator.instance.sosRequests
+                      .where((s) => s.status != IncidentStatus.closed)
                       .map(
                         (sos) => Marker(
-                          point: sos.coords,
+                          point: LatLng(sos.latitude, sos.longitude),
                           width: 44,
                           height: 44,
                           child: GestureDetector(
@@ -2108,11 +1978,10 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
 
-                // 2. Shelter Markers
                 if (_layerShelters)
-                  ..._shelters.map(
+                  ...IncidentCoordinator.instance.shelters.map(
                     (sh) => Marker(
-                      point: sh.coords,
+                      point: LatLng(sh.latitude, sh.longitude),
                       width: 38,
                       height: 38,
                       child: GestureDetector(
@@ -2136,7 +2005,6 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
 
-                // 3. Rescue Team Markers
                 if (_layerTeams)
                   Marker(
                     point: const LatLng(25.4800, 91.7700),
@@ -2156,7 +2024,6 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
 
-                // 4. Blocked Bridge Marker
                 if (_layerRoads)
                   Marker(
                     point: const LatLng(25.4120, 91.7912),
@@ -2179,7 +2046,6 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
 
-        // Floating Map Controls (Zoom, Re-center, Legend)
         Positioned(
           top: 10,
           right: 10,
@@ -2211,7 +2077,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
 
-        // Map Legend Quick Indicator
         Positioned(
           bottom: 10,
           left: 10,
@@ -2375,8 +2240,6 @@ class _HomeScreenState extends State<HomeScreen>
   // ==========================================================================
   // FLOOD / RIVER & RAINFALL MONITORING (Sections 6 & 7)
   // ==========================================================================
-  // RIVER & RAINFALL TELEMETRY DUAL CARDS (1 ROW, 2 GRAPHS)
-  // ==========================================================================
   Widget _buildRiverAndRainfallSection() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -2489,7 +2352,7 @@ class _HomeScreenState extends State<HomeScreen>
 
           const SizedBox(height: 12),
 
-          // AI Prediction Box (Section 8 - Matching executive screenshot)
+          // AI Prediction Box (Section 8)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -2663,78 +2526,141 @@ class _HomeScreenState extends State<HomeScreen>
 
           const SizedBox(height: 14),
 
-          // Critical Villages Priority List (Section 9 & 10)
-          const Text(
-            'EVACUATION PRIORITY RANKING',
-            style: TextStyle(
-              color: CmdColors.textSecondary,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Priority 1 — Mawphlang
-          _villagePriorityCard(
-            rank: '1',
-            villageName: 'Mawphlang Sector',
-            severity: 'Critical',
-            badgeColor: CmdColors.criticalRed,
-            priorityScore: '94 / 100',
-            population: '2,840',
-            vulnerable: '380 (Elderly & Kids)',
-            sosCount: '8 SOS',
-            roadAccess: 'Road Blocked',
-            onView: () {
-              _mapController.move(const LatLng(25.4512, 91.7589), 13.5);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Centered on Mawphlang Critical Evacuation Zone'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            onOrderEvac: _showIssueEvacuationDialog,
-          ),
-
-          const SizedBox(height: 8),
-
-          // Priority 2 — Village B
-          _villagePriorityCard(
-            rank: '2',
-            villageName: 'Nongstoin Valley Lowland',
-            severity: 'High',
-            badgeColor: CmdColors.warningOrange,
-            priorityScore: '78 / 100',
-            population: '1,920',
-            vulnerable: '210',
-            sosCount: '3 SOS',
-            roadAccess: 'Passable (Caution)',
-            onView: () {
-              _mapController.move(const LatLng(25.5230, 91.2680), 13.0);
-            },
-          ),
-
-          const SizedBox(height: 8),
-
-          // Priority 3 — Village C
-          _villagePriorityCard(
-            rank: '3',
-            villageName: 'Pynursla Riverbed Basin',
-            severity: 'High',
-            badgeColor: CmdColors.cautionAmber,
-            priorityScore: '65 / 100',
-            population: '1,450',
-            vulnerable: '160',
-            sosCount: '1 SOS',
-            roadAccess: 'Open',
-            onView: () {
-              _mapController.move(const LatLng(25.3094, 91.9022), 13.0);
-            },
-          ),
+          // Priority Ranking Section
+          _buildPriorityRankingSection(),
         ],
       ),
+    );
+  }
+
+  Widget _buildPriorityRankingSection() {
+    return ListenableBuilder(
+      listenable: IncidentCoordinator.instance,
+      builder: (context, _) {
+        final op = IncidentCoordinator.instance.getEvacuationForArea('Mawphlang Sector');
+        
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.priority_high_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Evacuation Decision Queue',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        Text(
+                          'AI ranked areas requiring immediate attention',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Priority 1 — Mawphlang
+              _villagePriorityCard(
+                rank: '1',
+                villageName: 'Mawphlang Sector',
+                severity: 'Critical',
+                badgeColor: CmdColors.criticalRed,
+                priorityScore: '94 / 100',
+                population: '2,840',
+                vulnerable: '380 (Elderly & Kids)',
+                sosCount: '8 SOS',
+                roadAccess: 'Road Blocked',
+                activeOp: op,
+                onView: () {
+                  _mapController.move(const LatLng(25.4512, 91.7589), 13.5);
+                },
+                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Priority 2 — Village B
+              _villagePriorityCard(
+                rank: '2',
+                villageName: 'Nongstoin Valley Lowland',
+                severity: 'High',
+                badgeColor: CmdColors.warningOrange,
+                priorityScore: '78 / 100',
+                population: '1,920',
+                vulnerable: '210',
+                sosCount: '3 SOS',
+                roadAccess: 'Passable (Caution)',
+                onView: () {
+                  _mapController.move(const LatLng(25.5230, 91.2680), 13.0);
+                },
+                onOrderEvac: () {},
+                actionLabel: 'PREPARE',
+              ),
+
+              const SizedBox(height: 8),
+
+              // Priority 3 — Village C
+              _villagePriorityCard(
+                rank: '3',
+                villageName: 'Pynursla Riverbed Basin',
+                severity: 'High',
+                badgeColor: CmdColors.cautionAmber,
+                priorityScore: '65 / 100',
+                population: '1,450',
+                vulnerable: '160',
+                sosCount: '1 SOS',
+                roadAccess: 'Open',
+                onView: () {
+                  _mapController.move(const LatLng(25.3094, 91.9022), 13.0);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -2748,15 +2674,19 @@ class _HomeScreenState extends State<HomeScreen>
     required String vulnerable,
     required String sosCount,
     required String roadAccess,
+    EvacuationOperation? activeOp,
     VoidCallback? onView,
     VoidCallback? onOrderEvac,
+    String? actionLabel,
   }) {
+    bool isEvacActive = activeOp != null;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: CmdColors.bg,
+        color: isEvacActive ? const Color(0xFFF8FAFC) : CmdColors.bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CmdColors.cardBorder, width: 1),
+        border: Border.all(color: isEvacActive ? const Color(0xFF0284C7) : CmdColors.cardBorder, width: isEvacActive ? 1.5 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2795,7 +2725,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     Text(
-                      '$population people · Vulnerable: $vulnerable',
+                      isEvacActive ? 'Target: $population people' : '$population people · Vulnerable: $vulnerable',
                       style: const TextStyle(
                         color: CmdColors.textSecondary,
                         fontSize: 10.5,
@@ -2804,97 +2734,146 @@ class _HomeScreenState extends State<HomeScreen>
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Score: $priorityScore',
-                    style: TextStyle(
-                      color: badgeColor,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
+              if (!isEvacActive)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Score: $priorityScore',
+                      style: TextStyle(
+                        color: badgeColor,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                  Text(
-                    roadAccess,
-                    style: TextStyle(
-                      color: roadAccess.contains('Blocked')
-                          ? CmdColors.criticalRed
-                          : CmdColors.textSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                    Text(
+                      roadAccess,
+                      style: TextStyle(
+                        color: roadAccess.contains('Blocked')
+                            ? CmdColors.criticalRed
+                            : CmdColors.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                  ],
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ],
-              ),
+                  child: const Text(
+                    'EVACUATION ACTIVE',
+                    style: TextStyle(color: Color(0xFF0284C7), fontSize: 10, fontWeight: FontWeight.w900),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // Action Buttons: View on Map & Order Evacuation
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: CmdColors.redLight,
-                  borderRadius: BorderRadius.circular(4),
+          if (isEvacActive) ...[
+            const Divider(color: CmdColors.divider),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatText('${activeOp.totalEvacuated} / ${activeOp.targetPopulation}', 'evacuated'),
+                _buildStatText('${activeOp.activeTeamsCount}', 'teams deployed'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F172A),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
-                child: Text(
-                  sosCount,
-                  style: const TextStyle(
-                    color: CmdColors.criticalRed,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                icon: const Icon(Icons.monitor_heart_rounded, size: 16),
+                label: const Text('MONITOR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                onPressed: () {},
               ),
-              const Spacer(),
-              if (onView != null)
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: const Size(50, 28),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: CmdColors.redLight,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  icon: const Icon(
-                    Icons.location_searching_rounded,
-                    size: 14,
-                    color: CmdColors.primaryBlue,
-                  ),
-                  label: const Text(
-                    'VIEW',
-                    style: TextStyle(
-                      fontSize: 11,
+                  child: Text(
+                    sosCount,
+                    style: const TextStyle(
+                      color: CmdColors.criticalRed,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (onView != null)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(50, 28),
+                    ),
+                    icon: const Icon(
+                      Icons.location_searching_rounded,
+                      size: 14,
                       color: CmdColors.primaryBlue,
                     ),
-                  ),
-                  onPressed: onView,
-                ),
-              if (onOrderEvac != null) ...[
-                const SizedBox(width: 6),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: CmdColors.criticalRed,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                    label: const Text(
+                      'VIEW',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: CmdColors.primaryBlue,
+                      ),
                     ),
-                    minimumSize: const Size(60, 28),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+                    onPressed: onView,
+                  ),
+                if (onOrderEvac != null) ...[
+                  const SizedBox(width: 6),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: CmdColors.criticalRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      minimumSize: const Size(60, 28),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    onPressed: onOrderEvac,
+                    child: Text(
+                      actionLabel ?? 'ORDER EVAC',
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800),
                     ),
                   ),
-                  onPressed: onOrderEvac,
-                  child: const Text(
-                    'ORDER EVAC',
-                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800),
-                  ),
-                ),
+                ],
               ],
-            ],
-          ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatText(String value, String label) {
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(text: '$value ', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.w900)),
+          TextSpan(text: label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -2927,9 +2906,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ==========================================================================
-  // POPULATION AT RISK CARD (Section 11)
-  // ==========================================================================
-  // ==========================================================================
   // POPULATION AT RISK DEMOGRAPHICS (Section 11)
   // ==========================================================================
   Widget _buildPopulationAtRiskSection() {
@@ -2951,7 +2927,6 @@ class _HomeScreenState extends State<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -3174,20 +3149,20 @@ class _HomeScreenState extends State<HomeScreen>
   // ACTIVE CITIZEN SOS TRIAGE (Section 12)
   // ==========================================================================
   Widget _buildSosManagementSection() {
-    final allActive = _sosList.where((s) => s.status != 'Resolved').toList();
-    final criticalCount = allActive.where((s) => s.severity == 'Critical').length;
+    final allActive = IncidentCoordinator.instance.sosRequests.where((s) => s.status != IncidentStatus.closed).toList();
+    final criticalCount = allActive.where((s) => s.hasMedical).length;
 
     // Filter by tab and search
     final filteredList = allActive.where((sos) {
-      if (_sosFilter == 'Critical' && sos.severity != 'Critical') return false;
-      if (_sosFilter == 'Medical' && !sos.medical) return false;
-      if (_sosFilter == 'Unassigned' && (sos.assignedTeam != null && sos.assignedTeam!.isNotEmpty)) return false;
+      if (_sosFilter == 'Critical' && !sos.hasMedical) return false;
+      if (_sosFilter == 'Medical' && !sos.hasMedical) return false;
+      if (_sosFilter == 'Unassigned' && (sos.assignedTeamName != null && sos.assignedTeamName!.isNotEmpty)) return false;
       if (_sosSearchQuery.isNotEmpty) {
         final q = _sosSearchQuery.toLowerCase();
         final match = sos.id.toLowerCase().contains(q) ||
             sos.village.toLowerCase().contains(q) ||
-            sos.district.toLowerCase().contains(q) ||
-            (sos.assignedTeam?.toLowerCase().contains(q) ?? false);
+            sos.village.toLowerCase().contains(q) ||
+            (sos.assignedTeamName?.toLowerCase().contains(q) ?? false);
         if (!match) return false;
       }
       return true;
@@ -3617,8 +3592,8 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildSosTableRow(_SosItem sos) {
-    final isUnassigned = sos.assignedTeam == null || sos.assignedTeam!.isEmpty || sos.status == 'Unassigned';
+  Widget _buildSosTableRow(SOSRequest sos) {
+    final isUnassigned = sos.assignedTeamId == null || sos.status == IncidentStatus.newSos;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -3666,7 +3641,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 1),
             Text(
-              sos.district,
+              sos.village,
               style: const TextStyle(
                 color: Color(0xFF64748B),
                 fontSize: 11,
@@ -3684,20 +3659,20 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               _detailBadge(
                 icon: Icons.people_alt_rounded,
-                label: '${sos.people} People',
+                label: '${sos.peopleCount} People',
                 bg: const Color(0xFFEFF6FF),
                 color: const Color(0xFF2563EB),
               ),
-              if (sos.elderly > 0) ...[
+              if (sos.elderlyCount > 0) ...[
                 const SizedBox(width: 6),
                 _detailBadge(
                   icon: Icons.elderly_rounded,
-                  label: '${sos.elderly} Elderly',
+                  label: '${sos.elderlyCount} Elderly',
                   bg: const Color(0xFFFEF2F2),
                   color: const Color(0xFFDC2626),
                 ),
               ],
-              if (sos.medical) ...[
+              if (sos.hasMedical) ...[
                 const SizedBox(width: 6),
                 _detailBadge(
                   icon: Icons.add_circle_outline_rounded,
@@ -3765,7 +3740,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  isUnassigned ? 'Unassigned' : sos.assignedTeam!,
+                  isUnassigned ? 'Unassigned' : sos.assignedTeamName ?? '',
                   style: TextStyle(
                     color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
                     fontSize: 11,
@@ -3777,7 +3752,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         time: Text(
-          sos.timeAgo,
+          sos.timeAgoFormatted,
           style: const TextStyle(
             color: Color(0xFF64748B),
             fontSize: 11.5,
@@ -3803,7 +3778,7 @@ class _HomeScreenState extends State<HomeScreen>
                 label: 'View Location',
                 color: const Color(0xFF0284C7),
                 onTap: () {
-                  _mapController.move(sos.coords, 14.0);
+                  _mapController.move(LatLng(sos.latitude, sos.longitude), 14.0);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Centered map on SOS ${sos.id} (${sos.village})'),
@@ -3900,131 +3875,309 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildRescueTeamsSection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: CmdColors.cardBg,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CmdColors.cardBorder, width: 1.2),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.sailing_rounded,
-                color: CmdColors.deepBlue,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'RESCUE TEAMS DEPLOYMENT',
-                style: TextStyle(
-                  color: CmdColors.textPrimary,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9), // Light grayish blue
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.sailing_rounded,
+                    color: Color(0xFF1E293B),
+                    size: 22,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RESCUE TEAMS DEPLOYMENT',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'On-ground teams and quick response units',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
               Text(
-                '${_rescueTeams.where((t) => t.status == 'Available').length} Available / ${_rescueTeams.length} Total',
+                '${IncidentCoordinator.instance.responderTeams.where((t) => t.status == 'Available').length} Available',
                 style: const TextStyle(
-                  color: CmdColors.safeGreen,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF16A34A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Text(
+                ' / 4 Total',
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF007AEB),
+                  side: const BorderSide(color: Color(0xFF007AEB), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View Teams',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 900;
+              final isMedium = constraints.maxWidth >= 560;
+              final display = IncidentCoordinator.instance.responderTeams.take(4).toList();
 
-          ..._rescueTeams.map((team) => _rescueTeamTile(team)),
+              if (isWide) {
+                const spacing = 12.0;
+                final cardW = (constraints.maxWidth - spacing * 3) / 4;
+                return Row(
+                  children: [
+                    for (int i = 0; i < display.length; i++) ...[
+                      if (i > 0) const SizedBox(width: spacing),
+                      SizedBox(width: cardW, child: _rescueTeamTile(display[i])),
+                    ],
+                  ],
+                );
+              } else if (isMedium) {
+                const spacing = 10.0;
+                final cardW = (constraints.maxWidth - spacing) / 2;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: display.map((t) => SizedBox(width: cardW, child: _rescueTeamTile(t))).toList(),
+                );
+              } else {
+                return Column(
+                  children: display.map((t) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _rescueTeamTile(t))).toList(),
+                );
+              }
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _rescueTeamTile(_RescueTeam team) {
-    Color statusColor = CmdColors.safeGreen;
-    if (team.status == 'On Mission') statusColor = CmdColors.warningOrange;
-    if (team.status == 'Offline') statusColor = CmdColors.criticalRed;
+  Widget _rescueTeamTile(ResponderTeamLocation team) {
+    Color statusColor = const Color(0xFF16A34A);
+    Color statusBg = const Color(0xFFDCFCE7);
+    if (team.status == 'On Mission') {
+      statusColor = const Color(0xFFD97706);
+      statusBg = const Color(0xFFFEF3C7);
+    }
+    if (team.status == 'Offline') {
+      statusColor = const Color(0xFFDC2626);
+      statusBg = const Color(0xFFFEE2E2);
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: CmdColors.bg,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: statusColor.withValues(alpha: 0.15),
-            child: Icon(
-              Icons.directions_boat_filled_rounded,
-              color: statusColor,
-              size: 16,
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusBg, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.sailing_rounded,
+                    color: statusColor,
+                    size: 19,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${team.name} (${team.unit})',
+                      team.name,
                       style: const TextStyle(
-                        color: CmdColors.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        team.status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '(${team.unit})',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${team.members} Members · ${team.boats} Boats · ${team.ambulances} Amb · ETA: ${team.eta}',
-                  style: const TextStyle(
-                    color: CmdColors.textSecondary,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  team.status,
+                  style: TextStyle(
+                    color: statusColor,
                     fontSize: 10,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                Text(
-                  'Mission: ${team.mission}',
-                  style: const TextStyle(
-                    color: CmdColors.deepBlue,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.spaceBetween,
+            children: [
+              _buildTeamStatItem(Icons.people_alt_rounded, '${team.membersCount} Members'),
+              _buildTeamStatItem(Icons.directions_boat_filled_rounded, '${team.boatCount} Boats'),
+              _buildTeamStatItem(Icons.local_shipping_rounded, '${team.ambulanceCount} Amb'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.access_time_rounded, color: Color(0xFF64748B), size: 14),
+              const SizedBox(width: 6),
+              Text(
+                'ETA: ${team.etaEstimate}',
+                style: const TextStyle(
+                  color: Color(0xFF475569),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(color: Color(0xFFE2E8F0), height: 1),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.my_location_rounded, color: Color(0xFF64748B), size: 14),
+              const SizedBox(width: 6),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Inter',
+                    ),
+                    children: [
+                      const TextSpan(text: 'Mission: '),
+                      TextSpan(
+                        text: team.currentMissionId ?? "Standby",
+                        style: const TextStyle(
+                          color: Color(0xFF007AEB),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTeamStatItem(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: const Color(0xFF64748B), size: 14),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Color(0xFF475569),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
@@ -4664,9 +4817,11 @@ class _HomeScreenState extends State<HomeScreen>
   // 16-20. MODERN SHELTERS & RELIEF RESOURCES (MATCHING SCREENSHOT)
   // ==========================================================================
   Widget _buildShelterAndReliefSection() {
+    final liveShelters = IncidentCoordinator.instance.shelters;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -4674,202 +4829,174 @@ class _HomeScreenState extends State<HomeScreen>
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            blurRadius: 10,
+            offset: Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Shelters Header Row
+          // 1. Shelters Header Row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 42,
+                height: 42,
                 decoration: const BoxDecoration(
                   color: Color(0xFFE0F2FE),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
                   child: Icon(
-                    Icons.domain_rounded,
-                    color: Color(0xFF0284C7),
-                    size: 20,
+                    Icons.night_shelter_rounded,
+                    color: Color(0xFF007AEB),
+                    size: 22,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'SHELTERS & RELIEF RESOURCES',
                       style: TextStyle(
                         color: Color(0xFF0F172A),
-                        fontSize: 13,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                        letterSpacing: -0.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Availability and occupancy status of relief centers',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 3),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: const [
+                        Text(
+                          '18 Active Shelters',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '  •  Total Capacity: 2,150  •  Occupied: 1,374 (64%)',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ResourceShelterMapScreen(initialTabIndex: 1),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007AEB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text(
+                  'Add Shelter',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
               const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    '18 Active Shelters',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CitizenSheltersView(isAuthority: true),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  InkWell(
-                    onTap: () => setState(() => _activeNavIndex = 4),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F9FF),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFBAE6FD), width: 1),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text(
-                            'View All',
-                            style: TextStyle(
-                              color: Color(0xFF0284C7),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 13,
-                          ),
-                        ],
-                      ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF007AEB),
+                  side: const BorderSide(color: Color(0xFF007AEB), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View All',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                     ),
-                  ),
-                ],
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14),
+                  ],
+                ),
               ),
             ],
           ),
 
           const SizedBox(height: 16),
 
-          // 4 Shelter Cards Grid
+          // 2. Metrics Summary Row (Matching Screenshot)
           LayoutBuilder(
             builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 850;
-              final shelterCard1 = _buildModernShelterCard(
-                name: 'Meenakshipuram Community Center',
-                sectorDistance: 'Sector A • 2.3 km',
-                occupied: 72,
-                capacity: 100,
-                iconColor: const Color(0xFF10B981),
-                iconBgColor: const Color(0xFFECFDF5),
-                statusText: 'Available',
-                statusTextColor: const Color(0xFF10B981),
-                statusBgColor: const Color(0xFFECFDF5),
-                statusBorderColor: const Color(0xFFA7F3D0),
-                progressColor: const Color(0xFF10B981),
-              );
-              final shelterCard2 = _buildModernShelterCard(
-                name: 'St. Anthony Relief Hall',
-                sectorDistance: 'Sector B • 4.1 km',
-                occupied: 184,
-                capacity: 200,
-                iconColor: const Color(0xFFF97316),
-                iconBgColor: const Color(0xFFFFF7ED),
-                statusText: 'Near Capacity',
-                statusTextColor: const Color(0xFFD97706),
-                statusBgColor: const Color(0xFFFFFBEB),
-                statusBorderColor: const Color(0xFFFDE68A),
-                progressColor: const Color(0xFFF97316),
-              );
-              final shelterCard3 = _buildModernShelterCard(
-                name: 'Valley Convent High School',
-                sectorDistance: 'Sector C • 6.8 km',
-                occupied: 200,
-                capacity: 200,
-                iconColor: const Color(0xFFEF4444),
-                iconBgColor: const Color(0xFFFEF2F2),
-                statusText: 'Full',
-                statusTextColor: const Color(0xFFDC2626),
-                statusBgColor: const Color(0xFFFEF2F2),
-                statusBorderColor: const Color(0xFFFECACA),
-                progressColor: const Color(0xFFEF4444),
-              );
-              final shelterCard4 = _buildModernShelterCard(
-                name: 'Northeast Indoor Stadium',
-                sectorDistance: 'Sector D • 3.6 km',
-                occupied: 120,
-                capacity: 250,
-                iconColor: const Color(0xFF10B981),
-                iconBgColor: const Color(0xFFECFDF5),
-                statusText: 'Available',
-                statusTextColor: const Color(0xFF10B981),
-                statusBgColor: const Color(0xFFECFDF5),
-                statusBorderColor: const Color(0xFFA7F3D0),
-                progressColor: const Color(0xFF10B981),
-              );
+              final isWide = constraints.maxWidth >= 950;
+              return _buildShelterMetricsRow(isWide);
+            },
+          ),
 
-              if (isWide) {
+          const SizedBox(height: 16),
+
+          // 3. Shelter Cards — fixed single row of exactly 4
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final show4 = constraints.maxWidth >= 900;
+              final show2 = constraints.maxWidth >= 560;
+              // Show the 4 primary display shelters — rest visible via View All
+              const _primaryIds = {'SH-06', 'SH-07', 'SH-08', 'SH-09'};
+              final display = liveShelters.where((s) => _primaryIds.contains(s.id)).take(4).toList();
+
+              if (show4) {
+                // Single row: 4 equal-width cards
+                const spacing = 12.0;
+                final cardW = (constraints.maxWidth - spacing * 3) / 4;
                 return Row(
                   children: [
-                    Expanded(child: shelterCard1),
-                    const SizedBox(width: 10),
-                    Expanded(child: shelterCard2),
-                    const SizedBox(width: 10),
-                    Expanded(child: shelterCard3),
-                    const SizedBox(width: 10),
-                    Expanded(child: shelterCard4),
+                    for (int i = 0; i < display.length; i++) ...[
+                      if (i > 0) const SizedBox(width: spacing),
+                      SizedBox(width: cardW, child: _buildModernShelterCard(display[i])),
+                    ],
                   ],
                 );
-              } else if (constraints.maxWidth >= 520) {
-                return Column(
-                  children: [
-                    Row(children: [Expanded(child: shelterCard1), const SizedBox(width: 10), Expanded(child: shelterCard2)]),
-                    const SizedBox(height: 10),
-                    Row(children: [Expanded(child: shelterCard3), const SizedBox(width: 10), Expanded(child: shelterCard4)]),
-                  ],
+              } else if (show2) {
+                const spacing = 10.0;
+                final cardW = (constraints.maxWidth - spacing) / 2;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: display.map((s) => SizedBox(width: cardW, child: _buildModernShelterCard(s))).toList(),
                 );
               } else {
                 return Column(
-                  children: [
-                    shelterCard1,
-                    const SizedBox(height: 10),
-                    shelterCard2,
-                    const SizedBox(height: 10),
-                    shelterCard3,
-                    const SizedBox(height: 10),
-                    shelterCard4,
-                  ],
+                  children: display
+                      .map((s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _buildModernShelterCard(s)))
+                      .toList(),
                 );
               }
             },
@@ -4879,42 +5006,349 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildModernShelterCard({
-    required String name,
-    required String sectorDistance,
-    required int occupied,
-    required int capacity,
+  Widget _buildShelterMetricsRow(bool isWide) {
+    // 6 equal-width metric tiles dividing full screen width
+    Widget _metricTile({
+      required IconData icon,
+      required Color iconColor,
+      required Color iconBg,
+      required Color cardBg,
+      required Color borderColor,
+      required String number,
+      required String title,
+      required String subtitle,
+      required Color subColor,
+    }) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: borderColor, width: 1.1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                  child: Center(child: Icon(icon, color: iconColor, size: 16)),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  number,
+                  style: TextStyle(
+                    color: iconColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: subColor,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      );
+    }
+
+    const gap = SizedBox(width: 8);
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _metricTile(
+              icon: Icons.night_shelter_rounded,
+              iconColor: const Color(0xFF16A34A),
+              iconBg: const Color(0xFFDCFCE7),
+              cardBg: const Color(0xFFF2FBF5),
+              borderColor: const Color(0xFFDCFCE7),
+              number: '14',
+              title: 'Available',
+              subtitle: '≥ 30% space',
+              subColor: const Color(0xFF16A34A),
+            ),
+          ),
+          gap,
+          Expanded(
+            child: _metricTile(
+              icon: Icons.people_alt_rounded,
+              iconColor: const Color(0xFFD97706),
+              iconBg: const Color(0xFFFEF3C7),
+              cardBg: const Color(0xFFFFFDF5),
+              borderColor: const Color(0xFFFEF3C7),
+              number: '3',
+              title: 'Near Cap.',
+              subtitle: '≤ 30% space',
+              subColor: const Color(0xFFD97706),
+            ),
+          ),
+          gap,
+          Expanded(
+            child: _metricTile(
+              icon: Icons.warning_rounded,
+              iconColor: const Color(0xFFDC2626),
+              iconBg: const Color(0xFFFEE2E2),
+              cardBg: const Color(0xFFFEF5F5),
+              borderColor: const Color(0xFFFEE2E2),
+              number: '1',
+              title: 'At Limit',
+              subtitle: 'No space',
+              subColor: const Color(0xFFDC2626),
+            ),
+          ),
+          gap,
+          Expanded(
+            child: _metricTile(
+              icon: Icons.restaurant_rounded,
+              iconColor: const Color(0xFF16A34A),
+              iconBg: const Color(0xFFDCFCE7),
+              cardBg: const Color(0xFFF2FBF5),
+              borderColor: const Color(0xFFDCFCE7),
+              number: '2',
+              title: 'Food Shortage',
+              subtitle: 'Needs resupply',
+              subColor: const Color(0xFF16A34A),
+            ),
+          ),
+          gap,
+          Expanded(
+            child: _metricTile(
+              icon: Icons.water_drop_rounded,
+              iconColor: const Color(0xFF0284C7),
+              iconBg: const Color(0xFFE0F2FE),
+              cardBg: const Color(0xFFF0F9FF),
+              borderColor: const Color(0xFFBAE6FD),
+              number: '1',
+              title: 'Water Shortage',
+              subtitle: 'Critical supply',
+              subColor: const Color(0xFF0284C7),
+            ),
+          ),
+          gap,
+          Expanded(
+            child: _metricTile(
+              icon: Icons.medical_services_rounded,
+              iconColor: const Color(0xFFDC2626),
+              iconBg: const Color(0xFFFEE2E2),
+              cardBg: const Color(0xFFFEF5F5),
+              borderColor: const Color(0xFFFEE2E2),
+              number: '1',
+              title: 'Medical Support',
+              subtitle: 'Needed',
+              subColor: const Color(0xFFDC2626),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusMetricCard({
+    required IconData icon,
     required Color iconColor,
-    required Color iconBgColor,
-    required String statusText,
-    required Color statusTextColor,
-    required Color statusBgColor,
-    required Color statusBorderColor,
-    required Color progressColor,
+    required Color iconBg,
+    required Color cardBg,
+    required Color borderColor,
+    required String number,
+    required String title,
+    required String subtitle,
+    required Color subColor,
   }) {
-    final double ratio = (occupied / capacity).clamp(0.0, 1.0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconBg,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Icon(icon, color: iconColor, size: 19),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      number,
+                      style: TextStyle(
+                        color: iconColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: subColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortageItem(IconData icon, Color color, String count, String label) {
+    return Expanded(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  count,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernShelterCard(ShelterOccupancy s) {
+    final isNearCap = s.name.contains('St. Anthony') || s.status.toLowerCase().contains('near');
+    final isFull = s.name.contains('Valley Convent') || s.status.toUpperCase() == 'FULL' || s.available == 0;
+
+    final statusColor = isFull
+        ? const Color(0xFFDC2626)
+        : isNearCap
+            ? const Color(0xFFD97706)
+            : const Color(0xFF16A34A);
+
+    final statusBg = isFull
+        ? const Color(0xFFFEE2E2)
+        : isNearCap
+            ? const Color(0xFFFEF3C7)
+            : const Color(0xFFDCFCE7);
+
+    final statusText = isFull
+        ? 'Full'
+        : isNearCap
+            ? 'Near Capacity'
+            : 'Open';
+
+    final double ratio = s.capacity > 0 ? (s.occupied / s.capacity).clamp(0.0, 1.0) : 0.0;
+
+    final bool foodShortage = s.name.contains('Community Hall');
+    final bool waterShortage = s.name.contains('St. Anthony') || s.name.contains('Valley Convent');
+    final bool doctorShortage = s.name.contains('Valley Convent');
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Header: Circular Icon, Title, Location, Status Badge
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: iconBgColor,
+                  color: statusBg,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Icon(Icons.home_rounded, color: iconColor, size: 18),
+                  child: Icon(
+                    Icons.night_shelter_rounded,
+                    color: statusColor,
+                    size: 19,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -4923,21 +5357,21 @@ class _HomeScreenState extends State<HomeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      s.name,
                       style: const TextStyle(
                         color: Color(0xFF0F172A),
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
-                      sectorDistance,
+                      '${s.locationName} • ${s.distance}',
                       style: const TextStyle(
                         color: Color(0xFF64748B),
-                        fontSize: 10,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
@@ -4946,60 +5380,166 @@ class _HomeScreenState extends State<HomeScreen>
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                '$occupied / $capacity',
-                style: TextStyle(
-                  color: statusTextColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: ratio,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: progressColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: statusBgColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: statusBorderColor, width: 0.8),
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   statusText,
                   style: TextStyle(
-                    color: statusTextColor,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                    color: statusColor,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
+
+          const SizedBox(height: 14),
+
+          // 2. Capacity & Progress Bar Row
+          Row(
+            children: [
+              Text(
+                '${s.occupied} / ${s.capacity}',
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 7.0,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // 3. Provision tags (Food, Water, Doctor)
+          Row(
+            children: [
+              _buildAmenityChip(
+                Icons.restaurant_rounded,
+                foodShortage ? 'Food !' : 'Food ✓',
+                foodShortage,
+              ),
+              const SizedBox(width: 5),
+              _buildAmenityChip(
+                Icons.water_drop_rounded,
+                waterShortage ? 'Water !' : 'Water ✓',
+                waterShortage,
+                isWater: true,
+              ),
+              const SizedBox(width: 5),
+              _buildAmenityChip(
+                Icons.medical_services_rounded,
+                doctorShortage ? 'Doctor !' : 'Doctor ✓',
+                doctorShortage,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // 4. Centered View Details button with location pin
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReliefCampDetailScreen(shelterId: s.id, isAuthority: true),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(
+                    Icons.location_on_rounded,
+                    color: Color(0xFF007AEB),
+                    size: 15,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'View Details',
+                    style: TextStyle(
+                      color: Color(0xFF007AEB),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAmenityChip(IconData icon, String label, bool isShortage, {bool isWater = false}) {
+    final Color baseColor = isShortage
+        ? const Color(0xFFD97706)
+        : isWater
+            ? const Color(0xFF0284C7)
+            : const Color(0xFF16A34A);
+
+    final Color bgColor = isShortage
+        ? const Color(0xFFFFFBEB)
+        : isWater
+            ? const Color(0xFFF0F9FF)
+            : const Color(0xFFF0FDF4);
+
+    final Color borderColor = isShortage
+        ? const Color(0xFFFEF3C7)
+        : isWater
+            ? const Color(0xFFBAE6FD)
+            : const Color(0xFFDCFCE7);
+
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: borderColor, width: 0.8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 11, color: baseColor),
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: baseColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -5314,12 +5854,15 @@ class _HomeScreenState extends State<HomeScreen>
         if (didPop) return;
         _handleLogout();
       },
-      child: Scaffold(
-        backgroundColor: CmdColors.bg,
-        appBar: _buildTopBar(),
-        drawer: _buildDrawer(),
-        body: _buildCurrentView(),
-        bottomNavigationBar: _buildBottomCommandBar(),
+      child: RoleQuickSwitcherOverlay(
+        currentRole: CurrentDashboardRole.authority,
+        child: Scaffold(
+          backgroundColor: CmdColors.bg,
+          appBar: _buildTopBar(),
+          drawer: _buildDrawer(),
+          body: _buildCurrentView(),
+          bottomNavigationBar: _buildBottomCommandBar(),
+        ),
       ),
     );
   }
@@ -6045,7 +6588,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               onPressed: () {
                 Navigator.pop(context);
-                _showIssueEvacuationDialog();
+                    _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94);
               },
               child: const Text(
                 'ISSUE PRIORITY EVACUATION ORDER',
@@ -6129,7 +6672,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _showSosDetailSheet(_SosItem sos) {
+  void _showSosDetailSheet(SOSRequest sos) {
     showModalBottomSheet(
       context: context,
       backgroundColor: CmdColors.cardBg,
@@ -6150,9 +6693,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const Spacer(),
                 Text(
-                  sos.status,
+                  sos.status.name.toUpperCase(),
                   style: TextStyle(
-                    color: sos.status == 'Unassigned'
+                    color: sos.status == IncidentStatus.newSos
                         ? CmdColors.criticalRed
                         : CmdColors.warningOrange,
                     fontWeight: FontWeight.w800,
@@ -6161,9 +6704,9 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
             const SizedBox(height: 8),
-            Text('Affected: ${sos.people} People (${sos.elderly} Elderly, ${sos.children} Children)'),
-            Text('Medical Emergency: ${sos.medical ? "YES - Priority Urgent" : "None reported"}'),
-            Text('Received: ${sos.timeAgo}'),
+            Text('Affected: ${sos.peopleCount} People (${sos.elderlyCount} Elderly, ${sos.childrenCount} Children)'),
+            Text('Medical Emergency: ${sos.hasMedical ? "YES - Priority Urgent" : "None reported"}'),
+            Text('Received: ${sos.timeAgoFormatted}'),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -6196,7 +6739,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _showShelterDetailSheet(_ShelterItem sh) {
+  void _showShelterDetailSheet(ShelterOccupancy sh) {
     showModalBottomSheet(
       context: context,
       backgroundColor: CmdColors.cardBg,
@@ -6215,9 +6758,9 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 6),
             Text('Capacity: ${sh.occupied} / ${sh.capacity} (${sh.capacity - sh.occupied} spots available)'),
-            Text('Food Status: ${sh.food}'),
-            Text('Water Supply: ${sh.water}'),
-            Text('Medical Station: ${sh.medical ? "Active" : "None"}'),
+            Text('Food Status: ${sh.foodDetails}'),
+            Text('Water Supply: ${sh.waterDetails}'),
+            Text('Medical Station: ${sh.medicalAvailable ? "Active" : "None"}'),
             const SizedBox(height: 14),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -6239,7 +6782,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _showAssignTeamModal(_SosItem sos) {
+  void _showAssignTeamModal(SOSRequest sos) {
     showModalBottomSheet(
       context: context,
       backgroundColor: CmdColors.cardBg,
@@ -6257,7 +6800,7 @@ class _HomeScreenState extends State<HomeScreen>
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
             ),
             const SizedBox(height: 10),
-            ..._rescueTeams.map(
+            ...IncidentCoordinator.instance.responderTeams.map(
               (team) => ListTile(
                 leading: Icon(
                   Icons.directions_boat,
@@ -6266,18 +6809,51 @@ class _HomeScreenState extends State<HomeScreen>
                       : CmdColors.warningOrange,
                 ),
                 title: Text('${team.name} (${team.unit})'),
-                subtitle: Text('Status: ${team.status} · ETA: ${team.eta}'),
+                subtitle: Text('Status: ${team.status} · ETA: ${team.etaEstimate}'),
                 trailing: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: CmdColors.deepBlue,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () {
+                    final targetTeamId =
+                        team.teamId == 'T-04' || team.name == 'Team 04'
+                            ? 'SDRF-BRAVO-04'
+                            : (team.unit.contains('NDRF')
+                                ? 'NDRF-ALPHA-07'
+                                : 'LOCAL-RESCUE-09');
+
+                    final coordSos = IncidentCoordinator.instance.sosRequests
+                        .where((s) => s.id == sos.id)
+                        .firstOrNull;
+                    if (coordSos != null) {
+                      IncidentCoordinator.instance.assignMission(
+                        sosId: sos.id,
+                        teamId: targetTeamId,
+                      );
+                    } else {
+                      final newSos = IncidentCoordinator.instance.createSos(
+                        callerName: 'Citizen ${sos.id}',
+                        village: sos.village,
+                        latitude: LatLng(sos.latitude, sos.longitude).latitude,
+                        longitude: LatLng(sos.latitude, sos.longitude).longitude,
+                        peopleCount: sos.peopleCount,
+                        elderlyCount: sos.elderlyCount,
+                        childrenCount: sos.childrenCount,
+                        hasMedical: sos.hasMedical,
+                        emergencyType: 'Flash Flood Evacuation',
+                      );
+                      IncidentCoordinator.instance.assignMission(
+                        sosId: newSos.id,
+                        teamId: targetTeamId,
+                      );
+                    }
+
                     setState(() {
-                      sos.status = 'Team Assigned';
-                      sos.assignedTeam = '${team.name} (${team.unit})';
+                      sos.status = IncidentStatus.teamAssigned;
+                      sos.assignedTeamName = '${team.name} (${team.unit})';
                       team.status = 'On Mission';
-                      team.mission = 'Assigned to SOS ${sos.id}';
+                      team.currentMissionId = 'Assigned to SOS ${sos.id}';
                       _actionLogs.insert(
                         0,
                         '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, "0")} — Assigned ${team.name} to SOS ${sos.id} (${sos.village})',
@@ -6302,9 +6878,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _markSosResolved(_SosItem sos) {
+  void _markSosResolved(SOSRequest sos) {
+    IncidentCoordinator.instance.closeIncident(sos.id);
     setState(() {
-      sos.status = 'Resolved';
+      sos.status = IncidentStatus.closed;
       _actionLogs.insert(
         0,
         '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, "0")} — SOS ${sos.id} resolved by field team',
@@ -6315,51 +6892,149 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _showIssueEvacuationDialog() {
-    showDialog(
+  void _showIssueEvacuationDialog(BuildContext context, String areaName, int population, int vulnerable, String sosCount, String roadAccess, int score) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.campaign_rounded, color: CmdColors.criticalRed),
-            SizedBox(width: 8),
-            Text('Issue Evacuation Order'),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to broadcast an IMMEDIATE LEVEL 3 EVACUATION ORDER for Mawphlang Sector?\n\nThis will trigger sirens, Cell Broadcast SMS, and app notifications to 21,400 registered residents.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: CmdColors.criticalRed,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _situationStatus = 'CRITICAL';
-                _evacuatedPop += 150;
-                if (_evacuatedPop > _totalSectorPop) _evacuatedPop = _totalSectorPop;
-                _actionLogs.insert(
-                  0,
-                  '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, "0")} — Level 3 Evacuation Order re-broadcasted for Mawphlang Sector',
-                );
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: CmdColors.criticalRed,
-                  content: Text(
-                    'EVACUATION ORDER BROADCASTED ACROSS ALL CHANNELS!',
+      isScrollControlled: true,
+      backgroundColor: CmdColors.bg,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: MediaQuery.of(context).size.height * 0.85,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.warning_rounded, color: CmdColors.criticalRed, size: 28),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'EVACUATION PLAN REVIEW',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: CmdColors.textPrimary),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(height: 24, color: CmdColors.divider),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPlanRow('Area', areaName, isBold: true),
+                      _buildPlanRow('Population', '$population people'),
+                      _buildPlanRow('Vulnerable', '$vulnerable'),
+                      _buildPlanRow('Hazard', 'Flash Flood — Critical', valueColor: CmdColors.criticalRed),
+                      _buildPlanRow('Estimated Impact', '35 min', valueColor: CmdColors.warningOrange),
+                      const SizedBox(height: 16),
+                      
+                      const Text('Primary Shelter', style: TextStyle(fontWeight: FontWeight.w700, color: CmdColors.textSecondary)),
+                      const SizedBox(height: 4),
+                      const Text('Mawphlang Community Centre\n312 / 500 occupied\n188 spaces available', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+
+                      const Text('Secondary Shelter', style: TextStyle(fontWeight: FontWeight.w700, color: CmdColors.textSecondary)),
+                      const SizedBox(height: 4),
+                      const Text('Govt. High School\n120 / 400 occupied', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 16),
+
+                      _buildPlanRow('Recommended Route', 'Road C — SAFE (4.2 km)', valueColor: CmdColors.safeGreen),
+                      _buildPlanRow('Avoid', 'Eastern Bridge — Unsafe', valueColor: CmdColors.criticalRed),
+                      const SizedBox(height: 16),
+                      
+                      const Text('Available Teams', style: TextStyle(fontWeight: FontWeight.w700, color: CmdColors.textSecondary)),
+                      const SizedBox(height: 4),
+                      const Text('• SDRF Bravo — 2.1 km\n• NDRF Alpha — 4.8 km\n• Local Rescue 03 — 3.4 km', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
                   ),
                 ),
-              );
-            },
-            child: const Text('CONFIRM BROADCAST'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: CmdColors.divider),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel', style: TextStyle(color: CmdColors.textPrimary, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CmdColors.criticalRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        // Create backend operation
+                        final op = EvacuationOperation(
+                          id: 'EVAC-2026-041',
+                          areaName: areaName,
+                          targetPopulation: population,
+                          primaryShelter: 'Mawphlang Community Centre',
+                          safeRoute: 'Road C',
+                          missions: [
+                            ResponderMission(id: 'RS-204', clusterName: 'North Cluster', targetPopulation: 820, assignedTeam: 'SDRF Bravo 04'),
+                            ResponderMission(id: 'RS-205', clusterName: 'Riverfront Cluster', targetPopulation: 640, assignedTeam: 'NDRF Alpha 02'),
+                            ResponderMission(id: 'RS-206', clusterName: 'School / Market Cluster', targetPopulation: 760, assignedTeam: 'Local Rescue 03'),
+                            ResponderMission(id: 'RS-207', clusterName: 'Vulnerable Population', targetPopulation: 620, assignedTeam: 'Medical + SDRF Team'),
+                          ],
+                        );
+                        IncidentCoordinator.instance.issueEvacuationOrder(op);
+                        
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: CmdColors.criticalRed,
+                            content: Text('EVACUATION ORDER ISSUED FOR $areaName!'),
+                          ),
+                        );
+                      },
+                      child: const Text('ISSUE EVACUATION ORDER', style: TextStyle(fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPlanRow(String label, String value, {Color? valueColor, bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: CmdColors.textSecondary, fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+                color: valueColor ?? CmdColors.textPrimary,
+                fontSize: 14,
+              ),
+            ),
           ),
         ],
       ),
@@ -6449,13 +7124,13 @@ class _HomeScreenState extends State<HomeScreen>
                 '1. POPULATION & EVACUATION SUMMARY:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
-              Text('• Total At Risk: 12,480 people across 3 villages\n• Evacuated: $_evacuatedPop (67% of Sector A)\n• Remaining: ${_totalSectorPop - _evacuatedPop}\n• Active SOS: ${_sosList.where((s) => s.status != "Resolved").length}'),
+              Text('• Total At Risk: 12,480 people across 3 villages\n• Evacuated: $_evacuatedPop (67% of Sector A)\n• Remaining: ${_totalSectorPop - _evacuatedPop}\n• Active SOS: ${IncidentCoordinator.instance.sosRequests.where((s) => s.status != "Resolved").length}'),
               const SizedBox(height: 8),
               const Text(
                 '2. OPERATIONAL DEPLOYMENTS:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
-              Text('• Rescue Teams Active: ${_rescueTeams.length} (Team 02 deployed to Mawphlang)\n• Shelters Active: ${_shelters.length} (2 near capacity, 1 full)\n• Critical Lifeline: Route A verified operational'),
+              Text('• Rescue Teams Active: ${IncidentCoordinator.instance.responderTeams.length} (Team 02 deployed to Mawphlang)\n• Shelters Active: ${IncidentCoordinator.instance.shelters.length} (2 near capacity, 1 full)\n• Critical Lifeline: Route A verified operational'),
               const SizedBox(height: 8),
               const Text(
                 '3. CRITICAL RELIEF DEFICIT:',
@@ -6540,3 +7215,8 @@ class _MapLegendDot extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

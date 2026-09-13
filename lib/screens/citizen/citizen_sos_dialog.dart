@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/incident_coordinator.dart';
 
 class CitizenSosDialog extends StatefulWidget {
   final bool isHindi;
@@ -22,7 +23,7 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
   String _selectedReason = 'Trapped in Rising Water';
   bool _isTransmitting = false;
   bool _isSent = false;
-  final String _sosId = 'SOS-9482';
+  String _sosId = '#284';
 
   final List<Map<String, dynamic>> _reasons = [
     {
@@ -53,9 +54,24 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
 
   Future<void> _transmitSos() async {
     setState(() => _isTransmitting = true);
-    await Future.delayed(const Duration(milliseconds: 900));
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    final sos = IncidentCoordinator.instance.createSos(
+      callerName: 'Rohit',
+      village: 'Mawphlang Riverbank',
+      latitude: 25.4502,
+      longitude: 91.7592,
+      peopleCount: 6,
+      elderlyCount: 1,
+      childrenCount: 1,
+      hasMedical: _selectedReason.contains('Medical'),
+      emergencyType: _selectedReason,
+      message: 'Trapped near riverbank, flood water rising rapidly.',
+    );
+
     if (!mounted) return;
     setState(() {
+      _sosId = sos.id;
       _isTransmitting = false;
       _isSent = true;
     });

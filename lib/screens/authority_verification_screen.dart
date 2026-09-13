@@ -477,9 +477,11 @@ class _AuthorityVerificationScreenState
     double textScale,
   ) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: (16.0 * scaleW).clamp(12.0, 22.0),
-        vertical: (8.0 * scaleH).clamp(6.0, 12.0),
+      padding: EdgeInsets.only(
+        left: (16.0 * scaleW).clamp(12.0, 22.0),
+        right: (16.0 * scaleW).clamp(12.0, 22.0),
+        top: (32.0 * scaleH).clamp(24.0, 48.0),
+        bottom: (8.0 * scaleH).clamp(6.0, 12.0),
       ),
       child: Row(
         children: [
@@ -534,7 +536,7 @@ class _AuthorityVerificationScreenState
                         'GOVT OF INDIA • DISASTER AUTHORITY',
                         style: TextStyle(
                           color: const Color(0xFF013973),
-                          fontSize: (8.5 * textScale).clamp(7.5, 10.0),
+                          fontSize: (11.0 * textScale).clamp(10.0, 14.0),
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4,
                         ),
@@ -551,8 +553,8 @@ class _AuthorityVerificationScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: const Color(0xFF013973),
-                    fontSize: (16.5 * textScale).clamp(14.0, 19.0),
-                    fontWeight: FontWeight.w800,
+                    fontSize: (20.0 * textScale).clamp(18.0, 24.0),
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -814,6 +816,7 @@ class _AuthorityVerificationScreenState
 
     return Container(
       key: const ValueKey('otp_section'),
+      margin: EdgeInsets.only(top: (24.0 * scaleH).clamp(16.0, 32.0)),
       padding: EdgeInsets.symmetric(
         horizontal: (20.0 * scaleW).clamp(16.0, 26.0),
         vertical: (24.0 * scaleH).clamp(18.0, 30.0),
@@ -856,7 +859,7 @@ class _AuthorityVerificationScreenState
             'Official ID Phone Verification',
             style: TextStyle(
               color: const Color(0xFF013973),
-              fontSize: (18.5 * textScale).clamp(16.0, 22.0),
+              fontSize: (21.5 * textScale).clamp(18.0, 26.0),
               fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
             ),
@@ -867,7 +870,7 @@ class _AuthorityVerificationScreenState
             textAlign: TextAlign.center,
             style: TextStyle(
               color: const Color(0xFF537392),
-              fontSize: (12.0 * textScale).clamp(10.5, 14.0),
+              fontSize: (14.0 * textScale).clamp(12.5, 16.0),
               fontWeight: FontWeight.w500,
               height: 1.35,
             ),
@@ -957,86 +960,153 @@ class _AuthorityVerificationScreenState
   // OTP DIGIT BOX WIDGET
   // --------------------------------------------------------------------------
   Widget _buildOtpDigitBox(int index, double scaleMin, double textScale) {
-    final boxSize = (44.0 * scaleMin).clamp(38.0, 52.0);
+    final boxSize = (52.0 * scaleMin).clamp(48.0, 64.0);
     final bool isFilled = _otpControllers[index].text.isNotEmpty;
     final bool isFocused = _otpFocusNodes[index].hasFocus;
+    
+    final double outerRadius = (boxSize * 0.30).clamp(10.0, 13.0);
+    final double innerRadius = (outerRadius - 2.8).clamp(7.5, 10.5);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       width: boxSize,
       height: boxSize * 1.12,
-      transform: Matrix4.translationValues(0, isFocused ? -2.0 : 0.0, 0),
+      transform: Matrix4.translationValues(0, isFocused ? -2.5 : 0.0, 0),
       decoration: BoxDecoration(
-        color: isFocused
-            ? Colors.white
-            : (isFilled ? const Color(0xFFF1F8FE) : const Color(0xFFF8FAFC)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(outerRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isFocused
+              ? [
+                  const Color(0xFFF0F6FE),
+                  const Color(0xFFD6E7FC),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFE0EBF5),
+                ],
+        ),
         border: Border.all(
           color: isFocused
               ? const Color(0xFF007AEB)
-              : isFilled
-                  ? const Color(0xFF013973)
-                  : const Color(0xFFCBD5E1),
-          width: isFocused ? 2.0 : 1.2,
+              : (isFilled ? const Color(0xFFC4D5E7) : Colors.white),
+          width: isFocused ? 1.6 : 1.4,
         ),
-        boxShadow: isFocused
-            ? [
-                // Soft colored outline glow radiating around the OTP box
-                BoxShadow(
-                  color: const Color(0xFF007AEB).withValues(alpha: 0.28),
-                  blurRadius: 10,
-                  spreadRadius: 1.2,
-                  offset: const Offset(0, 0),
-                ),
-                BoxShadow(
-                  color: const Color(0xFF007AEB).withValues(alpha: 0.14),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ]
-            : (isFilled
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF013973).withValues(alpha: 0.12),
-                      blurRadius: 6,
-                      spreadRadius: 0.5,
-                      offset: const Offset(0, 0),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x04000000),
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ]),
+        boxShadow: [
+          // Soft elevated ambient drop shadow
+          BoxShadow(
+            color: isFocused
+                ? const Color(0xFF007AEB).withValues(alpha: 0.28)
+                : const Color(0xFF0B3A66).withValues(alpha: 0.14),
+            blurRadius: isFocused ? 11 : 8,
+            spreadRadius: isFocused ? 0.5 : 0,
+            offset: const Offset(0, 4),
+          ),
+          // Contact shadow at the bottom edge
+          BoxShadow(
+            color: const Color(0xFF002B54).withValues(alpha: 0.07),
+            blurRadius: 2.5,
+            offset: const Offset(0, 1.5),
+          ),
+          // Top rim specular highlight
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.95),
+            blurRadius: 3,
+            offset: const Offset(0, -1),
+          ),
+        ],
       ),
-      child: Center(
-        child: TextField(
-          controller: _otpControllers[index],
-          focusNode: _otpFocusNodes[index],
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          maxLength: 1,
-          style: TextStyle(
-            color: const Color(0xFF013973),
-            fontSize: (19.0 * textScale).clamp(16.0, 23.0),
-            fontWeight: FontWeight.w900,
+      padding: const EdgeInsets.all(3.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(innerRadius),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isFocused
+                ? [
+                    const Color(0xFFF3F8FE),
+                    Colors.white,
+                  ]
+                : (isFilled
+                    ? [
+                        const Color(0xFFE8F0F7),
+                        const Color(0xFFF7FAFD),
+                        Colors.white,
+                      ]
+                    : [
+                        const Color(0xFFE9F0F7),
+                        const Color(0xFFF4F8FC),
+                        const Color(0xFFFAFCFE),
+                      ]),
+            stops: isFocused
+                ? const [0.0, 1.0]
+                : const [0.0, 0.42, 1.0],
           ),
-          decoration: const InputDecoration(
-            counterText: '',
-            border: InputBorder.none,
-            isDense: true,
+          border: Border.all(
+            color: isFocused
+                ? const Color(0xFFB4D5F8)
+                : const Color(0xFFD6E2EE),
+            width: 0.9,
           ),
-          onChanged: (val) {
-            if (val.isNotEmpty && index < _otpLength - 1) {
-              _otpFocusNodes[index + 1].requestFocus();
-            } else if (val.isEmpty && index > 0) {
-              _otpFocusNodes[index - 1].requestFocus();
-            }
-            setState(() {});
-          },
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Underlying TextField for keyboard handling
+            TextField(
+              controller: _otpControllers[index],
+              focusNode: _otpFocusNodes[index],
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              showCursor: false,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              style: const TextStyle(color: Colors.transparent),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+              ),
+              onChanged: (val) {
+                if (val.isNotEmpty && index < _otpLength - 1) {
+                  _otpFocusNodes[index + 1].requestFocus();
+                } else if (val.isEmpty && index > 0) {
+                  _otpFocusNodes[index - 1].requestFocus();
+                }
+                setState(() {});
+              },
+            ),
+
+            // Visible smooth animated digit
+            IgnorePointer(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.85, end: 1.0).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Text(
+                  _otpControllers[index].text,
+                  key: ValueKey(_otpControllers[index].text),
+                  style: TextStyle(
+                    color: const Color(0xFF0F172A),
+                    fontSize: (24.0 * textScale).clamp(20.0, 28.0),
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1345,6 +1415,8 @@ class _AuthorityVerificationScreenState
     double scaleMin,
     double textScale,
   ) {
+    final isOtpFilled = _otpControllers.every((c) => c.text.isNotEmpty);
+    
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -1354,14 +1426,14 @@ class _AuthorityVerificationScreenState
               ? const Color(0xFF16A34A)
               : const Color(0xFF013973),
           foregroundColor: Colors.white,
-          minimumSize: Size(double.infinity, (48.0 * scaleH).clamp(44.0, 56.0)),
+          minimumSize: Size(double.infinity, (62.0 * scaleH).clamp(58.0, 72.0)),
           padding: EdgeInsets.symmetric(
-            vertical: (14.0 * scaleH).clamp(12.0, 18.0),
+            vertical: (16.0 * scaleH).clamp(14.0, 22.0),
             horizontal: 16,
           ),
           elevation: 3,
           shadowColor: const Color(0xFF013973).withValues(alpha: 0.35),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: _isOtpVerifying
             ? const SizedBox(
@@ -1380,7 +1452,7 @@ class _AuthorityVerificationScreenState
                           size: 20, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        'Access Granted ✓',
+                        'Verified - Access Granted ✓',
                         style:
                             TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                       ),
@@ -1394,13 +1466,30 @@ class _AuthorityVerificationScreenState
                         Text(
                           'Verify & Access Command Center',
                           style: TextStyle(
-                            fontSize: (14.5 * textScale).clamp(12.5, 16.5),
+                            fontSize: (18.0 * textScale).clamp(16.0, 22.0),
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.3,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.lock_open_rounded, size: 19),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 600),
+                          switchInCurve: Curves.elasticOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                              scale: animation,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            isOtpFilled
+                                ? Icons.lock_open_rounded
+                                : Icons.lock_outline_rounded,
+                            key: ValueKey<bool>(isOtpFilled),
+                            size: 24,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1408,3 +1497,4 @@ class _AuthorityVerificationScreenState
     );
   }
 }
+

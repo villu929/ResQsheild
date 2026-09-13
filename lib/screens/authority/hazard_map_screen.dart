@@ -147,6 +147,9 @@ class _HazardMapScreenState extends State<HazardMapScreen> {
               initialZoom: 11.0,
               minZoom: 8.0,
               maxZoom: 17.0,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+              ),
             ),
             children: [
               TileLayer(

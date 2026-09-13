@@ -81,6 +81,9 @@ class _CitizenSafeRouteViewState extends State<CitizenSafeRouteView> {
                   options: MapOptions(
                     initialCenter: const LatLng(23.7990, 86.4340),
                     initialZoom: 14.5,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+                    ),
                   ),
                   children: [
                     TileLayer(

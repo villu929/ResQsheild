@@ -7,14 +7,15 @@ import 'citizen_safe_route_view.dart';
 import 'citizen_shelters_view.dart';
 import 'citizen_hazard_report_view.dart';
 import 'citizen_alerts_view.dart';
+import 'citizen_medical_centers_view.dart';
 import '../role_selection_screen.dart';
+import '../../models/incident_models.dart';
+import '../../services/incident_coordinator.dart';
+import '../../services/medical_api_service.dart';
+import '../../services/shelter_api_service.dart';
+import '../../widgets/role_quick_switcher.dart';
 
-enum CitizenThreatLevel {
-  safe,
-  watch,
-  warning,
-  evacuation,
-}
+enum CitizenThreatLevel { safe, watch, warning, evacuation }
 
 class _DosPhaseInfo {
   final String badgeEn;
@@ -86,8 +87,18 @@ class _ScenicWatermarkPainter extends CustomPainter {
     // Distant hill curve
     final path1 = Path();
     path1.moveTo(0, size.height * 0.40);
-    path1.quadraticBezierTo(size.width * 0.20, size.height * 0.22, size.width * 0.45, size.height * 0.50);
-    path1.quadraticBezierTo(size.width * 0.70, size.height * 0.75, size.width, size.height * 0.65);
+    path1.quadraticBezierTo(
+      size.width * 0.20,
+      size.height * 0.22,
+      size.width * 0.45,
+      size.height * 0.50,
+    );
+    path1.quadraticBezierTo(
+      size.width * 0.70,
+      size.height * 0.75,
+      size.width,
+      size.height * 0.65,
+    );
     path1.lineTo(size.width, size.height);
     path1.lineTo(0, size.height);
     path1.close();
@@ -96,14 +107,29 @@ class _ScenicWatermarkPainter extends CustomPainter {
     // Midground hill curve
     final path2 = Path();
     path2.moveTo(0, size.height * 0.62);
-    path2.quadraticBezierTo(size.width * 0.16, size.height * 0.42, size.width * 0.38, size.height * 0.68);
-    path2.quadraticBezierTo(size.width * 0.60, size.height * 0.88, size.width * 0.82, size.height);
+    path2.quadraticBezierTo(
+      size.width * 0.16,
+      size.height * 0.42,
+      size.width * 0.38,
+      size.height * 0.68,
+    );
+    path2.quadraticBezierTo(
+      size.width * 0.60,
+      size.height * 0.88,
+      size.width * 0.82,
+      size.height,
+    );
     path2.lineTo(0, size.height);
     path2.close();
     canvas.drawPath(path2, hillPaint2);
 
     // Stylized conifer pine trees on bottom left
-    void drawPineTree(double x, double baseY, double treeWidth, double treeHeight) {
+    void drawPineTree(
+      double x,
+      double baseY,
+      double treeWidth,
+      double treeHeight,
+    ) {
       final p = Path();
       p.moveTo(x, baseY - treeHeight);
       p.lineTo(x + treeWidth * 0.32, baseY - treeHeight * 0.58);
@@ -131,7 +157,8 @@ class _ScenicWatermarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ScenicWatermarkPainter oldDelegate) => oldDelegate.baseColor != baseColor;
+  bool shouldRepaint(covariant _ScenicWatermarkPainter oldDelegate) =>
+      oldDelegate.baseColor != baseColor;
 }
 
 final List<_DosDisasterInfo> _dosDisasterList = [
@@ -213,8 +240,10 @@ final List<_DosDisasterInfo> _dosDisasterList = [
     titleHi: 'चक्रवात',
     bannerTitleEn: "Do's & Don'ts Before, During & After Cyclone",
     bannerTitleHi: 'चक्रवात: क्या करें और क्या न करें',
-    bannerSubtitleEn: 'High-speed destructive winds. Stay indoors in secure rooms.',
-    bannerSubtitleHi: 'अत्यंत तेज विनाशकारी हवाएं। सुरक्षित पक्के कमरों में रहें।',
+    bannerSubtitleEn:
+        'High-speed destructive winds. Stay indoors in secure rooms.',
+    bannerSubtitleHi:
+        'अत्यंत तेज विनाशकारी हवाएं। सुरक्षित पक्के कमरों में रहें।',
     icon: Icons.cyclone_rounded,
     gradient: const [Color(0xFF047857), Color(0xFF10B981)],
     primaryColor: const Color(0xFF047857),
@@ -284,8 +313,10 @@ final List<_DosDisasterInfo> _dosDisasterList = [
     titleHi: 'भूस्खलन',
     bannerTitleEn: "Do's and Don'ts during Landslide",
     bannerTitleHi: 'भूस्खलन: क्या करें और क्या न करें',
-    bannerSubtitleEn: 'Unstable hill slopes and mudslides. Move away from steep paths.',
-    bannerSubtitleHi: 'पहाड़ी ढलानों पर मिट्टी का खिसकना। ढलान वाले रास्तों से दूर रहें।',
+    bannerSubtitleEn:
+        'Unstable hill slopes and mudslides. Move away from steep paths.',
+    bannerSubtitleHi:
+        'पहाड़ी ढलानों पर मिट्टी का खिसकना। ढलान वाले रास्तों से दूर रहें।',
     icon: Icons.landscape_rounded,
     gradient: const [Color(0xFFC2410C), Color(0xFFEA580C)],
     primaryColor: const Color(0xFFC2410C),
@@ -355,7 +386,8 @@ final List<_DosDisasterInfo> _dosDisasterList = [
     titleHi: 'वज्रपात',
     bannerTitleEn: "Do's and Don'ts during Lightning",
     bannerTitleHi: 'आकाशीय बिजली: क्या करें और क्या न करें',
-    bannerSubtitleEn: 'When thunder roars, go indoors. Seek safe shelter immediately.',
+    bannerSubtitleEn:
+        'When thunder roars, go indoors. Seek safe shelter immediately.',
     bannerSubtitleHi: 'जब बिजली चमके और बादल गरजे, तुरंत पक्के मकान में जाएं।',
     icon: Icons.flash_on_rounded,
     gradient: const [Color(0xFF6D28D9), Color(0xFF9333EA)],
@@ -442,7 +474,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
   // Do's and Don'ts Carousel State (Auto-slides every 3.5s)
   int _dosDisasterIdx = 0; // 0: Flood, 1: Cyclone, 2: Landslide, 3: Lightning
-  int _dosPhaseIdx = 0;    // 0: Before, 1: During, 2: After
+  int _dosPhaseIdx = 0; // 0: Before, 1: During, 2: After
   Timer? _dosAutoSlideTimer;
 
   // Map Controllers
@@ -451,6 +483,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   late final MapController _rainMapController;
   bool _showRainRadar = true;
   String _fullMapFilter = 'All';
+
+  // API State
+  late Future<ShelterOccupancy?> _nearestShelterFuture;
+  late Future<MedicalCenterModel?> _nearestMedicalCenterFuture;
 
   // Key Coordinates (Local Basin)
   final LatLng _userPos = const LatLng(23.7957, 86.4304);
@@ -463,10 +499,42 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
   // Family Safety Data
   final List<Map<String, dynamic>> _familyMembers = [
-    {'name': 'Father', 'nameHi': 'पिताजी', 'status': 'Safe', 'statusHi': 'सुरक्षित', 'icon': Icons.elderly_rounded, 'isSafe': true, 'time': 'Updated 5m ago'},
-    {'name': 'Mother', 'nameHi': 'माताजी', 'status': 'Safe', 'statusHi': 'सुरक्षित', 'icon': Icons.face_3_rounded, 'isSafe': true, 'time': 'Updated 10m ago'},
-    {'name': 'Brother', 'nameHi': 'भाई', 'status': 'Last seen 15 min ago', 'statusHi': '15 मिनट पहले देखा गया', 'icon': Icons.boy_rounded, 'isSafe': false, 'time': 'Last seen 15m ago'},
-    {'name': 'Sister', 'nameHi': 'बहन', 'status': 'Safe', 'statusHi': 'सुरक्षित', 'icon': Icons.girl_rounded, 'isSafe': true, 'time': 'Updated 2m ago'},
+    {
+      'name': 'Father',
+      'nameHi': 'पिताजी',
+      'status': 'Safe',
+      'statusHi': 'सुरक्षित',
+      'icon': Icons.elderly_rounded,
+      'isSafe': true,
+      'time': 'Updated 5m ago',
+    },
+    {
+      'name': 'Mother',
+      'nameHi': 'माताजी',
+      'status': 'Safe',
+      'statusHi': 'सुरक्षित',
+      'icon': Icons.face_3_rounded,
+      'isSafe': true,
+      'time': 'Updated 10m ago',
+    },
+    {
+      'name': 'Brother',
+      'nameHi': 'भाई',
+      'status': 'Last seen 15 min ago',
+      'statusHi': '15 मिनट पहले देखा गया',
+      'icon': Icons.boy_rounded,
+      'isSafe': false,
+      'time': 'Last seen 15m ago',
+    },
+    {
+      'name': 'Sister',
+      'nameHi': 'बहन',
+      'status': 'Safe',
+      'statusHi': 'सुरक्षित',
+      'icon': Icons.girl_rounded,
+      'isSafe': true,
+      'time': 'Updated 2m ago',
+    },
   ];
 
   // Active Alerts List
@@ -498,7 +566,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'distanceHi': '6.1 किमी ऊपर की ओर',
       'time': 'Updated 18 min ago',
       'timeHi': '18 मिनट पहले अपडेट',
-      'impact': 'River velocity elevated. Avoid low-ground causeways and riverbanks.',
+      'impact':
+          'River velocity elevated. Avoid low-ground causeways and riverbanks.',
       'impactHi': 'नदी की गति तेज है। पुल और नदी तट से दूर रहें।',
       'badge': 'DAM SURGE',
       'badgeHi': 'डैम सर्ज',
@@ -518,8 +587,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'distanceHi': '1.2 किमी दूर • बेसिन क्षेत्र',
       'time': 'Updated 2 min ago',
       'timeHi': '2 मिनट पहले अपडेट',
-      'impact': 'Stay indoors. Avoid open fields, tall trees and electrical poles.',
-      'impactHi': 'घर के अंदर रहें। खुले मैदान, ऊंचे पेड़ और खंभों से दूर रहें।',
+      'impact':
+          'Stay indoors. Avoid open fields, tall trees and electrical poles.',
+      'impactHi':
+          'घर के अंदर रहें। खुले मैदान, ऊंचे पेड़ और खंभों से दूर रहें।',
       'badge': 'THUNDERSTORM',
       'badgeHi': 'वज्रपात चेतावनी',
       'issued': 'Issued 30m ago',
@@ -538,7 +609,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       'distanceHi': '3.5 किमी दूर • पुराना हाईवे',
       'time': 'Updated 12 min ago',
       'timeHi': '12 मिनट पहले अपडेट',
-      'impact': 'Water height 2.5ft over causeway. Route blocked for light vehicles.',
+      'impact':
+          'Water height 2.5ft over causeway. Route blocked for light vehicles.',
       'impactHi': 'पुलिया पर 2.5 फीट पानी। हल्के वाहनों का आवागमन बंद।',
       'badge': 'ROAD BLOCKED',
       'badgeHi': 'मार्ग अवरुद्ध',
@@ -564,7 +636,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     },
     {
       'title': 'Relief Shelter Open: Govt Senior Secondary',
-      'body': 'Capacity 72% full. Clean food, drinking water & doctors available.',
+      'body':
+          'Capacity 72% full. Clean food, drinking water & doctors available.',
       'type': 'Shelter',
       'time': '25 mins ago',
       'isRead': false,
@@ -584,6 +657,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     _mapController = MapController();
     _fullMapController = MapController();
     _rainMapController = MapController();
+
+    // Fetch data from fake API
+    _nearestShelterFuture = ShelterApiService.getNearestShelter();
+    _nearestMedicalCenterFuture = MedicalApiService.getNearestMedicalCenter();
+
+    IncidentCoordinator.instance.addListener(_onIncidentCoordChanged);
     if (!_isTestEnvironment()) {
       _startDosTimer();
     }
@@ -591,8 +670,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
   @override
   void dispose() {
+    IncidentCoordinator.instance.removeListener(_onIncidentCoordChanged);
     _dosAutoSlideTimer?.cancel();
     super.dispose();
+  }
+
+  void _onIncidentCoordChanged() {
+    if (mounted) {
+      setState(() {
+        final activeSos = IncidentCoordinator.instance.activeCitizenSos;
+        final activeEvacs = IncidentCoordinator.instance.activeEvacuations;
+        
+        if (activeSos != null && activeSos.status != IncidentStatus.closed) {
+          _isSosActive = true;
+          _threatLevel = CitizenThreatLevel.evacuation;
+        } else if (activeEvacs.isNotEmpty) {
+          _threatLevel = CitizenThreatLevel.evacuation;
+        } else if (activeSos?.status == IncidentStatus.closed) {
+          _isSosActive = false;
+        }
+      });
+    }
   }
 
   bool _isTestEnvironment() {
@@ -602,7 +700,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _startDosTimer() {
     _dosAutoSlideTimer?.cancel();
     if (_isTestEnvironment()) return;
-    _dosAutoSlideTimer = Timer.periodic(const Duration(milliseconds: 4500), (_) {
+    _dosAutoSlideTimer = Timer.periodic(const Duration(milliseconds: 4500), (
+      _,
+    ) {
       if (!mounted) return;
       _advanceDosSlide();
     });
@@ -625,7 +725,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         _dosPhaseIdx--;
       } else {
         _dosPhaseIdx = 2;
-        _dosDisasterIdx = (_dosDisasterIdx - 1 + _dosDisasterList.length) % _dosDisasterList.length;
+        _dosDisasterIdx =
+            (_dosDisasterIdx - 1 + _dosDisasterList.length) %
+            _dosDisasterList.length;
       }
     });
     _startDosTimer();
@@ -684,11 +786,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           _navigateToRoles();
         }
       },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFE9F4FB),
-        appBar: _buildTopAppBar(),
-        body: _buildCurrentTabBody(),
-        bottomNavigationBar: _buildBottomNavigationBar(),
+      child: RoleQuickSwitcherOverlay(
+        currentRole: CurrentDashboardRole.citizen,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFE9F4FB),
+          appBar: _buildTopAppBar(),
+          body: _buildCurrentTabBody(),
+          bottomNavigationBar: _buildBottomNavigationBar(),
+        ),
       ),
     );
   }
@@ -720,7 +825,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       titleSpacing: 8,
       leadingWidth: 44,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
+        icon: const Icon(
+          Icons.arrow_back_rounded,
+          color: Color(0xFF0F172A),
+          size: 22,
+        ),
         tooltip: _isHindi ? 'भूमिका चयन' : 'Back to Roles',
         onPressed: _navigateToRoles,
       ),
@@ -746,7 +855,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.shield_rounded, color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.shield_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 8),
           Flexible(
@@ -765,7 +878,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  _isHindi ? 'सतर्क रहें • सुरक्षित रहें • तैयार रहें' : 'Be Aware • Be Safe • Be Prepared',
+                  _isHindi
+                      ? 'सतर्क रहें • सुरक्षित रहें • तैयार रहें'
+                      : 'Be Aware • Be Safe • Be Prepared',
                   style: const TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 9.5,
@@ -794,7 +909,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF2563EB)),
+                const Icon(
+                  Icons.location_on_rounded,
+                  size: 14,
+                  color: Color(0xFF2563EB),
+                ),
                 const SizedBox(width: 3),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 95),
@@ -808,7 +927,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: Color(0xFF64748B),
+                ),
               ],
             ),
           ),
@@ -819,7 +942,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         GestureDetector(
           onTap: () {
             setState(() => _isHindi = !_isHindi);
-            _showMessage(_isHindi ? 'भाषा बदली गई: हिंदी' : 'Language switched to English');
+            _showMessage(
+              _isHindi ? 'भाषा बदली गई: हिंदी' : 'Language switched to English',
+            );
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 12),
@@ -846,7 +971,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B), size: 21),
+              icon: const Icon(
+                Icons.notifications_none_rounded,
+                color: Color(0xFF1E293B),
+                size: 21,
+              ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               onPressed: _showNotificationsSheet,
@@ -863,7 +992,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ),
                 child: Text(
                   '${_notifications.length}',
-                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -884,7 +1017,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
-              child: const Icon(Icons.person_rounded, size: 18, color: Color(0xFF2563EB)),
+              child: const Icon(
+                Icons.person_rounded,
+                size: 18,
+                color: Color(0xFF2563EB),
+              ),
             ),
           ),
         ),
@@ -901,8 +1038,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         // Offline Mesh Banner
         _buildOfflineBanner(),
 
-        // Active SOS Banner (if SOS sent)
-        if (_isSosActive) _buildActiveSosBanner(),
+        // Active SOS Banner & Hazard Notice Banner
+        _buildActiveSosBanner(),
+        _buildHazardNoticeBanner(),
 
         // Scrollable Dashboard Content
         Expanded(
@@ -915,7 +1053,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 _buildUnifiedSafetyMapCard(),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -939,6 +1080,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                       const SizedBox(height: 16),
 
+                      // 10. NEARBY MEDICAL / HOSPITAL HELP
+                      _buildMedicalHelpCard(),
+
+                      const SizedBox(height: 16),
+
                       // 6. FAMILY SAFETY CARD
                       _buildFamilySafetyCard(),
 
@@ -956,11 +1102,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                       // 9. LOCAL ROAD CONDITIONS
                       _buildRoadStatusCard(),
-
-                      const SizedBox(height: 16),
-
-                      // 10. NEARBY MEDICAL / HOSPITAL HELP
-                      _buildMedicalHelpCard(),
 
                       const SizedBox(height: 16),
 
@@ -1026,7 +1167,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.wifi_off_rounded, color: Color(0xFFF87171), size: 15),
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  color: Color(0xFFF87171),
+                  size: 15,
+                ),
                 const SizedBox(width: 5),
                 Text(
                   _isHindi ? 'ऑफलाइन कार्यशील' : 'Works offline',
@@ -1037,7 +1182,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   ),
                 ),
                 const SizedBox(width: 2),
-                const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 16),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white70,
+                  size: 16,
+                ),
               ],
             ),
           ),
@@ -1047,12 +1196,109 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // ACTIVE SOS STATE BANNER
+  // ACTIVE SOS STATE BANNER (DYNAMICALLY SYNCED WITH AUTHORITY & RESPONDER)
   // --------------------------------------------------------------------------
   Widget _buildActiveSosBanner() {
+    final activeSos = IncidentCoordinator.instance.activeCitizenSos;
+    final activeEvacs = IncidentCoordinator.instance.activeEvacuations;
+    final activeEvac = activeEvacs.isNotEmpty ? activeEvacs.first : null;
+
+    if (activeSos == null && activeEvac == null && !_isSosActive) return const SizedBox.shrink();
+
+    String title;
+    String subtitle;
+    Color bannerBg;
+
+    if (activeEvac != null) {
+      title = _isHindi
+          ? '🚨 निकासी आदेश: ${activeEvac.areaName}'
+          : '🚨 EVACUATION ORDER: ${activeEvac.areaName}';
+      subtitle = _isHindi
+          ? 'सुरक्षित मार्ग: ${activeEvac.safeRoute} • गंतव्य: ${activeEvac.primaryShelter}'
+          : 'Safe Route: ${activeEvac.safeRoute} • Dest: ${activeEvac.primaryShelter}';
+      bannerBg = const Color(0xFFDC2626);
+    } else if (activeSos != null) {
+      switch (activeSos.status) {
+        case IncidentStatus.newSos:
+          title = _isHindi
+              ? '🚨 आपातकालीन SOS सक्रिय (${activeSos.id})'
+              : '🚨 EMERGENCY SOS ACTIVE (${activeSos.id})';
+          subtitle = _isHindi
+              ? 'स्थान एनडीआरएफ एवं राज्य नियंत्रण कक्ष को भेजा गया • सहायता दल खोजा जा रहा है'
+              : 'GPS Beacon Transmitted to State Command • Seeking nearest unit';
+          bannerBg = const Color(0xFFE92828);
+          break;
+        case IncidentStatus.authorityAcknowledged:
+        case IncidentStatus.teamAssigned:
+          title = _isHindi
+              ? '🚨 बचाव दल नियुक्त (${activeSos.assignedTeamName ?? "Team 04"})'
+              : '🚨 RESCUE TEAM ASSIGNED (${activeSos.assignedTeamName ?? "Team 04"})';
+          subtitle = _isHindi
+              ? 'बचाव दल को अनुरोध प्राप्त हुआ • अनुमानित आगमन: 9 मिनट'
+              : 'Assigned to ${activeSos.assignedTeamName ?? "Team 04"} • Est. arrival: ~9 min';
+          bannerBg = const Color(0xFF0284C7);
+          break;
+        case IncidentStatus.responderAccepted:
+          title = _isHindi
+              ? '✓ दल ने अनुरोध स्वीकार किया (Team 04)'
+              : '✓ RESCUE TEAM ACCEPTED • PREPARING';
+          subtitle = _isHindi
+              ? 'एसडीआरएफ ब्रावो ने मिशन स्वीकार किया • आगमन: ~9 मिनट'
+              : 'SDRF Bravo accepted mission • Gear loaded • ETA: ~9 min';
+          bannerBg = const Color(0xFF2563EB);
+          break;
+        case IncidentStatus.teamReady:
+        case IncidentStatus.enRoute:
+          title = _isHindi
+              ? '🚒 बचाव दल रवाना (EN ROUTE)'
+              : '🚒 RESCUE TEAM EN ROUTE • ON THE WAY';
+          subtitle = _isHindi
+              ? 'बचाव दल आपके स्थान की ओर बढ़ रहा है • अनुमानित समय: 7-9 मिनट'
+              : 'Team moving to Mawphlang Riverbank • Approaching (Speed 24 km/h)';
+          bannerBg = const Color(0xFF0D9488);
+          break;
+        case IncidentStatus.onSite:
+        case IncidentStatus.rescueInProgress:
+          title = _isHindi
+              ? '📍 बचाव दल आपके स्थान पर पहुँच गया'
+              : '📍 RESCUE TEAM HAS REACHED YOUR LOCATION';
+          subtitle = _isHindi
+              ? 'सुरक्षित निकासी एवं प्राथमिक उपचार प्रक्रिया जारी है'
+              : 'Responders are on-site • Evacuation & medical triage in progress';
+          bannerBg = const Color(0xFF16A34A);
+          break;
+        case IncidentStatus.transporting:
+          title = _isHindi
+              ? '🏠 राहत शिविर की ओर सुरक्षित परिवहन'
+              : '🏠 TRANSPORTING TO SAFE SHELTER';
+          subtitle = _isHindi
+              ? 'मावफ्लांग रिलीफ सेंटर की ओर रवाना • रहने व भोजन की व्यवस्था उपलब्ध'
+              : 'En route to Mawphlang Relief Centre • Beds & meals ready';
+          bannerBg = const Color(0xFF6366F1);
+          break;
+        case IncidentStatus.completed:
+          title = _isHindi
+              ? '✓ आपातकालीन अनुरोध सुरक्षित संपन्न'
+              : '✓ EMERGENCY REQUEST RESOLVED';
+          subtitle = _isHindi
+              ? 'सभी नागरिक सुरक्षित स्थान पर पहुँचा दिए गए हैं'
+              : 'All victims safely sheltered. Relief operations complete.';
+          bannerBg = const Color(0xFF10B981);
+          break;
+        case IncidentStatus.closed:
+          return const SizedBox.shrink();
+      }
+    } else {
+      title = _isHindi ? '🚨 आपातकालीन SOS सक्रिय' : '🚨 EMERGENCY SOS ACTIVE';
+      subtitle = _isHindi
+          ? 'स्थान राहत दल से साझा किया गया • स्थिति: बचाव दल रवाना'
+          : 'GPS shared with Response Unit • Status: Rescue team dispatched';
+      bannerBg = const Color(0xFFE92828);
+    }
+
     return Container(
       width: double.infinity,
-      color: const Color(0xFFE92828),
+      color: bannerBg,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -1063,13 +1309,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isHindi ? '🚨 आपातकालीन SOS सक्रिय' : '🚨 EMERGENCY SOS ACTIVE',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
                 ),
                 Text(
-                  _isHindi
-                      ? 'स्थान राहत दल से साझा किया गया • स्थिति: बचाव दल रवाना'
-                      : 'GPS shared with Response Unit • Status: Rescue team dispatched',
+                  subtitle,
                   style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ],
@@ -1077,16 +1325,25 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           ),
           TextButton(
             onPressed: () {
+              if (activeSos != null) {
+                IncidentCoordinator.instance.closeIncident(activeSos.id);
+              }
               setState(() => _isSosActive = false);
-              _showMessage(_isHindi ? 'SOS समाप्त किया गया' : 'SOS Cancelled');
+              _showMessage(
+                _isHindi ? 'SOS समाप्त किया गया' : 'SOS Resolved / Closed',
+              );
             },
             style: TextButton.styleFrom(
               backgroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             ),
             child: Text(
-              _isHindi ? 'रद्द करें' : 'Resolve',
-              style: const TextStyle(color: Color(0xFFE92828), fontWeight: FontWeight.bold, fontSize: 11),
+              _isHindi ? 'समाप्त' : 'Dismiss',
+              style: TextStyle(
+                color: bannerBg,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
             ),
           ),
         ],
@@ -1094,6 +1351,38 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     );
   }
 
+  Widget _buildHazardNoticeBanner() {
+    final hazards = IncidentCoordinator.instance.hazardReports;
+    if (hazards.isEmpty) return const SizedBox.shrink();
+    final latest = hazards.first;
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFEF3C7),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Color(0xFFD97706),
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _isHindi
+                  ? 'चेतावनी: ${latest.title} असुरक्षित • मार्ग डायवर्जन: ${latest.bypassRoute}'
+                  : '⚠️ Evacuation Route Update: ${latest.title} reported unsafe • Bypass via ${latest.bypassRoute}',
+              style: const TextStyle(
+                color: Color(0xFF92400E),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // --------------------------------------------------------------------------
   // 2. TOP UNIFIED SAFETY STATUS & LIVE MAP CARD (EXACT SCREENSHOT DESIGN)
@@ -1149,7 +1438,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         borderColor = const Color(0xFFFCA5A5);
         badgeColor = const Color(0xFFFEE2E2);
         badgeTextColor = const Color(0xFFDC2626);
-        statusTitle = _isHindi ? 'तुरंत सुरक्षित स्थान जाएं' : 'Evacuate immediately';
+        statusTitle = _isHindi
+            ? 'तुरंत सुरक्षित स्थान जाएं'
+            : 'Evacuate immediately';
         statusDesc = _isHindi
             ? 'तत्काल राहत शिविर की ओर बढ़ें।'
             : 'Move to nearest shelter immediately.';
@@ -1184,9 +1475,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             // Background Watermark: Scenic Rolling Hills & Pine Trees (Matches Screenshot)
             Positioned.fill(
               child: CustomPaint(
-                painter: _ScenicWatermarkPainter(
-                  baseColor: badgeTextColor,
-                ),
+                painter: _ScenicWatermarkPainter(baseColor: badgeTextColor),
               ),
             ),
 
@@ -1223,11 +1512,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                Icon(shieldIcon, color: badgeTextColor, size: 32),
+                                Icon(
+                                  shieldIcon,
+                                  color: badgeTextColor,
+                                  size: 32,
+                                ),
                                 if (_threatLevel == CitizenThreatLevel.safe)
                                   const Padding(
                                     padding: EdgeInsets.only(top: 2),
-                                    child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                                    child: Icon(
+                                      Icons.check_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
                                   ),
                               ],
                             ),
@@ -1238,7 +1535,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _isHindi ? 'सतर्क रहें। सुरक्षित रहें।' : 'STAY INFORMED. STAY SAFE.',
+                                  _isHindi
+                                      ? 'सतर्क रहें। सुरक्षित रहें।'
+                                      : 'STAY INFORMED. STAY SAFE.',
                                   style: const TextStyle(
                                     color: Color(0xFF64748B),
                                     fontSize: 11.5,
@@ -1310,11 +1609,17 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                       // Last Updated Pill Badge (FittedBox ensures zero overflow on any device or in tests)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF6EE7B7), width: 1.2),
+                          border: Border.all(
+                            color: const Color(0xFF6EE7B7),
+                            width: 1.2,
+                          ),
                         ),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
@@ -1329,7 +1634,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _isHindi ? 'अंतिम अपडेट: 12 सितं 2026, 12:05 पूर्वाह्न' : 'Last updated: 12 Sep 2026, 12:05 AM',
+                                _isHindi
+                                    ? 'अंतिम अपडेट: 12 सितं 2026, 12:05 पूर्वाह्न'
+                                    : 'Last updated: 12 Sep 2026, 12:05 AM',
                                 style: const TextStyle(
                                   color: Color(0xFF065F46),
                                   fontSize: 11.5,
@@ -1352,7 +1659,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0052CC).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF0052CC,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -1364,14 +1673,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             onTap: () => setState(() => _currentTab = 1),
                             borderRadius: BorderRadius.circular(22),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.map_rounded, size: 18, color: Colors.white),
+                                  const Icon(
+                                    Icons.map_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _isHindi ? 'लाइव मैप देखें' : 'View live map',
+                                    _isHindi
+                                        ? 'लाइव मैप देखें'
+                                        : 'View live map',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 13.5,
@@ -1379,7 +1696,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                 ],
                               ),
                             ),
@@ -1398,7 +1719,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         border: Border.all(color: Colors.white, width: 2.5),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+                            color: const Color(
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.12),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -1454,7 +1777,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             minZoom: 10.0,
             maxZoom: 18.0,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
+              flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
             ),
           ),
           children: [
@@ -1510,7 +1833,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.8),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
                       ],
                     ),
                     child: const Center(
@@ -1528,7 +1855,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.8),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
                       ],
                     ),
                     child: const Center(
@@ -1546,7 +1877,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.8),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
                       ],
                     ),
                     child: const Center(
@@ -1601,7 +1936,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
                       ],
                     ),
                     child: Center(
@@ -1631,7 +1970,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [
-                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Row(
@@ -1669,7 +2012,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [
-                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Row(
@@ -1713,14 +2060,23 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () {
-                    _showMessage(_isHindi ? 'मैप लेयर स्विच की गई' : 'Map layers toggled');
+                    _showMessage(
+                      _isHindi ? 'मैप लेयर स्विच की गई' : 'Map layers toggled',
+                    );
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.layers_rounded, size: 18, color: Color(0xFF334155)),
+                        Icon(
+                          Icons.layers_rounded,
+                          size: 18,
+                          color: Color(0xFF334155),
+                        ),
                         SizedBox(height: 1),
                         Text(
                           'Layers',
@@ -1745,26 +2101,50 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
                       onTap: () {
                         final currentZoom = _mapController.camera.zoom;
-                        _mapController.move(_mapController.camera.center, (currentZoom + 1).clamp(10.0, 18.0));
+                        _mapController.move(
+                          _mapController.camera.center,
+                          (currentZoom + 1).clamp(10.0, 18.0),
+                        );
                       },
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                        child: Icon(Icons.add, size: 16, color: Color(0xFF334155)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 5,
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          size: 16,
+                          color: Color(0xFF334155),
+                        ),
                       ),
                     ),
                     Container(width: 20, height: 1, color: Colors.black12),
                     InkWell(
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(8),
+                      ),
                       onTap: () {
                         final currentZoom = _mapController.camera.zoom;
-                        _mapController.move(_mapController.camera.center, (currentZoom - 1).clamp(10.0, 18.0));
+                        _mapController.move(
+                          _mapController.camera.center,
+                          (currentZoom - 1).clamp(10.0, 18.0),
+                        );
                       },
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                        child: Icon(Icons.remove, size: 16, color: Color(0xFF334155)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 5,
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          size: 16,
+                          color: Color(0xFF334155),
+                        ),
                       ),
                     ),
                   ],
@@ -1783,7 +2163,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   },
                   child: const Padding(
                     padding: EdgeInsets.all(7),
-                    child: Icon(Icons.near_me_rounded, size: 16, color: Color(0xFF334155)),
+                    child: Icon(
+                      Icons.near_me_rounded,
+                      size: 16,
+                      color: Color(0xFF334155),
+                    ),
                   ),
                 ),
               ),
@@ -1835,8 +2219,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     child: Icon(Icons.groups_rounded, color: Color(0xFF7C3AED)),
                   ),
                   title: Text(_isHindi ? 'परिवार सुरक्षा' : 'Family Safety'),
-                  subtitle: Text(_isHindi ? 'परिवार को ट्रैक करें' : 'Track and connect with family members'),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  subtitle: Text(
+                    _isHindi
+                        ? 'परिवार को ट्रैक करें'
+                        : 'Track and connect with family members',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _showFamilySafetyModal();
@@ -1845,16 +2236,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ListTile(
                   leading: const CircleAvatar(
                     backgroundColor: Color(0xFFFFF7ED),
-                    child: Icon(Icons.camera_alt_rounded, color: Color(0xFFEA580C)),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: Color(0xFFEA580C),
+                    ),
                   ),
                   title: Text(_isHindi ? 'आपदा रिपोर्ट' : 'Hazard Report'),
-                  subtitle: Text(_isHindi ? 'घटनाओं या खतरों की रिपोर्ट करें' : 'Submit photo and report hazards'),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  subtitle: Text(
+                    _isHindi
+                        ? 'घटनाओं या खतरों की रिपोर्ट करें'
+                        : 'Submit photo and report hazards',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => CitizenHazardReportView(isHindi: _isHindi)),
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            CitizenHazardReportView(isHindi: _isHindi),
+                      ),
                     );
                   },
                 ),
@@ -1863,9 +2267,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     backgroundColor: Color(0xFFEFF6FF),
                     child: Icon(Icons.map_rounded, color: Color(0xFF2563EB)),
                   ),
-                  title: Text(_isHindi ? 'पूर्ण लाइव मैप' : 'Full Interactive Map'),
-                  subtitle: Text(_isHindi ? 'सभी शेल्टर और रिलीफ कैंप देखें' : 'View full evacuation corridors & relief zones'),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  title: Text(
+                    _isHindi ? 'पूर्ण लाइव मैप' : 'Full Interactive Map',
+                  ),
+                  subtitle: Text(
+                    _isHindi
+                        ? 'सभी शेल्टर और रिलीफ कैंप देखें'
+                        : 'View full evacuation corridors & relief zones',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     setState(() => _currentTab = 1);
@@ -1894,7 +2307,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Text(
               _isHindi ? 'स्थिति सिमुलेशन:' : 'Simulate:',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF537392)),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF537392),
+              ),
             ),
             const SizedBox(width: 8),
             _buildSimChip('🟢 Safe', CitizenThreatLevel.safe),
@@ -1937,17 +2354,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // --------------------------------------------------------------------------
   Widget _buildActiveAlertCard() {
     final alert = _activeAlerts[_activeAlertIndex];
-    final Color alertColor = alert['color'] as Color? ?? const Color(0xFFDC2626);
+    final Color alertColor =
+        alert['color'] as Color? ?? const Color(0xFFDC2626);
     final int activeRiskStep = alert['riskStep'] as int? ?? 2;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFFFD1D5),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFFFFD1D5), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: alertColor.withValues(alpha: 0.05),
@@ -2004,7 +2419,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 22),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
               ),
               Positioned(
@@ -2029,7 +2448,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             children: [
               // Red Pill Badge (FLOOD WARNING)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDC2626),
                   borderRadius: BorderRadius.circular(12),
@@ -2037,10 +2459,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.waves_rounded, color: Colors.white, size: 12),
+                    const Icon(
+                      Icons.waves_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      _isHindi ? (alert['badgeHi'] ?? 'बाढ़ चेतावनी') : (alert['badge'] ?? 'FLOOD WARNING'),
+                      _isHindi
+                          ? (alert['badgeHi'] ?? 'बाढ़ चेतावनी')
+                          : (alert['badge'] ?? 'FLOOD WARNING'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 9.5,
@@ -2056,7 +2484,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
               // Title
               Text(
-                _isHindi ? alert['titleHi'] : (alert['title'] ?? 'Heavy Rainfall + Rising River Alert'),
+                _isHindi
+                    ? alert['titleHi']
+                    : (alert['title'] ?? 'Heavy Rainfall + Rising River Alert'),
                 style: const TextStyle(
                   color: Color(0xFF0F172A),
                   fontSize: 17,
@@ -2071,7 +2501,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
               // Subtitle / Impact description
               Text(
-                _isHindi ? alert['impactHi'] : (alert['impact'] ?? 'Low-lying areas may face flooding in the next 5–8 hours.'),
+                _isHindi
+                    ? alert['impactHi']
+                    : (alert['impact'] ??
+                          'Low-lying areas may face flooding in the next 5–8 hours.'),
                 style: const TextStyle(
                   color: Color(0xFF64748B),
                   fontSize: 12,
@@ -2091,21 +2524,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 children: [
                   _buildAlertTag(
                     icon: Icons.access_time_rounded,
-                    text: _isHindi ? (alert['issuedHi'] ?? '2 घंटे पहले जारी') : (alert['issued'] ?? 'Issued 2h ago'),
+                    text: _isHindi
+                        ? (alert['issuedHi'] ?? '2 घंटे पहले जारी')
+                        : (alert['issued'] ?? 'Issued 2h ago'),
                     bgColor: const Color(0xFFEFF6FF),
                     borderColor: const Color(0xFFDBEAFE),
                     textColor: const Color(0xFF1D4ED8),
                   ),
                   _buildAlertTag(
                     icon: Icons.location_on_rounded,
-                    text: _isHindi ? (alert['districtHi'] ?? 'जिला: नदी बेसिन') : (alert['district'] ?? 'District: River Basin'),
+                    text: _isHindi
+                        ? (alert['districtHi'] ?? 'जिला: नदी बेसिन')
+                        : (alert['district'] ?? 'District: River Basin'),
                     bgColor: const Color(0xFFEFF6FF),
                     borderColor: const Color(0xFFDBEAFE),
                     textColor: const Color(0xFF1D4ED8),
                   ),
                   _buildAlertTag(
                     icon: Icons.tune_rounded,
-                    text: _isHindi ? (alert['riskLevelHi'] ?? 'जोखिम: उच्च') : (alert['riskLevel'] ?? 'Risk Level: High'),
+                    text: _isHindi
+                        ? (alert['riskLevelHi'] ?? 'जोखिम: उच्च')
+                        : (alert['riskLevel'] ?? 'Risk Level: High'),
                     bgColor: const Color(0xFFFEF2F2),
                     borderColor: const Color(0xFFFEE2E2),
                     textColor: const Color(0xFFDC2626),
@@ -2129,13 +2568,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 InkWell(
                   onTap: () {
                     setState(() {
-                      _activeAlertIndex = (_activeAlertIndex - 1 + _activeAlerts.length) % _activeAlerts.length;
+                      _activeAlertIndex =
+                          (_activeAlertIndex - 1 + _activeAlerts.length) %
+                          _activeAlerts.length;
                     });
                   },
                   borderRadius: BorderRadius.circular(10),
                   child: const Padding(
                     padding: EdgeInsets.all(2),
-                    child: Icon(Icons.chevron_left_rounded, size: 16, color: Color(0xFF475569)),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      size: 16,
+                      color: Color(0xFF475569),
+                    ),
                   ),
                 ),
                 Padding(
@@ -2152,13 +2597,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 InkWell(
                   onTap: () {
                     setState(() {
-                      _activeAlertIndex = (_activeAlertIndex + 1) % _activeAlerts.length;
+                      _activeAlertIndex =
+                          (_activeAlertIndex + 1) % _activeAlerts.length;
                     });
                   },
                   borderRadius: BorderRadius.circular(10),
                   child: const Padding(
                     padding: EdgeInsets.all(2),
-                    child: Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF475569)),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: Color(0xFF475569),
+                    ),
                   ),
                 ),
               ],
@@ -2180,10 +2630,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     foregroundColor: Colors.white,
                     elevation: 1.5,
                     minimumSize: const Size.fromHeight(48),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
-                  icon: const Icon(Icons.visibility_rounded, size: 16, color: Colors.white),
+                  icon: const Icon(
+                    Icons.visibility_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
@@ -2205,12 +2664,24 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF0066EE),
-                    side: const BorderSide(color: Color(0xFF0066EE), width: 1.5),
+                    side: const BorderSide(
+                      color: Color(0xFF0066EE),
+                      width: 1.5,
+                    ),
                     minimumSize: const Size.fromHeight(48),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
-                  icon: const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF0066EE)),
+                  icon: const Icon(
+                    Icons.shield_outlined,
+                    size: 16,
+                    color: Color(0xFF0066EE),
+                  ),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
@@ -2228,7 +2699,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           );
 
           // Full right-side Map widget
-          Widget fullMap = _buildFullAlertMap(context, height: isWide ? 235 : 210);
+          Widget fullMap = _buildFullAlertMap(
+            context,
+            height: isWide ? 235 : 210,
+          );
 
           return Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
@@ -2248,7 +2722,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       alertBadge,
                                       const SizedBox(width: 14),
@@ -2285,10 +2760,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          alertBadge,
-                          switcherCapsule,
-                        ],
+                        children: [alertBadge, switcherCapsule],
                       ),
                       const SizedBox(height: 12),
                       middleInfo,
@@ -2439,7 +2911,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           label,
           style: TextStyle(
             color: isActive
-                ? (color == const Color(0xFFEF4444) ? const Color(0xFFDC2626) : color)
+                ? (color == const Color(0xFFEF4444)
+                      ? const Color(0xFFDC2626)
+                      : color)
                 : const Color(0xFF334155),
             fontSize: 11.5,
             fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
@@ -2492,8 +2966,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 options: const MapOptions(
                   initialCenter: LatLng(25.5788, 91.8933),
                   initialZoom: 12.2,
-                  interactionOptions: InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  interactionOptions: const InteractionOptions(
+                    flags:
+                        InteractiveFlag.all &
+                        ~InteractiveFlag.rotate &
+                        ~InteractiveFlag.scrollWheelZoom,
                   ),
                 ),
                 children: [
@@ -2513,8 +2990,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           point: const LatLng(25.5850, 91.8900),
                           radius: 4500,
                           useRadiusInMeter: true,
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.22),
-                          borderColor: const Color(0xFF0284C7).withValues(alpha: 0.55),
+                          color: const Color(
+                            0xFF0284C7,
+                          ).withValues(alpha: 0.22),
+                          borderColor: const Color(
+                            0xFF0284C7,
+                          ).withValues(alpha: 0.55),
                           borderStrokeWidth: 1.5,
                         ),
                         // Intense river basin flood cell
@@ -2522,8 +3003,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           point: const LatLng(25.5720, 91.9050),
                           radius: 2600,
                           useRadiusInMeter: true,
-                          color: const Color(0xFFDC2626).withValues(alpha: 0.28),
-                          borderColor: const Color(0xFFDC2626).withValues(alpha: 0.65),
+                          color: const Color(
+                            0xFFDC2626,
+                          ).withValues(alpha: 0.28),
+                          borderColor: const Color(
+                            0xFFDC2626,
+                          ).withValues(alpha: 0.65),
                           borderStrokeWidth: 2.0,
                         ),
                         // Moderate rain area
@@ -2531,8 +3016,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           point: const LatLng(25.5600, 91.8700),
                           radius: 3500,
                           useRadiusInMeter: true,
-                          color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
-                          borderColor: const Color(0xFF0284C7).withValues(alpha: 0.45),
+                          color: const Color(
+                            0xFF38BDF8,
+                          ).withValues(alpha: 0.25),
+                          borderColor: const Color(
+                            0xFF0284C7,
+                          ).withValues(alpha: 0.45),
                           borderStrokeWidth: 1.5,
                         ),
                       ],
@@ -2547,13 +3036,20 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         width: 146,
                         height: 34,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFDC2626),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.white, width: 1.5),
                             boxShadow: const [
-                              BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
                             ],
                           ),
                           child: const FittedBox(
@@ -2561,7 +3057,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.waves_rounded, color: Colors.white, size: 14),
+                                Icon(
+                                  Icons.waves_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Damodar: 214.6m [High]',
@@ -2582,19 +3082,31 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         width: 96,
                         height: 28,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF0F2D59),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF38BDF8), width: 1.2),
-                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                            border: Border.all(
+                              color: const Color(0xFF38BDF8),
+                              width: 1.2,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 4),
+                            ],
                           ),
                           child: const FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.thunderstorm_rounded, color: Color(0xFF38BDF8), size: 13),
+                                Icon(
+                                  Icons.thunderstorm_rounded,
+                                  color: Color(0xFF38BDF8),
+                                  size: 13,
+                                ),
                                 SizedBox(width: 3),
                                 Text(
                                   '68 mm/h',
@@ -2619,7 +3131,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             shape: BoxShape.circle,
                             color: const Color(0xFF2563EB),
                             border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black38, blurRadius: 4),
+                            ],
                           ),
                         ),
                       ),
@@ -2634,12 +3148,20 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               top: 10,
               left: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 4.5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.88),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.7), width: 1),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                  border: Border.all(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.7),
+                    width: 1,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 4),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -2672,13 +3194,23 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               left: 10,
               bottom: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 4.5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x12000000), blurRadius: 5, offset: Offset(0, 1)),
+                    BoxShadow(
+                      color: Color(0x12000000),
+                      blurRadius: 5,
+                      offset: Offset(0, 1),
+                    ),
                   ],
                 ),
                 child: Row(
@@ -2687,12 +3219,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     Container(
                       width: 7,
                       height: 7,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2563EB)),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       _isHindi ? 'आपकी स्थिति' : 'Your location',
-                      style: const TextStyle(color: Color(0xFF1E293B), fontSize: 10.5, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -2707,9 +3246,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -2717,23 +3263,36 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   children: [
                     // Layers toggle
                     InkWell(
-                      onTap: () => setState(() => _alertMapSatellite = !_alertMapSatellite),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                      onTap: () => setState(
+                        () => _alertMapSatellite = !_alertMapSatellite,
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(10),
+                      ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 5,
+                        ),
                         child: Column(
                           children: [
                             Icon(
-                              _alertMapSatellite ? Icons.layers : Icons.layers_outlined,
+                              _alertMapSatellite
+                                  ? Icons.layers
+                                  : Icons.layers_outlined,
                               size: 15,
-                              color: _alertMapSatellite ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                              color: _alertMapSatellite
+                                  ? const Color(0xFF2563EB)
+                                  : const Color(0xFF475569),
                             ),
                             const SizedBox(height: 1),
                             Text(
                               _isHindi ? 'परतें' : 'Layers',
                               style: TextStyle(
                                 fontSize: 8.0,
-                                color: _alertMapSatellite ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                                color: _alertMapSatellite
+                                    ? const Color(0xFF2563EB)
+                                    : const Color(0xFF475569),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -2741,60 +3300,99 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         ),
                       ),
                     ),
-                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+                    Container(
+                      height: 1,
+                      width: 28,
+                      color: const Color(0xFFF1F5F9),
+                    ),
 
                     // Zoom In (+)
                     InkWell(
                       key: const Key('alert_map_zoom_in'),
                       onTap: () {
                         setState(() {
-                          _alertMapZoom = (_alertMapZoom + 0.25).clamp(0.75, 2.5);
+                          _alertMapZoom = (_alertMapZoom + 0.25).clamp(
+                            0.75,
+                            2.5,
+                          );
                         });
                         try {
                           final currentZoom = _rainMapController.camera.zoom;
-                          _rainMapController.move(_rainMapController.camera.center, currentZoom + 1.0);
+                          _rainMapController.move(
+                            _rainMapController.camera.center,
+                            currentZoom + 1.0,
+                          );
                         } catch (_) {}
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(Icons.add, size: 16, color: Color(0xFF0F2D59)),
+                        child: Icon(
+                          Icons.add,
+                          size: 16,
+                          color: Color(0xFF0F2D59),
+                        ),
                       ),
                     ),
-                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+                    Container(
+                      height: 1,
+                      width: 28,
+                      color: const Color(0xFFF1F5F9),
+                    ),
 
                     // Zoom Out (-)
                     InkWell(
                       key: const Key('alert_map_zoom_out'),
                       onTap: () {
                         setState(() {
-                          _alertMapZoom = (_alertMapZoom - 0.25).clamp(0.75, 2.5);
+                          _alertMapZoom = (_alertMapZoom - 0.25).clamp(
+                            0.75,
+                            2.5,
+                          );
                         });
                         try {
                           final currentZoom = _rainMapController.camera.zoom;
-                          _rainMapController.move(_rainMapController.camera.center, currentZoom - 1.0);
+                          _rainMapController.move(
+                            _rainMapController.camera.center,
+                            currentZoom - 1.0,
+                          );
                         } catch (_) {}
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(Icons.remove, size: 16, color: Color(0xFF0F2D59)),
+                        child: Icon(
+                          Icons.remove,
+                          size: 16,
+                          color: Color(0xFF0F2D59),
+                        ),
                       ),
                     ),
-                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+                    Container(
+                      height: 1,
+                      width: 28,
+                      color: const Color(0xFFF1F5F9),
+                    ),
 
                     // Radar Toggle
                     InkWell(
                       key: const Key('rain_map_radar_toggle'),
-                      onTap: () => setState(() => _showRainRadar = !_showRainRadar),
+                      onTap: () =>
+                          setState(() => _showRainRadar = !_showRainRadar),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: Icon(
                           Icons.radar_rounded,
                           size: 16,
-                          color: _showRainRadar ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
+                          color: _showRainRadar
+                              ? const Color(0xFF0284C7)
+                              : const Color(0xFF94A3B8),
                         ),
                       ),
                     ),
-                    Container(height: 1, width: 28, color: const Color(0xFFF1F5F9)),
+                    Container(
+                      height: 1,
+                      width: 28,
+                      color: const Color(0xFFF1F5F9),
+                    ),
 
                     // Recenter / Navigation
                     InkWell(
@@ -2804,13 +3402,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           _alertMapZoom = 1.0;
                         });
                         try {
-                          _rainMapController.move(const LatLng(25.5788, 91.8933), 12.2);
+                          _rainMapController.move(
+                            const LatLng(25.5788, 91.8933),
+                            12.2,
+                          );
                         } catch (_) {}
                       },
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(10),
+                      ),
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(Icons.my_location_rounded, size: 15, color: Color(0xFF0F2D59)),
+                        child: Icon(
+                          Icons.my_location_rounded,
+                          size: 15,
+                          color: Color(0xFF0F2D59),
+                        ),
                       ),
                     ),
                   ],
@@ -2827,7 +3434,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.90),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -2837,9 +3447,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       height: 4,
                       decoration: const BoxDecoration(
                         border: Border(
-                          left: BorderSide(color: Color(0xFF334155), width: 1.5),
-                          bottom: BorderSide(color: Color(0xFF334155), width: 1.5),
-                          right: BorderSide(color: Color(0xFF334155), width: 1.5),
+                          left: BorderSide(
+                            color: Color(0xFF334155),
+                            width: 1.5,
+                          ),
+                          bottom: BorderSide(
+                            color: Color(0xFF334155),
+                            width: 1.5,
+                          ),
+                          right: BorderSide(
+                            color: Color(0xFF334155),
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),
@@ -2930,7 +3549,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
+            MaterialPageRoute(
+              builder: (_) => CitizenSafeRouteView(isHindi: _isHindi),
+            ),
           );
         },
       ),
@@ -2948,7 +3569,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => CitizenSheltersView(isHindi: _isHindi)),
+            MaterialPageRoute(
+              builder: (_) => CitizenSheltersView(isHindi: _isHindi),
+            ),
           );
         },
       ),
@@ -2963,7 +3586,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         borderColor: const Color(0xFFE9E0FD),
         iconCircleColor: const Color(0xFFEDE4FD),
         watermarkIcon: Icons.favorite_rounded,
-        onTap: _showMedicalDetailsModal,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CitizenMedicalCentersView(isHindi: _isHindi),
+          ),
+        ),
       ),
       _QuickActionItem(
         title: _isHindi ? 'परिवार' : 'Family',
@@ -2992,7 +3620,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => CitizenHazardReportView(isHindi: _isHindi)),
+            MaterialPageRoute(
+              builder: (_) => CitizenHazardReportView(isHindi: _isHindi),
+            ),
           );
         },
       ),
@@ -3126,9 +3756,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(child: _buildQuickActionCard(items[row * 2])),
+                          Expanded(
+                            child: _buildQuickActionCard(items[row * 2]),
+                          ),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildQuickActionCard(items[row * 2 + 1])),
+                          Expanded(
+                            child: _buildQuickActionCard(items[row * 2 + 1]),
+                          ),
                         ],
                       ),
                     ),
@@ -3147,10 +3781,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.0,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -3189,7 +3820,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     width: 4.0,
                     decoration: BoxDecoration(
                       color: item.accentColor,
-                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(3)),
+                      borderRadius: const BorderRadius.horizontal(
+                        right: Radius.circular(3),
+                      ),
                     ),
                   ),
                 ),
@@ -3254,9 +3887,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             children: [
                               Flexible(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 5,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: item.accentColor.withValues(alpha: 0.10),
+                                    color: item.accentColor.withValues(
+                                      alpha: 0.10,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
@@ -3273,7 +3911,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                       const SizedBox(width: 4),
                                       Flexible(
                                         child: Text(
-                                          _isHindi ? 'त्वरित पहुंच' : 'Quick Access',
+                                          _isHindi
+                                              ? 'त्वरित पहुंच'
+                                              : 'Quick Access',
                                           style: TextStyle(
                                             color: item.accentColor,
                                             fontSize: 10.5,
@@ -3293,7 +3933,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: item.accentColor.withValues(alpha: 0.10),
+                                  color: item.accentColor.withValues(
+                                    alpha: 0.10,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
@@ -3323,361 +3965,445 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // 5. NEAREST SAFE SHELTER & GOVT RELIEF CENTER CARD
   // --------------------------------------------------------------------------
   Widget _buildNearestSafeShelterCard() {
-    const accentColor = Color(0xFF10B981); // Emerald green for safe shelter
+    return FutureBuilder<ShelterOccupancy?>(
+      future: _nearestShelterFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(color: Color(0xFF007AEB)),
+            ),
+          );
+        }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top Row: Icon + Badge & Titles + Live Open Status
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Shelter Home Icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE6F4EA),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.home_rounded,
-                  color: Color(0xFF15945C),
-                  size: 26,
-                ),
+        final shelter = snapshot.data;
+        if (shelter == null) {
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            ),
+            child: Center(
+              child: Text(
+                _isHindi ? 'कोई आश्रय नहीं मिला' : 'No shelter found',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // NEAREST SAFE SHELTER Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        _isHindi ? 'नजदीकी सुरक्षित शिविर' : 'NEAREST SAFE SHELTER',
-                        style: const TextStyle(
-                          color: Color(0xFF15803D),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _isHindi ? 'सरकारी राहत केंद्र' : 'Government Relief Centre',
-                      style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isHindi
-                          ? 'सुरक्षित, स्वच्छ और आवश्यक सेवाओं से युक्त राहत केंद्र।'
-                          : 'Safe, clean and fully equipped shelter with essential services.',
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Live Open Status Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFA7F3D0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: accentColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      _isHindi ? 'खुला है' : 'OPEN',
-                      style: const TextStyle(
-                        color: Color(0xFF065F46),
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          );
+        }
+
+        final capacityPercent = shelter.capacity > 0
+            ? shelter.occupied / shelter.capacity
+            : 0.0;
+        final capacityPercentStr = (capacityPercent * 100).toInt();
+
+        return Container(
+          height: 250,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 16,
+                offset: Offset(0, 4),
               ),
             ],
           ),
-
-          const SizedBox(height: 14),
-
-          // Distance, Location & Occupancy Row
-          Wrap(
-            spacing: 12,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF007AEB)),
-                  const SizedBox(width: 4),
-                  Text(
-                    _isHindi ? '3.4 किमी दूर • सेक्टर 5' : '3.4 km away • Sector 5',
-                    style: const TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.people_alt_rounded, size: 15, color: Color(0xFF007AEB)),
-                  const SizedBox(width: 4),
-                  Text(
-                    _isHindi ? '312 / 500 व्यक्ति (62%)' : '312 / 500 people (62%)',
-                    style: const TextStyle(
-                      color: Color(0xFF475569),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Capacity (60% width) + Food, Water, Medical, Power in 4 equal widths (40% width)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final cardWidth = constraints.maxWidth;
-              final isWide = cardWidth >= 700;
-
-              final capacityWidget = Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.groups_rounded, size: 18, color: Color(0xFF007AEB)),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isHindi ? 'क्षमता' : 'Capacity',
-                      style: const TextStyle(
-                        color: Color(0xFF0F2642),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(7),
-                        child: const LinearProgressIndicator(
-                          value: 0.62,
-                          minHeight: 14,
-                          backgroundColor: Color(0xFFE2E8F0),
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '62%',
-                      style: TextStyle(
-                        color: Color(0xFF0F2642),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              final supplyChips = [
-                _buildShelterSupplyChip(
-                  icon: Icons.restaurant_rounded,
-                  iconBgColor: const Color(0xFFFEF3C7),
-                  iconColor: const Color(0xFFD97706),
-                  title: _isHindi ? 'भोजन' : 'Food',
-                  status: _isHindi ? 'उपलब्ध' : 'Available',
-                  onTap: _showShelterDetailsModal,
-                ),
-                _buildShelterSupplyChip(
-                  icon: Icons.water_drop_rounded,
-                  iconBgColor: const Color(0xFFE0F2FE),
-                  iconColor: const Color(0xFF0284C7),
-                  title: _isHindi ? 'जल' : 'Water',
-                  status: _isHindi ? 'उपलब्ध' : 'Available',
-                  onTap: _showShelterDetailsModal,
-                ),
-                _buildShelterSupplyChip(
-                  icon: Icons.add_circle_rounded,
-                  iconBgColor: const Color(0xFFFEE2E2),
-                  iconColor: const Color(0xFFEF4444),
-                  title: _isHindi ? 'चिकित्सा' : 'Medical',
-                  status: _isHindi ? 'उपलब्ध' : 'Available',
-                  onTap: _showShelterDetailsModal,
-                ),
-                _buildShelterSupplyChip(
-                  icon: Icons.bolt_rounded,
-                  iconBgColor: const Color(0xFFF3E8FF),
-                  iconColor: const Color(0xFF9333EA),
-                  title: _isHindi ? 'बिजली' : 'Power',
-                  status: _isHindi ? 'उपलब्ध' : 'Available',
-                  onTap: _showShelterDetailsModal,
-                ),
-              ];
-
-              if (isWide) {
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 60,
-                      child: capacityWidget,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 40,
-                      child: Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(19),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Image Section
+                Expanded(
+                  flex: 40,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        fit: StackFit.expand,
                         children: [
-                          for (int i = 0; i < supplyChips.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 6),
-                            Expanded(child: supplyChips[i]),
-                          ],
+                          Image.network(shelter.photoUrl, fit: BoxFit.cover),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.85),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            right: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // NEAREST SAFE SHELTER badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFDCFCE7,
+                                    ).withValues(alpha: 0.95),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _isHindi
+                                        ? 'नजदीकी सुरक्षित शिविर'
+                                        : 'NEAREST SAFE SHELTER',
+                                    style: const TextStyle(
+                                      color: Color(0xFF15803D),
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.home_rounded,
+                                        color: Color(0xFF15945C),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            shelter.name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w900,
+                                              height: 1.1,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_rounded,
+                                                size: 12,
+                                                color: Color(0xFF38BDF8),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${shelter.distance} • ${shelter.locationName}',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ],
-                );
-              } else {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    capacityWidget,
-                    const SizedBox(height: 10),
-                    Row(
+                  ),
+                ),
+
+                // Right Details Section
+                Expanded(
+                  flex: 60,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        for (int i = 0; i < supplyChips.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 6),
-                          Expanded(child: supplyChips[i]),
-                        ],
+                        // Top Info Row (Safe clean text + OPEN badge)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _isHindi
+                                    ? 'सुरक्षित, स्वच्छ और आवश्यक सेवाओं से युक्त राहत केंद्र।'
+                                    : 'Safe, clean and fully equipped shelter with essential services.',
+                                style: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFFA7F3D0),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    shelter.status,
+                                    style: const TextStyle(
+                                      color: Color(0xFF065F46),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Occupancy Row
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.people_alt_rounded,
+                              size: 16,
+                              color: Color(0xFF007AEB),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _isHindi
+                                  ? '${shelter.occupied} / ${shelter.capacity} व्यक्ति ($capacityPercentStr%)'
+                                  : '${shelter.occupied} / ${shelter.capacity} people ($capacityPercentStr%)',
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Capacity Bar
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.groups_rounded,
+                              size: 16,
+                              color: Color(0xFF007AEB),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _isHindi ? 'क्षमता' : 'Capacity',
+                              style: const TextStyle(
+                                color: Color(0xFF0F2642),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(7),
+                                child: LinearProgressIndicator(
+                                  value: capacityPercent,
+                                  minHeight: 10,
+                                  backgroundColor: const Color(0xFFE2E8F0),
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF10B981),
+                                      ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$capacityPercentStr%',
+                              style: const TextStyle(
+                                color: Color(0xFF0F2642),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // 4 Chips
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildShelterSupplyChip(
+                                icon: Icons.restaurant_rounded,
+                                iconBgColor: const Color(0xFFFEF3C7),
+                                iconColor: const Color(0xFFD97706),
+                                title: _isHindi ? 'भोजन' : 'Food',
+                                status: shelter.foodAvailable
+                                    ? (_isHindi ? 'उपलब्ध' : 'Available')
+                                    : 'Low',
+                                onTap: _showShelterDetailsModal,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _buildShelterSupplyChip(
+                                icon: Icons.water_drop_rounded,
+                                iconBgColor: const Color(0xFFE0F2FE),
+                                iconColor: const Color(0xFF0284C7),
+                                title: _isHindi ? 'जल' : 'Water',
+                                status: shelter.waterAvailable
+                                    ? (_isHindi ? 'उपलब्ध' : 'Available')
+                                    : 'Low',
+                                onTap: _showShelterDetailsModal,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _buildShelterSupplyChip(
+                                icon: Icons.add_circle_rounded,
+                                iconBgColor: const Color(0xFFFEE2E2),
+                                iconColor: const Color(0xFFEF4444),
+                                title: _isHindi ? 'चिकित्सा' : 'Medical',
+                                status: shelter.medicalAvailable
+                                    ? (_isHindi ? 'उपलब्ध' : 'Available')
+                                    : 'Low',
+                                onTap: _showShelterDetailsModal,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _buildShelterSupplyChip(
+                                icon: Icons.bolt_rounded,
+                                iconBgColor: const Color(0xFFF3E8FF),
+                                iconColor: const Color(0xFF9333EA),
+                                title: _isHindi ? 'बिजली' : 'Power',
+                                status: shelter.services.contains('Power')
+                                    ? (_isHindi ? 'उपलब्ध' : 'Available')
+                                    : 'Off',
+                                onTap: _showShelterDetailsModal,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _showShelterDetailsModal,
+                                icon: const Icon(
+                                  Icons.map_outlined,
+                                  size: 16,
+                                  color: Color(0xFF059669),
+                                ),
+                                label: Text(
+                                  _isHindi ? 'विवरण देखें' : 'View Details',
+                                  style: const TextStyle(
+                                    color: Color(0xFF059669),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  side: const BorderSide(
+                                    color: Color(0xFF10B981),
+                                    width: 1.2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  backgroundColor: const Color(0xFFF0FDF4),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CitizenSafeRouteView(isHindi: _isHindi),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.near_me_rounded,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                label: Text(
+                                  _isHindi ? 'दिशा-निर्देश' : 'Get Directions',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: const Color(0xFF007AEB),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                );
-              }
-            },
+                  ),
+                ),
+              ],
+            ),
           ),
-
-          const SizedBox(height: 14),
-
-          // Action Buttons: View Details & Get Directions
-          Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            children: [
-              OutlinedButton(
-                onPressed: _showShelterDetailsModal,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  backgroundColor: const Color(0xFFF0FDF4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.map_outlined, size: 16, color: Color(0xFF059669)),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isHindi ? 'विवरण देखें' : 'View Details',
-                      style: const TextStyle(
-                        color: Color(0xFF059669),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF059669)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  backgroundColor: const Color(0xFFF8FAFC),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.near_me_outlined, size: 15, color: Color(0xFF007AEB)),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isHindi ? 'दिशा-निर्देश' : 'Get Directions',
-                      style: const TextStyle(
-                        color: Color(0xFF007AEB),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -3745,7 +4471,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ],
               ),
               const SizedBox(width: 3),
-              const Icon(Icons.chevron_right_rounded, size: 13, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 13,
+                color: Color(0xFF94A3B8),
+              ),
             ],
           ),
         ),
@@ -3764,9 +4494,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD6E8F7)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3776,10 +4512,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7351D8).withValues(alpha: 0.12),
+                  color: const Color(0xFFF3E8FF),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.family_restroom_rounded, color: Color(0xFF7351D8), size: 22),
+                child: const Icon(
+                  Icons.family_restroom_rounded,
+                  color: Color(0xFF9333EA),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -3787,12 +4527,23 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isHindi ? 'परिवार सुरक्षा स्थिति' : 'FAMILY SAFETY',
-                      style: const TextStyle(color: Color(0xFF537392), fontSize: 10.5, fontWeight: FontWeight.w800),
+                      _isHindi ? 'परिवार सुरक्षा' : 'FAMILY SAFETY',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     Text(
-                      _isHindi ? '$safeCount / $totalCount सदस्य सुरक्षित हैं' : '$safeCount / $totalCount members safe',
-                      style: const TextStyle(color: Color(0xFF013973), fontSize: 14, fontWeight: FontWeight.w900),
+                      _isHindi
+                          ? '$safeCount / $totalCount सदस्य सुरक्षित हैं'
+                          : '$safeCount / $totalCount members safe',
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
@@ -3800,63 +4551,105 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               TextButton(
                 onPressed: _showFamilySafetyModal,
                 style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                child: Text(
-                  _isHindi ? 'पूरा देखें' : 'View Family',
-                  style: const TextStyle(color: Color(0xFF007AEB), fontWeight: FontWeight.bold, fontSize: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _isHindi ? 'पूरा देखें' : 'View Family',
+                      style: const TextStyle(
+                        color: Color(0xFF0284C7),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: Color(0xFF0284C7),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const Divider(height: 20),
-          Column(
-            children: _familyMembers.map((member) {
-              final isSafe = member['isSafe'] as bool;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
+          const Divider(height: 24, color: Color(0xFFE2E8F0)),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(_familyMembers.length, (index) {
+                final member = _familyMembers[index];
+                final isSafe = member['isSafe'] as bool;
+
+                return Row(
                   children: [
                     CircleAvatar(
-                      radius: 14,
-                      backgroundColor: const Color(0xFFF3F8FD),
-                      child: Icon(member['icon'], size: 16, color: const Color(0xFF013973)),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _isHindi ? member['nameHi'] : member['name'],
-                        style: const TextStyle(color: Color(0xFF013973), fontWeight: FontWeight.w800, fontSize: 12.5),
+                      radius: 16,
+                      backgroundColor: const Color(0xFFE0F2FE),
+                      child: Icon(
+                        member['icon'],
+                        size: 20,
+                        color: const Color(0xFF0284C7),
                       ),
                     ),
+                    const SizedBox(width: 14),
+                    Text(
+                      _isHindi ? member['nameHi'] : member['name'],
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSafe ? const Color(0xFFEAF8F0) : const Color(0xFFFFF5E7),
-                        borderRadius: BorderRadius.circular(8),
+                        color: isSafe
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isSafe ? Icons.check_circle_rounded : Icons.access_time_rounded,
-                            size: 12,
-                            color: isSafe ? const Color(0xFF15945C) : const Color(0xFFF39A20),
+                            isSafe
+                                ? Icons.check_circle_rounded
+                                : Icons.access_time_rounded,
+                            size: 14,
+                            color: isSafe
+                                ? const Color(0xFF16A34A)
+                                : const Color(0xFFD97706),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
                             _isHindi ? member['statusHi'] : member['status'],
                             style: TextStyle(
-                              color: isSafe ? const Color(0xFF15945C) : const Color(0xFFF39A20),
+                              color: isSafe
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFD97706),
                               fontWeight: FontWeight.w800,
-                              fontSize: 10.5,
+                              fontSize: 12.5,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    if (index < _familyMembers.length - 1)
+                      Container(
+                        width: 1,
+                        height: 24,
+                        color: const Color(0xFFE2E8F0),
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                      ),
                   ],
-                ),
-              );
-            }).toList(),
+                );
+              }),
+            ),
           ),
         ],
       ),
@@ -3904,20 +4697,42 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  _isHindi ? 'आपके क्षेत्र की स्थिति' : 'LOCAL CONDITIONS (YOUR AREA)',
-                  style: const TextStyle(
-                    color: Color(0xFF013973),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isHindi
+                          ? 'आपके क्षेत्र की स्थिति'
+                          : 'LOCAL CONDITIONS (YOUR AREA)',
+                      style: const TextStyle(
+                        color: Color(0xFF013973),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.3,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _isHindi
+                          ? 'स्थानीय सेंसर और आधिकारिक स्रोतों से रीयल-टाइम जानकारी'
+                          : 'Real-time information from local sensors and official sources',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4.5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(20),
@@ -3960,62 +4775,66 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           const SizedBox(height: 14),
 
           // ── 4 CONDITION TILES (2x2 GRID MATCHING SCREENSHOT) ──
-          Column(
+          Row(
             children: [
-              Row(
-                children: [
-                  // Tile 1: Rainfall
-                  Expanded(
-                    child: _buildConditionTile(
-                      icon: Icons.cloudy_snowing,
-                      iconColor: const Color(0xFF0284C7),
-                      iconBgColor: const Color(0xFFE0F2FE),
-                      title: _isHindi ? 'बारिश' : 'Rainfall',
-                      value: _isHindi ? 'भारी (Heavy)' : 'Heavy',
-                      subtitle: _isHindi ? 'निरंतर जारी' : 'Continuous',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Tile 2: River Level
-                  Expanded(
-                    child: _buildConditionTile(
-                      icon: Icons.waves_rounded,
-                      iconColor: const Color(0xFFE11D48),
-                      iconBgColor: const Color(0xFFFFE4E6),
-                      title: _isHindi ? 'नदी जलस्तर' : 'River Level',
-                      value: _isHindi ? 'तेजी से बढ़ रहा' : 'Rising rapidly',
-                      subtitle: _isHindi ? 'दामोदर नदी' : 'Damodar River',
-                    ),
-                  ),
-                ],
+              // Tile 1: Rainfall
+              Expanded(
+                child: _buildConditionTile(
+                  icon: Icons.cloudy_snowing,
+                  iconColor: const Color(0xFF0284C7),
+                  iconBgColor: const Color(0xFFE0F2FE),
+                  leftBorderColor: const Color(0xFF007AEB),
+                  title: _isHindi ? 'बारिश' : 'Rainfall',
+                  value: _isHindi ? 'भारी (Heavy)' : 'Heavy',
+                  subtitle: _isHindi ? 'निरंतर जारी' : 'Continuous',
+                  badgeIcon: Icons.bar_chart_rounded,
+                  badgeText: _isHindi ? 'उच्च' : 'High',
+                ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  // Tile 3: Temperature
-                  Expanded(
-                    child: _buildConditionTile(
-                      icon: Icons.thermostat_rounded,
-                      iconColor: const Color(0xFFD97706),
-                      iconBgColor: const Color(0xFFFEF3C7),
-                      title: _isHindi ? 'तापमान' : 'Temperature',
-                      value: '24°C',
-                      subtitle: _isHindi ? 'नमी: 94%' : 'Humidity: 94%',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Tile 4: Wind Speed
-                  Expanded(
-                    child: _buildConditionTile(
-                      icon: Icons.air_rounded,
-                      iconColor: const Color(0xFF0284C7),
-                      iconBgColor: const Color(0xFFE0F2FE),
-                      title: _isHindi ? 'हवा की गति' : 'Wind Speed',
-                      value: '18 km/h',
-                      subtitle: _isHindi ? 'हवा का रुख: पूर्व' : 'Heading East',
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 8),
+              // Tile 2: River Level
+              Expanded(
+                child: _buildConditionTile(
+                  icon: Icons.waves_rounded,
+                  iconColor: const Color(0xFFE11D48),
+                  iconBgColor: const Color(0xFFFFE4E6),
+                  leftBorderColor: const Color(0xFFE11D48),
+                  title: _isHindi ? 'नदी जलस्तर' : 'River Level',
+                  value: _isHindi ? 'तेजी से बढ़ रहा' : 'Rising rapidly',
+                  subtitle: _isHindi ? 'दामोदर नदी' : 'Damodar River',
+                  badgeIcon: Icons.trending_up_rounded,
+                  badgeText: _isHindi ? 'बढ़ रहा' : 'Rising',
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Tile 3: Temperature
+              Expanded(
+                child: _buildConditionTile(
+                  icon: Icons.thermostat_rounded,
+                  iconColor: const Color(0xFFD97706),
+                  iconBgColor: const Color(0xFFFEF3C7),
+                  leftBorderColor: const Color(0xFFF59E0B),
+                  title: _isHindi ? 'तापमान' : 'Temperature',
+                  value: '24°C',
+                  subtitle: _isHindi ? 'नमी: 94%' : 'Humidity: 94%',
+                  badgeIcon: Icons.device_thermostat_rounded,
+                  badgeText: _isHindi ? 'गर्म' : 'Warm',
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Tile 4: Wind Speed
+              Expanded(
+                child: _buildConditionTile(
+                  icon: Icons.air_rounded,
+                  iconColor: const Color(0xFF0284C7),
+                  iconBgColor: const Color(0xFFE0F2FE),
+                  leftBorderColor: const Color(0xFF38BDF8),
+                  title: _isHindi ? 'हवा की गति' : 'Wind Speed',
+                  value: '18 km/h',
+                  subtitle: _isHindi ? 'हवा का रुख: पूर्व' : 'Heading East',
+                  badgeIcon: Icons.near_me_rounded,
+                  badgeText: _isHindi ? 'पूर्व' : 'East',
+                ),
               ),
             ],
           ),
@@ -4028,18 +4847,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     required IconData icon,
     required Color iconColor,
     required Color iconBgColor,
+    required Color leftBorderColor,
     required String title,
     required String value,
     required String subtitle,
+    required IconData badgeIcon,
+    required String badgeText,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
       ),
-      child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(11),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: leftBorderColor, width: 4),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(10, 14, 10, 14),
+          child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Circular Avatar Icon
@@ -4050,13 +4880,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               color: iconBgColor,
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
+            child: Center(child: Icon(icon, color: iconColor, size: 22)),
           ),
           const SizedBox(width: 12),
 
-          // Content Column (Category Title, Primary Value, Subtext)
+          // Content Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4067,17 +4895,17 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   style: const TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   value,
                   style: const TextStyle(
                     color: Color(0xFF0F172A),
-                    fontSize: 15.5,
+                    fontSize: 15.0,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.2,
                   ),
@@ -4098,7 +4926,39 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               ],
             ),
           ),
+
+          // Right Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(badgeIcon, size: 12, color: iconColor),
+                const SizedBox(width: 4),
+                Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: iconColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: Color(0xFF94A3B8),
+          ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -4228,7 +5088,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     Text(
-                                      _isHindi ? 'मौसम और वर्षा पूर्वानुमान' : 'WEATHER & RAIN FORECAST',
+                                      _isHindi
+                                          ? 'मौसम और वर्षा पूर्वानुमान'
+                                          : 'WEATHER & RAIN FORECAST',
                                       style: const TextStyle(
                                         color: Color(0xFF0F2D59),
                                         fontSize: 12,
@@ -4237,7 +5099,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFE0F2FE),
                                         borderRadius: BorderRadius.circular(14),
@@ -4269,17 +5134,25 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                   onTap: _showWeatherForecastModal,
                                   borderRadius: BorderRadius.circular(20),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: const Color(0xFF93C5FD), width: 1.2),
+                                      border: Border.all(
+                                        color: const Color(0xFF93C5FD),
+                                        width: 1.2,
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          _isHindi ? 'पूर्वानुमान देखें' : 'View Forecast',
+                                          _isHindi
+                                              ? 'पूर्वानुमान देखें'
+                                              : 'View Forecast',
                                           style: const TextStyle(
                                             color: Color(0xFF1D4ED8),
                                             fontSize: 12,
@@ -4299,7 +5172,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                                 if (isCompact) {
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       headerChips,
                                       const SizedBox(height: 6),
@@ -4309,7 +5183,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                 }
 
                                 return Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(child: headerChips),
                                     const SizedBox(width: 8),
@@ -4323,7 +5198,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                             // Subtitle: Short-term outlook
                             Text(
-                              _isHindi ? 'अल्पकालिक दृष्टिकोण' : 'Short-term outlook',
+                              _isHindi
+                                  ? 'अल्पकालिक दृष्टिकोण'
+                                  : 'Short-term outlook',
                               style: const TextStyle(
                                 color: Color(0xFF64748B),
                                 fontSize: 12,
@@ -4335,7 +5212,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                             // Bold Main Heading: Heavy rainfall expected today
                             Text(
-                              _isHindi ? 'आज भारी वर्षा की संभावना' : 'Heavy rainfall expected today',
+                              _isHindi
+                                  ? 'आज भारी वर्षा की संभावना'
+                                  : 'Heavy rainfall expected today',
                               style: const TextStyle(
                                 color: Color(0xFF0F2D59),
                                 fontSize: 19,
@@ -4354,11 +5233,17 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   // Warning Banner: Next 3 hrs: Flood risk may rise
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF7ED),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFED7AA), width: 1.2),
+                      border: Border.all(
+                        color: const Color(0xFFFED7AA),
+                        width: 1.2,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -4390,13 +5275,41 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: _buildHourlyRain('Now', '🌧️🌧️', '35 mm/h', 'High')),
+                      Expanded(
+                        child: _buildHourlyRain(
+                          'Now',
+                          '🌧️🌧️',
+                          '35 mm/h',
+                          'High',
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildHourlyRain('+1 hr', '🌧️🌧️🌧️', '48 mm/h', 'Peak')),
+                      Expanded(
+                        child: _buildHourlyRain(
+                          '+1 hr',
+                          '🌧️🌧️🌧️',
+                          '48 mm/h',
+                          'Peak',
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildHourlyRain('+2 hr', '🌧️🌧️', '30 mm/h', 'High')),
+                      Expanded(
+                        child: _buildHourlyRain(
+                          '+2 hr',
+                          '🌧️🌧️',
+                          '30 mm/h',
+                          'High',
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildHourlyRain('+3 hr', '🌧️', '14 mm/h', 'Moderate')),
+                      Expanded(
+                        child: _buildHourlyRain(
+                          '+3 hr',
+                          '🌧️',
+                          '14 mm/h',
+                          'Moderate',
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -4452,7 +5365,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isHindi ? 'आस-पास के सड़कों की स्थिति' : 'Nearby Road Conditions',
+                      _isHindi
+                          ? 'आस-पास के सड़कों की स्थिति'
+                          : 'Nearby Road Conditions',
                       style: const TextStyle(
                         color: Color(0xFF0F172A),
                         fontSize: 16,
@@ -4462,7 +5377,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _isHindi ? 'लाइव ट्रैफ़िक व मौसम प्रभाव' : 'Live traffic & weather impact',
+                      _isHindi
+                          ? 'लाइव ट्रैफ़िक व मौसम प्रभाव'
+                          : 'Live traffic & weather impact',
                       style: const TextStyle(
                         color: Color(0xFF64748B),
                         fontSize: 12,
@@ -4476,7 +5393,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 onTap: _showRoadConditionsModal,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -4506,7 +5426,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           // 1. Main Bypass Highway (Open)
           _buildRoadConditionItem(
             name: _isHindi ? 'मुख्य बायपास रोड' : 'Main Bypass Highway',
-            subtitle: _isHindi ? 'साफ • सामान्य यातायात' : 'Clear • Normal traffic',
+            subtitle: _isHindi
+                ? 'साफ • सामान्य यातायात'
+                : 'Clear • Normal traffic',
             statusLabel: _isHindi ? 'खुला है' : 'Open',
             dotColor: const Color(0xFF16A34A),
             iconBgColor: const Color(0xFFDCFCE7),
@@ -4536,7 +5458,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           // 3. Damodar River Bridge (Closed)
           _buildRoadConditionItem(
             name: _isHindi ? 'दामोदर नदी पुल' : 'Damodar River Bridge',
-            subtitle: _isHindi ? 'अतिप्रवाह के कारण बंद' : 'Closed due to overflow',
+            subtitle: _isHindi
+                ? 'अतिप्रवाह के कारण बंद'
+                : 'Closed due to overflow',
             statusLabel: _isHindi ? 'बंद' : 'Closed',
             dotColor: const Color(0xFFDC2626),
             iconBgColor: const Color(0xFFFEE2E2),
@@ -4587,7 +5511,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 color: iconBgColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 18, color: iconColor),
+              child: Icon(icon, size: 22, color: iconColor),
             ),
             const SizedBox(width: 12),
 
@@ -4600,7 +5524,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     name,
                     style: const TextStyle(
                       color: Color(0xFF0F172A),
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -4609,7 +5533,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     subtitle,
                     style: const TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 12,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -4631,14 +5555,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     statusLabel,
                     style: TextStyle(
                       color: badgeTextColor,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right_rounded,
-                    size: 14,
+                    size: 16,
                     color: badgeTextColor,
                   ),
                 ],
@@ -4665,14 +5589,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: statusColor, size: 20),
+          Icon(icon, color: statusColor, size: 24),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               name,
               style: const TextStyle(
                 color: Color(0xFF0F172A),
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -4688,7 +5612,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               status,
               style: TextStyle(
                 color: statusColor,
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -4702,348 +5626,436 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // 10. NEARBY MEDICAL / HOSPITAL HELP CARD
   // --------------------------------------------------------------------------
   Widget _buildMedicalHelpCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Top Header Row: Hospital Icon + Info + Operational Badge
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Medical Bag / First Aid Icon in light blue rounded container
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0F2FE),
-                  borderRadius: BorderRadius.circular(12),
+    return FutureBuilder<MedicalCenterModel?>(
+      future: _nearestMedicalCenterFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(color: Color(0xFF007AEB)),
+            ),
+          );
+        }
+
+        final center = snapshot.data;
+        if (center == null) {
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            ),
+            child: Center(
+              child: Text(
+                _isHindi
+                    ? 'कोई चिकित्सा केंद्र नहीं मिला'
+                    : 'No medical centers found',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                 ),
-                child: const Icon(Icons.medical_services_rounded, color: Color(0xFF0284C7), size: 22),
               ),
+            ),
+          );
+        }
 
-              const SizedBox(width: 12),
-
-              // Title & Location / Beds Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _isHindi ? 'झारखंड' : 'JHARKHAND',
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isHindi ? 'जिला सामान्य अस्पताल' : 'District General Hospital',
-                      style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
+        return Container(
+          height: 250,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(19),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Image Section
+                Expanded(
+                  flex: 40,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        fit: StackFit.expand,
                         children: [
-                          const Icon(Icons.location_on_rounded, size: 13, color: Color(0xFF0284C7)),
-                          const SizedBox(width: 3),
-                          Text(
-                            _isHindi ? '3.2 किमी दूर' : '3.2 km away',
-                            style: const TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const Text('  |  ', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-                          const Icon(Icons.bed_rounded, size: 14, color: Color(0xFF64748B)),
-                          const SizedBox(width: 3),
-                          Text(
-                            _isHindi ? '120+ बेड' : '120+ beds',
-                            style: const TextStyle(
-                              color: Color(0xFF475569),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Text('  •  ', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                          Image.network(center.photoUrl, fit: BoxFit.cover),
                           Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF16A34A),
-                              shape: BoxShape.circle,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.85),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _isHindi ? 'खुला 24 × 7' : 'Open 24 × 7',
-                            style: const TextStyle(
-                              color: Color(0xFF16A34A),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            right: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // NEAREST MEDICAL HELP badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFE0F2FE,
+                                    ).withValues(alpha: 0.95),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _isHindi
+                                        ? 'नजदीकी चिकित्सा सहायता'
+                                        : 'NEAREST MEDICAL HELP',
+                                    style: const TextStyle(
+                                      color: Color(0xFF0369A1),
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  center.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_rounded,
+                                      size: 12,
+                                      color: Color(0xFF38BDF8),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      center.distance,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const Text(
+                                      ' • ',
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${center.emergencyBeds}+ beds',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const Text(
+                                      ' • ',
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 5,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: center.isOpen
+                                            ? const Color(0xFF10B981)
+                                            : Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      center.isOpen
+                                          ? (_isHindi
+                                                ? 'खुला 24 × 7'
+                                                : 'Open 24 × 7')
+                                          : 'Closed',
+                                      style: TextStyle(
+                                        color: center.isOpen
+                                            ? const Color(0xFF10B981)
+                                            : Colors.red,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // Operational Pill Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFBBF7D0), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isHindi ? 'सक्रिय' : 'Operational',
-                      style: const TextStyle(
-                        color: Color(0xFF15803D),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // 2. The 4 Metric Cards in Equal Parts
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 640;
-
-              // Card 1: Available Beds (with bar indicator)
-              Widget bedCard = _buildHospitalMetricBox(
-                icon: Icons.bed_rounded,
-                iconBg: const Color(0xFFE0F2FE),
-                iconColor: const Color(0xFF0284C7),
-                label: _isHindi ? 'उपलब्ध बेड' : 'Available Beds',
-                value: '78 / 120',
-                bottomWidget: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: const LinearProgressIndicator(
-                    value: 78 / 120,
-                    minHeight: 5,
-                    backgroundColor: Color(0xFFE2E8F0),
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF007AEB)),
                   ),
                 ),
-              );
 
-              // Card 2: Doctors On Duty
-              Widget doctorCard = _buildHospitalMetricBox(
-                icon: Icons.medical_services_outlined,
-                iconBg: const Color(0xFFDCFCE7),
-                iconColor: const Color(0xFF16A34A),
-                label: _isHindi ? 'ड्यूटी पर डॉक्टर' : 'Doctors On Duty',
-                value: '18',
-                bottomWidget: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF16A34A),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isHindi ? 'सक्रिय' : 'Active',
-                      style: const TextStyle(
-                        color: Color(0xFF16A34A),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              // Card 3: Ambulances
-              Widget ambulanceCard = _buildHospitalMetricBox(
-                icon: Icons.emergency_outlined,
-                iconBg: const Color(0xFFFEE2E2),
-                iconColor: const Color(0xFFEF4444),
-                label: _isHindi ? 'एम्बुलेंस' : 'Ambulances',
-                value: '5',
-                bottomWidget: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF16A34A),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isHindi ? 'उपलब्ध' : 'Available',
-                      style: const TextStyle(
-                        color: Color(0xFF16A34A),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              // Card 4: Emergency Helpline
-              Widget helplineCard = _buildHospitalMetricBox(
-                icon: Icons.phone_rounded,
-                iconBg: const Color(0xFFF3E8FF),
-                iconColor: const Color(0xFF9333EA),
-                label: _isHindi ? 'इमरजेंसी हेल्पलाइन' : 'Emergency Helpline',
-                value: '108',
-                bottomWidget: const Text(
-                  '(24 × 7)',
-                  style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-
-              if (isWide) {
-                return Row(
-                  children: [
-                    Expanded(child: bedCard),
-                    const SizedBox(width: 10),
-                    Expanded(child: doctorCard),
-                    const SizedBox(width: 10),
-                    Expanded(child: ambulanceCard),
-                    const SizedBox(width: 10),
-                    Expanded(child: helplineCard),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    Row(
+                // Right Details Section
+                Expanded(
+                  flex: 60,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: bedCard),
-                        const SizedBox(width: 8),
-                        Expanded(child: doctorCard),
+                        // The 4 metric cards in a row
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _buildHospitalMetricBox(
+                                  icon: Icons.bed_rounded,
+                                  iconBg: const Color(0xFFE0F2FE),
+                                  iconColor: const Color(0xFF0284C7),
+                                  label: _isHindi
+                                      ? 'उपलब्ध बेड'
+                                      : 'Available Beds',
+                                  value: '${center.emergencyBeds}',
+                                  bottomWidget: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: const LinearProgressIndicator(
+                                      value: 0.65,
+                                      minHeight: 12,
+                                      backgroundColor: Color(0xFFE2E8F0),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF007AEB),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildHospitalMetricBox(
+                                  icon: Icons.medical_services_outlined,
+                                  iconBg: const Color(0xFFDCFCE7),
+                                  iconColor: const Color(0xFF16A34A),
+                                  label: _isHindi
+                                      ? 'ड्यूटी पर डॉक्टर'
+                                      : 'Doctors On Duty',
+                                  value: center.emergencyBeds > 10 ? '18' : '5',
+                                  bottomWidget: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF16A34A),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _isHindi ? 'सक्रिय' : 'Active',
+                                        style: const TextStyle(
+                                          color: Color(0xFF16A34A),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildHospitalMetricBox(
+                                  icon: Icons.emergency_outlined,
+                                  iconBg: const Color(0xFFFEE2E2),
+                                  iconColor: const Color(0xFFEF4444),
+                                  label: _isHindi ? 'एम्बुलेंस' : 'Ambulances',
+                                  value: '${center.ambulanceUnits}',
+                                  bottomWidget: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: center.ambulanceUnits > 0
+                                              ? const Color(0xFF16A34A)
+                                              : Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        center.ambulanceUnits > 0
+                                            ? (_isHindi
+                                                  ? 'उपलब्ध'
+                                                  : 'Available')
+                                            : 'Busy',
+                                        style: TextStyle(
+                                          color: center.ambulanceUnits > 0
+                                              ? const Color(0xFF16A34A)
+                                              : Colors.red,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildHospitalMetricBox(
+                                  icon: Icons.phone_rounded,
+                                  iconBg: const Color(0xFFF3E8FF),
+                                  iconColor: const Color(0xFF9333EA),
+                                  label: _isHindi
+                                      ? 'इमरजेंसी हेल्पलाइन'
+                                      : 'Emergency Helpline',
+                                  value: center.phone.length > 5
+                                      ? 'Call'
+                                      : center.phone,
+                                  valueColor: center.phone.length > 5 ? const Color(0xFF007AEB) : null,
+                                  onTapValue: center.phone.length > 5
+                                      ? () => _showMessage(
+                                            _isHindi
+                                                ? 'अस्पताल को कॉल किया जा रहा है: ${center.phone}'
+                                                : 'Dialing ${center.name} (${center.phone})...',
+                                          )
+                                      : null,
+                                  bottomWidget: const Text(
+                                    '(24 × 7)',
+                                    style: TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => CitizenMedicalCentersView(
+                                      isHindi: _isHindi,
+                                    ),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.list_alt_rounded,
+                                  size: 16,
+                                  color: Color(0xFF0284C7),
+                                ),
+                                label: Text(
+                                  _isHindi ? 'सभी देखें' : 'View All',
+                                  style: const TextStyle(
+                                    color: Color(0xFF0284C7),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  side: const BorderSide(
+                                    color: Color(0xFF0284C7),
+                                    width: 1.5,
+                                  ),
+                                  backgroundColor: const Color(0xFFF0F9FF),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CitizenSafeRouteView(isHindi: _isHindi),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.near_me_rounded,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                label: Text(
+                                  _isHindi ? 'दिशा-निर्देश' : 'Get Directions',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: const Color(0xFF007AEB),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(child: ambulanceCard),
-                        const SizedBox(width: 8),
-                        Expanded(child: helplineCard),
-                      ],
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // 3. Action Buttons: Call Hospital & Get Directions
-          Row(
-            children: [
-              // Call Hospital Button
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showMessage(
-                    _isHindi
-                        ? 'अस्पताल को कॉल किया जा रहा है: 06542-230001'
-                        : 'Dialing District General Hospital (108 / 06542-230001)...',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    side: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-                    backgroundColor: const Color(0xFFF0F9FF),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: Color(0xFF0284C7)),
-                  label: Text(
-                    _isHindi ? 'अस्पताल को कॉल करें' : 'Call Hospital',
-                    style: const TextStyle(
-                      color: Color(0xFF0284C7),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Get Directions Button
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    backgroundColor: const Color(0xFF007AEB),
-                    elevation: 1.5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.near_me_rounded, size: 16, color: Colors.white),
-                  label: Text(
-                    _isHindi ? 'दिशा-निर्देश प्राप्त करें' : 'Get Directions',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -5054,49 +6066,61 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     required String label,
     required String value,
     required Widget bottomWidget,
+    VoidCallback? onTapValue,
+    Color? valueColor,
   }) {
+    final valueWidget = Text(
+      value,
+      style: TextStyle(
+        color: valueColor ?? const Color(0xFF0F172A),
+        fontSize: 16,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon in tinted circular pill
           Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 16),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                onTapValue != null
+                    ? InkWell(
+                        onTap: onTapValue,
+                        child: valueWidget,
+                      )
+                    : valueWidget,
+              ],
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF0F172A),
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           bottomWidget,
         ],
       ),
@@ -5107,8 +6131,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // 11. DYNAMIC SAFETY INSTRUCTIONS ("DO'S AND DON'TS" SLIDING CAROUSEL)
   // --------------------------------------------------------------------------
   Widget _buildSafetyInstructionsCard() {
-    final currentDisaster = _dosDisasterList[_dosDisasterIdx.clamp(0, _dosDisasterList.length - 1)];
-    final currentPhase = currentDisaster.phases[_dosPhaseIdx.clamp(0, currentDisaster.phases.length - 1)];
+    final currentDisaster =
+        _dosDisasterList[_dosDisasterIdx.clamp(0, _dosDisasterList.length - 1)];
+    final currentPhase = currentDisaster
+        .phases[_dosPhaseIdx.clamp(0, currentDisaster.phases.length - 1)];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5191,16 +6217,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF0B46A2) : const Color(0xFFF1F5F9),
+                    color: isSelected
+                        ? const Color(0xFF0B46A2)
+                        : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF0B46A2) : const Color(0xFFE2E8F0),
+                      color: isSelected
+                          ? const Color(0xFF0B46A2)
+                          : const Color(0xFFE2E8F0),
                       width: 1.2,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF0B46A2).withValues(alpha: 0.25),
+                              color: const Color(
+                                0xFF0B46A2,
+                              ).withValues(alpha: 0.25),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -5213,21 +6245,30 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       borderRadius: BorderRadius.circular(24),
                       onTap: () => _selectDosDisaster(index),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               item.icon,
                               size: 16,
-                              color: isSelected ? Colors.white : const Color(0xFF334155),
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF334155),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               _isHindi ? item.titleHi : item.titleEn,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : const Color(0xFF334155),
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF334155),
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 fontSize: 13,
                               ),
                             ),
@@ -5268,14 +6309,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   // 3A. HEADER GRADIENT BANNER
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 400),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: currentDisaster.gradient,
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(19),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -5286,7 +6332,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             color: Colors.white.withValues(alpha: 0.22),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(currentDisaster.icon, color: Colors.white, size: 20),
+                          child: Icon(
+                            currentDisaster.icon,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -5294,7 +6344,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _isHindi ? currentDisaster.bannerTitleHi : currentDisaster.bannerTitleEn,
+                                _isHindi
+                                    ? currentDisaster.bannerTitleHi
+                                    : currentDisaster.bannerTitleEn,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
@@ -5306,7 +6358,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                _isHindi ? currentDisaster.bannerSubtitleHi : currentDisaster.bannerSubtitleEn,
+                                _isHindi
+                                    ? currentDisaster.bannerSubtitleHi
+                                    : currentDisaster.bannerSubtitleEn,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.92),
                                   fontSize: 12,
@@ -5332,7 +6386,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final isWide = constraints.maxWidth >= 600;
-                      final tips = _isHindi ? currentPhase.tipsHi : currentPhase.tipsEn;
+                      final tips = _isHindi
+                          ? currentPhase.tipsHi
+                          : currentPhase.tipsEn;
 
                       // 1. Tips content: AnimatedSwitcher keyed by Phase + Disaster
                       // Slow, silky-smooth horizontal conveyor slide animation (950ms, full 1.0 travel, Curves.easeInOutCubic)
@@ -5341,50 +6397,78 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         duration: const Duration(milliseconds: 950),
                         switchInCurve: Curves.easeInOutCubic,
                         switchOutCurve: Curves.easeInOutCubic,
-                        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-                          return Stack(
-                            alignment: Alignment.topLeft,
-                            children: <Widget>[
-                              ...previousChildren,
-                              ?currentChild,
-                            ],
-                          );
-                        },
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          final isEntering = (child.key == ValueKey('tips-${currentDisaster.id}-$_dosPhaseIdx'));
-                          final slideTween = isEntering
-                              ? Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                              : Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero);
+                        layoutBuilder:
+                            (
+                              Widget? currentChild,
+                              List<Widget> previousChildren,
+                            ) {
+                              return Stack(
+                                alignment: Alignment.topLeft,
+                                children: <Widget>[
+                                  ...previousChildren,
+                                  ?currentChild,
+                                ],
+                              );
+                            },
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                              final isEntering =
+                                  (child.key ==
+                                  ValueKey(
+                                    'tips-${currentDisaster.id}-$_dosPhaseIdx',
+                                  ));
+                              final slideTween = isEntering
+                                  ? Tween<Offset>(
+                                      begin: const Offset(1.0, 0.0),
+                                      end: Offset.zero,
+                                    )
+                                  : Tween<Offset>(
+                                      begin: const Offset(-1.0, 0.0),
+                                      end: Offset.zero,
+                                    );
 
-                          return ClipRect(
-                            child: SlideTransition(
-                              position: slideTween.animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOutCubic,
-                              )),
-                              child: child,
-                            ),
-                          );
-                        },
+                              return ClipRect(
+                                child: SlideTransition(
+                                  position: slideTween.animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOutCubic,
+                                    ),
+                                  ),
+                                  child: child,
+                                ),
+                              );
+                            },
                         child: SizedBox(
-                          key: ValueKey('tips-${currentDisaster.id}-$_dosPhaseIdx'),
+                          key: ValueKey(
+                            'tips-${currentDisaster.id}-$_dosPhaseIdx',
+                          ),
                           width: double.infinity,
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: isWide ? 230 : 205),
+                            constraints: BoxConstraints(
+                              minHeight: isWide ? 230 : 205,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 // Phase Badge Pill (clean without any dot)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 5,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0F2FE),
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                                    border: Border.all(
+                                      color: const Color(0xFFBAE6FD),
+                                    ),
                                   ),
                                   child: Text(
-                                    _isHindi ? currentPhase.badgeHi : currentPhase.badgeEn,
+                                    _isHindi
+                                        ? currentPhase.badgeHi
+                                        : currentPhase.badgeEn,
                                     style: const TextStyle(
                                       color: Color(0xFF0284C7),
                                       fontWeight: FontWeight.w800,
@@ -5401,7 +6485,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                   (tip) => Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Padding(
                                           padding: EdgeInsets.only(top: 2),
@@ -5437,18 +6522,31 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                     backgroundColor: const Color(0xFF0F172A),
                                     foregroundColor: Colors.white,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 11,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _isHindi ? 'पूरी गाइड देखें' : 'View Full Guide',
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                        _isHindi
+                                            ? 'पूरी गाइड देखें'
+                                            : 'View Full Guide',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.arrow_forward_rounded, size: 15),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 15,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -5465,31 +6563,46 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         duration: const Duration(milliseconds: 950),
                         switchInCurve: Curves.easeInOutCubic,
                         switchOutCurve: Curves.easeInOutCubic,
-                        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              ...previousChildren,
-                              ?currentChild,
-                            ],
-                          );
-                        },
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          final isEntering = (child.key == ValueKey('img-${currentDisaster.id}'));
-                          final slideTween = isEntering
-                              ? Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                              : Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero);
+                        layoutBuilder:
+                            (
+                              Widget? currentChild,
+                              List<Widget> previousChildren,
+                            ) {
+                              return Stack(
+                                alignment: Alignment.center,
+                                children: <Widget>[
+                                  ...previousChildren,
+                                  ?currentChild,
+                                ],
+                              );
+                            },
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                              final isEntering =
+                                  (child.key ==
+                                  ValueKey('img-${currentDisaster.id}'));
+                              final slideTween = isEntering
+                                  ? Tween<Offset>(
+                                      begin: const Offset(1.0, 0.0),
+                                      end: Offset.zero,
+                                    )
+                                  : Tween<Offset>(
+                                      begin: const Offset(-1.0, 0.0),
+                                      end: Offset.zero,
+                                    );
 
-                          return ClipRect(
-                            child: SlideTransition(
-                              position: slideTween.animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOutCubic,
-                              )),
-                              child: child,
-                            ),
-                          );
-                        },
+                              return ClipRect(
+                                child: SlideTransition(
+                                  position: slideTween.animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOutCubic,
+                                    ),
+                                  ),
+                                  child: child,
+                                ),
+                              );
+                            },
                         child: ClipRRect(
                           key: ValueKey('img-${currentDisaster.id}'),
                           borderRadius: BorderRadius.circular(16),
@@ -5498,11 +6611,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                             height: isWide ? 230 : 175,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              height: isWide ? 230 : 175,
-                              color: const Color(0xFFE2E8F0),
-                              child: Icon(currentDisaster.icon, size: 48, color: const Color(0xFF94A3B8)),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  height: isWide ? 230 : 175,
+                                  color: const Color(0xFFE2E8F0),
+                                  child: Icon(
+                                    currentDisaster.icon,
+                                    size: 48,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                ),
                           ),
                         ),
                       );
@@ -5534,7 +6652,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                   // 3C. BOTTOM INDICATORS: 3 PHASE CHIPS + 4 DISASTER DOTS
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Wrap(
                       alignment: WrapAlignment.spaceBetween,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -5545,30 +6666,46 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildDosPhaseButton(0, _isHindi ? 'पूर्व' : 'Before'),
+                            _buildDosPhaseButton(
+                              0,
+                              _isHindi ? 'पूर्व' : 'Before',
+                            ),
                             const SizedBox(width: 6),
-                            _buildDosPhaseButton(1, _isHindi ? 'दौरान' : 'During'),
+                            _buildDosPhaseButton(
+                              1,
+                              _isHindi ? 'दौरान' : 'During',
+                            ),
                             const SizedBox(width: 6),
-                            _buildDosPhaseButton(2, _isHindi ? 'पश्चात' : 'After'),
+                            _buildDosPhaseButton(
+                              2,
+                              _isHindi ? 'पश्चात' : 'After',
+                            ),
                           ],
                         ),
 
                         // 4 Disaster Pagination Dots (Flood, Cyclone, Landslide, Lightning)
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: List.generate(_dosDisasterList.length, (dIdx) {
+                          children: List.generate(_dosDisasterList.length, (
+                            dIdx,
+                          ) {
                             final isCurr = dIdx == _dosDisasterIdx;
                             return InkWell(
                               onTap: () => _selectDosDisaster(dIdx),
                               borderRadius: BorderRadius.circular(4),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                  vertical: 4,
+                                ),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
                                   width: isCurr ? 24 : 7,
                                   height: 7,
                                   decoration: BoxDecoration(
-                                    color: isCurr ? currentDisaster.primaryColor : const Color(0xFFCBD5E1),
+                                    color: isCurr
+                                        ? currentDisaster.primaryColor
+                                        : const Color(0xFFCBD5E1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -5600,10 +6737,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
                       ],
                     ),
-                    child: const Icon(Icons.chevron_left_rounded, color: Color(0xFF0F172A), size: 22),
+                    child: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Color(0xFF0F172A),
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
@@ -5626,10 +6771,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
                       ],
                     ),
-                    child: const Icon(Icons.chevron_right_rounded, color: Color(0xFF0F172A), size: 22),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF0F172A),
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
@@ -5651,16 +6804,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           duration: const Duration(milliseconds: 250),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE0F2FE) : const Color(0xFFF8FAFC),
+            color: isSelected
+                ? const Color(0xFFE0F2FE)
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+              color: isSelected
+                  ? const Color(0xFFBAE6FD)
+                  : const Color(0xFFE2E8F0),
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+              color: isSelected
+                  ? const Color(0xFF0284C7)
+                  : const Color(0xFF64748B),
               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
               fontSize: 12,
             ),
@@ -5714,7 +6873,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isHindi ? 'आपातकालीन संपर्क (1-टैप कॉल)' : 'EMERGENCY HELPLINES (1-TAP CALL)',
+                      _isHindi
+                          ? 'आपातकालीन संपर्क (1-टैप कॉल)'
+                          : 'EMERGENCY HELPLINES (1-TAP CALL)',
                       style: const TextStyle(
                         color: Color(0xFF0F2642),
                         fontSize: 13,
@@ -5762,7 +6923,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 pillColor: const Color(0xFFDC2626),
                 chevronColor: const Color(0xFFFB7185),
                 onTap: () => _showMessage(
-                  _isHindi ? '112 (इमरजेंसी) पर कॉल किया जा रहा है...' : 'Dialing 112 (Emergency)...',
+                  _isHindi
+                      ? '112 (इमरजेंसी) पर कॉल किया जा रहा है...'
+                      : 'Dialing 112 (Emergency)...',
                 ),
               );
 
@@ -5777,7 +6940,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 pillColor: const Color(0xFF2563EB),
                 chevronColor: const Color(0xFF60A5FA),
                 onTap: () => _showMessage(
-                  _isHindi ? '100 (पुलिस) पर कॉल किया जा रहा है...' : 'Dialing 100 (Police)...',
+                  _isHindi
+                      ? '100 (पुलिस) पर कॉल किया जा रहा है...'
+                      : 'Dialing 100 (Police)...',
                 ),
               );
 
@@ -5792,7 +6957,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 pillColor: const Color(0xFFEA580C),
                 chevronColor: const Color(0xFFFB923C),
                 onTap: () => _showMessage(
-                  _isHindi ? '101 (फायर) पर कॉल किया जा रहा है...' : 'Dialing 101 (Fire)...',
+                  _isHindi
+                      ? '101 (फायर) पर कॉल किया जा रहा है...'
+                      : 'Dialing 101 (Fire)...',
                 ),
               );
 
@@ -5807,7 +6974,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 pillColor: const Color(0xFF16A34A),
                 chevronColor: const Color(0xFF4ADE80),
                 onTap: () => _showMessage(
-                  _isHindi ? '108 (एम्बुलेंस) पर कॉल किया जा रहा है...' : 'Dialing 108 (Ambulance)...',
+                  _isHindi
+                      ? '108 (एम्बुलेंस) पर कॉल किया जा रहा है...'
+                      : 'Dialing 108 (Ambulance)...',
                 ),
               );
 
@@ -5822,7 +6991,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 pillColor: const Color(0xFF9333EA),
                 chevronColor: const Color(0xFFC084FC),
                 onTap: () => _showMessage(
-                  _isHindi ? '1077 (आपदा नियंत्रण) पर कॉल किया जा रहा है...' : 'Dialing 1077 (Disaster Control)...',
+                  _isHindi
+                      ? '1077 (आपदा नियंत्रण) पर कॉल किया जा रहा है...'
+                      : 'Dialing 1077 (Disaster Control)...',
                 ),
               );
 
@@ -5884,11 +7055,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(child: card5),
-                      ],
-                    ),
+                    Row(children: [Expanded(child: card5)]),
                   ],
                 );
               }
@@ -5956,7 +7123,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     ),
                     const SizedBox(height: 3),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: pillColor,
                         borderRadius: BorderRadius.circular(10),
@@ -6008,6 +7178,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           options: MapOptions(
             initialCenter: const LatLng(23.7990, 86.4340),
             initialZoom: 13.5,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+            ),
           ),
           children: [
             TileLayer(
@@ -6037,9 +7210,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       color: const Color(0xFF007AEB),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 6),
+                      ],
                     ),
-                    child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 24),
+                    child: const Icon(
+                      Icons.my_location_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                 ),
                 // Shelter 1
@@ -6056,7 +7235,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
                         ),
-                        child: const Icon(Icons.night_shelter_rounded, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.night_shelter_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -6067,14 +7250,24 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     width: 40,
                     height: 40,
                     child: GestureDetector(
-                      onTap: _showMedicalDetailsModal,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CitizenMedicalCentersView(isHindi: _isHindi),
+                        ),
+                      ),
                       child: Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFF0284C7),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
                         ),
-                        child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.local_hospital_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -6092,7 +7285,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: const Icon(Icons.block_rounded, color: Colors.white, size: 18),
+                        child: const Icon(
+                          Icons.block_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
@@ -6109,26 +7306,31 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['All', 'Flood Zone', 'Roads', 'Shelters', 'Hospitals'].map((filter) {
-                final isSelected = _fullMapFilter == filter;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text(
-                      filter,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFF013973),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
+              children: ['All', 'Flood Zone', 'Roads', 'Shelters', 'Hospitals']
+                  .map((filter) {
+                    final isSelected = _fullMapFilter == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        selected: isSelected,
+                        label: Text(
+                          filter,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF013973),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                        selectedColor: const Color(0xFF013973),
+                        backgroundColor: Colors.white.withValues(alpha: 0.95),
+                        onSelected: (_) =>
+                            setState(() => _fullMapFilter = filter),
                       ),
-                    ),
-                    selectedColor: const Color(0xFF013973),
-                    backgroundColor: Colors.white.withValues(alpha: 0.95),
-                    onSelected: (_) => setState(() => _fullMapFilter = filter),
-                  ),
-                );
-              }).toList(),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ),
@@ -6142,19 +7344,34 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
+                MaterialPageRoute(
+                  builder: (_) => CitizenSafeRouteView(isHindi: _isHindi),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF15945C),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 6,
             ),
-            icon: const Icon(Icons.directions_run_rounded, color: Colors.white, size: 22),
+            icon: const Icon(
+              Icons.directions_run_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
             label: Text(
-              _isHindi ? 'सुरक्षित मार्ग नेविगेशन शुरू करें' : 'START SAFE ROUTE NAVIGATION',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+              _isHindi
+                  ? 'सुरक्षित मार्ग नेविगेशन शुरू करें'
+                  : 'START SAFE ROUTE NAVIGATION',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
@@ -6174,8 +7391,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         children: [
           // Need Help Header
           Text(
-            _isHindi ? '🚨 आपातकालीन मदद की आवश्यकता है?' : '🚨 Need Immediate Help?',
-            style: const TextStyle(color: Color(0xFF013973), fontSize: 20, fontWeight: FontWeight.w900),
+            _isHindi
+                ? '🚨 आपातकालीन मदद की आवश्यकता है?'
+                : '🚨 Need Immediate Help?',
+            style: const TextStyle(
+              color: Color(0xFF013973),
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -6193,13 +7416,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               onPressed: _showSosConfirmationDialog,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE92828),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 elevation: 6,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.emergency_share_rounded, color: Colors.white, size: 40),
+                  const Icon(
+                    Icons.emergency_share_rounded,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                   const SizedBox(width: 16),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -6207,11 +7436,21 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     children: [
                       Text(
                         _isHindi ? 'आपातकालीन SOS भेजें' : 'TRANSMIT SOS NOW',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       Text(
-                        _isHindi ? 'लाइव जीपीएस सीधे राहत दल को जाएगा' : 'Shares exact GPS with nearby NDRF / Police',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        _isHindi
+                            ? 'लाइव जीपीएस सीधे राहत दल को जाएगा'
+                            : 'Shares exact GPS with nearby NDRF / Police',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -6225,12 +7464,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           _buildHelpTile(
             icon: Icons.alt_route_rounded,
             color: const Color(0xFF15945C),
-            title: _isHindi ? 'सुरक्षित मार्ग खोजें' : 'Find Safe Evacuation Route',
-            subtitle: _isHindi ? 'बाढ़ से मुक्त ऊंचे मार्गों की नेविगेशन' : 'GPS route avoiding submerged roads & bridges',
+            title: _isHindi
+                ? 'सुरक्षित मार्ग खोजें'
+                : 'Find Safe Evacuation Route',
+            subtitle: _isHindi
+                ? 'बाढ़ से मुक्त ऊंचे मार्गों की नेविगेशन'
+                : 'GPS route avoiding submerged roads & bridges',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
+                MaterialPageRoute(
+                  builder: (_) => CitizenSafeRouteView(isHindi: _isHindi),
+                ),
               );
             },
           ),
@@ -6238,12 +7483,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           _buildHelpTile(
             icon: Icons.night_shelter_rounded,
             color: const Color(0xFF007AEB),
-            title: _isHindi ? 'निकटतम राहत शिविर खोजें' : 'Locate Nearest Relief Shelter',
-            subtitle: _isHindi ? 'भोजन, पानी और बिस्तर की उपलब्धता' : 'Food, clean water, medical aid & bed capacity',
+            title: _isHindi
+                ? 'निकटतम राहत शिविर खोजें'
+                : 'Locate Nearest Relief Shelter',
+            subtitle: _isHindi
+                ? 'भोजन, पानी और बिस्तर की उपलब्धता'
+                : 'Food, clean water, medical aid & bed capacity',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CitizenSheltersView(isHindi: _isHindi)),
+                MaterialPageRoute(
+                  builder: (_) => CitizenSheltersView(isHindi: _isHindi),
+                ),
               );
             },
           ),
@@ -6251,28 +7502,47 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           _buildHelpTile(
             icon: Icons.local_hospital_rounded,
             color: const Color(0xFF0284C7),
-            title: _isHindi ? 'अस्पताल व प्राथमिक चिकित्सा' : 'Hospitals & Medical Care',
-            subtitle: _isHindi ? 'सक्रिय स्वास्थ्य केंद्र एवं एम्बुलेंस' : 'Emergency clinics & on-call trauma units',
-            onTap: _showMedicalDetailsModal,
+            title: _isHindi
+                ? 'अस्पताल व प्राथमिक चिकित्सा'
+                : 'Hospitals & Medical Care',
+            subtitle: _isHindi
+                ? 'सक्रिय स्वास्थ्य केंद्र एवं एम्बुलेंस'
+                : 'Emergency clinics & on-call trauma units',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CitizenMedicalCentersView(isHindi: _isHindi),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           _buildHelpTile(
             icon: Icons.shield_rounded,
             color: const Color(0xFF7351D8),
-            title: _isHindi ? 'सुरक्षा गाइड और निर्देश' : 'Disaster Survival Guide',
-            subtitle: _isHindi ? 'बाढ़ के दौरान क्या करें और क्या न करें' : 'Step-by-step checklist during flash floods',
+            title: _isHindi
+                ? 'सुरक्षा गाइड और निर्देश'
+                : 'Disaster Survival Guide',
+            subtitle: _isHindi
+                ? 'बाढ़ के दौरान क्या करें और क्या न करें'
+                : 'Step-by-step checklist during flash floods',
             onTap: _showSafetyInstructionsModal,
           ),
           const SizedBox(height: 10),
           _buildHelpTile(
             icon: Icons.add_a_photo_rounded,
             color: const Color(0xFFF39A20),
-            title: _isHindi ? 'आपदा या खतरा दर्ज करें' : 'Report Incident or Hazard',
-            subtitle: _isHindi ? 'टूटे पुल, जलभराव या मलबे की फोटो भेजें' : 'Report blocked roads or stranded persons',
+            title: _isHindi
+                ? 'आपदा या खतरा दर्ज करें'
+                : 'Report Incident or Hazard',
+            subtitle: _isHindi
+                ? 'टूटे पुल, जलभराव या मलबे की फोटो भेजें'
+                : 'Report blocked roads or stranded persons',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CitizenHazardReportView(isHindi: _isHindi)),
+                MaterialPageRoute(
+                  builder: (_) => CitizenHazardReportView(isHindi: _isHindi),
+                ),
               );
             },
           ),
@@ -6320,17 +7590,28 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(color: Color(0xFF013973), fontSize: 13.5, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      color: Color(0xFF013973),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: Color(0xFF537392), fontSize: 11),
+                    style: const TextStyle(
+                      color: Color(0xFF537392),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF537392), size: 16),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Color(0xFF537392),
+              size: 16,
+            ),
           ],
         ),
       ),
@@ -6369,23 +7650,39 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     children: [
                       const Text(
                         'Rohit Kumar',
-                        style: TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                        style: TextStyle(
+                          color: Color(0xFF013973),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       const Text(
                         '+91 98765 43210 • Citizen',
-                        style: TextStyle(color: Color(0xFF537392), fontSize: 12),
+                        style: TextStyle(
+                          color: Color(0xFF537392),
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEAF8F0),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          _isHindi ? '🟢 जीपीएस सत्यापित' : '🟢 GPS Location Verified',
-                          style: const TextStyle(color: Color(0xFF15945C), fontSize: 10, fontWeight: FontWeight.bold),
+                          _isHindi
+                              ? '🟢 जीपीएस सत्यापित'
+                              : '🟢 GPS Location Verified',
+                          style: const TextStyle(
+                            color: Color(0xFF15945C),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -6402,14 +7699,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             items: [
               _buildProfileMenuItem(
                 icon: Icons.family_restroom_rounded,
-                title: _isHindi ? 'परिवार सदस्य सूची एवं चेक-इन' : 'Family Safety & Check-in',
-                subtitle: _isHindi ? '3/4 सदस्य सुरक्षित' : '3 / 4 members marked safe',
+                title: _isHindi
+                    ? 'परिवार सदस्य सूची एवं चेक-इन'
+                    : 'Family Safety & Check-in',
+                subtitle: _isHindi
+                    ? '3/4 सदस्य सुरक्षित'
+                    : '3 / 4 members marked safe',
                 onTap: _showFamilySafetyModal,
               ),
               _buildProfileMenuItem(
                 icon: Icons.contact_phone_rounded,
-                title: _isHindi ? 'आपातकालीन संपर्क सूची' : 'Emergency Contacts',
-                subtitle: _isHindi ? '112, पुलिस, एम्बुलेंस' : '112, Police, NDRF',
+                title: _isHindi
+                    ? 'आपातकालीन संपर्क सूची'
+                    : 'Emergency Contacts',
+                subtitle: _isHindi
+                    ? '112, पुलिस, एम्बुलेंस'
+                    : '112, Police, NDRF',
                 onTap: () => _showMessage('Emergency contacts up to date'),
               ),
             ],
@@ -6422,14 +7727,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             items: [
               _buildProfileMenuItem(
                 icon: Icons.download_done_rounded,
-                title: _isHindi ? 'डाउनलोड किए गए मैप और डेटा' : 'Downloaded Offline Data',
-                subtitle: _isHindi ? 'बोकारो व शिलांग बेसिन (14 MB)' : 'Bokaro & Shillong Basins (14 MB cached)',
+                title: _isHindi
+                    ? 'डाउनलोड किए गए मैप और डेटा'
+                    : 'Downloaded Offline Data',
+                subtitle: _isHindi
+                    ? 'बोकारो व शिलांग बेसिन (14 MB)'
+                    : 'Bokaro & Shillong Basins (14 MB cached)',
                 onTap: () => _showMessage('Offline maps are cached and ready'),
               ),
               _buildProfileMenuItem(
                 icon: Icons.wifi_tethering_rounded,
-                title: _isHindi ? 'लोरा रेडियो मेश सेटिंग्स' : 'LoRa Mesh Sync Settings',
-                subtitle: _isHindi ? 'ऑटोमैटिक पियर-टू-पियर चालू' : 'P2P background synchronization active',
+                title: _isHindi
+                    ? 'लोरा रेडियो मेश सेटिंग्स'
+                    : 'LoRa Mesh Sync Settings',
+                subtitle: _isHindi
+                    ? 'ऑटोमैटिक पियर-टू-पियर चालू'
+                    : 'P2P background synchronization active',
                 onTap: () => _showMessage('LoRa Mesh is active in background'),
               ),
             ],
@@ -6443,7 +7756,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               _buildProfileMenuItem(
                 icon: Icons.language_rounded,
                 title: _isHindi ? 'भाषा (Language)' : 'App Language',
-                subtitle: _isHindi ? 'वर्तमान: हिन्दी (टैप करें बदलने के लिए)' : 'Current: English (tap to switch)',
+                subtitle: _isHindi
+                    ? 'वर्तमान: हिन्दी (टैप करें बदलने के लिए)'
+                    : 'Current: English (tap to switch)',
                 onTap: () {
                   setState(() => _isHindi = !_isHindi);
                   _showMessage(_isHindi ? 'भाषा: हिन्दी' : 'Language: English');
@@ -6451,8 +7766,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               ),
               _buildProfileMenuItem(
                 icon: Icons.notifications_active_rounded,
-                title: _isHindi ? 'आपातकालीन अलर्ट सायरन' : 'Emergency Alert Sound',
-                subtitle: _isHindi ? 'उच्च प्राथमिकता सायरन चालू' : 'Loud siren on Critical Evacuation: ON',
+                title: _isHindi
+                    ? 'आपातकालीन अलर्ट सायरन'
+                    : 'Emergency Alert Sound',
+                subtitle: _isHindi
+                    ? 'उच्च प्राथमिकता सायरन चालू'
+                    : 'Loud siren on Critical Evacuation: ON',
                 onTap: () => _showMessage('Siren test completed'),
               ),
             ],
@@ -6463,13 +7782,21 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     );
   }
 
-  Widget _buildProfileMenuSection({required String title, required List<Widget> items}) {
+  Widget _buildProfileMenuSection({
+    required String title,
+    required List<Widget> items,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.6),
+          style: const TextStyle(
+            color: Color(0xFF537392),
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.6,
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -6504,16 +7831,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(color: Color(0xFF013973), fontSize: 13, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: Color(0xFF013973),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: Color(0xFF537392), fontSize: 11),
+                    style: const TextStyle(
+                      color: Color(0xFF537392),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF537392), size: 14),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Color(0xFF537392),
+              size: 14,
+            ),
           ],
         ),
       ),
@@ -6536,8 +7874,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF013973),
         unselectedItemColor: const Color(0xFF64748B),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 10.5),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 10.5,
+        ),
         elevation: 0,
         items: [
           BottomNavigationBarItem(
@@ -6577,12 +7921,19 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.warning_rounded, color: Color(0xFFE92828), size: 28),
+            const Icon(
+              Icons.warning_rounded,
+              color: Color(0xFFE92828),
+              size: 28,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 _isHindi ? 'आपातकालीन SOS' : 'Emergency SOS',
-                style: const TextStyle(color: Color(0xFF013973), fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  color: Color(0xFF013973),
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ],
@@ -6606,12 +7957,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.group_rounded, color: Color(0xFFE92828), size: 18),
+                  const Icon(
+                    Icons.group_rounded,
+                    color: Color(0xFFE92828),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _isHindi ? 'साथ में लोग: 3 सदस्य' : 'People with you: 3 members',
-                      style: const TextStyle(color: Color(0xFFE92828), fontSize: 11.5, fontWeight: FontWeight.bold),
+                      _isHindi
+                          ? 'साथ में लोग: 3 सदस्य'
+                          : 'People with you: 3 members',
+                      style: const TextStyle(
+                        color: Color(0xFFE92828),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -6624,25 +7985,50 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               _isHindi ? 'रद्द करें' : 'CANCEL',
-              style: const TextStyle(color: Color(0xFF537392), fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Color(0xFF537392),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
+              IncidentCoordinator.instance.createSos(
+                callerName: 'Rohit',
+                village: 'Mawphlang Riverbank',
+                latitude: 25.4502,
+                longitude: 91.7592,
+                peopleCount: 6,
+                elderlyCount: 1,
+                childrenCount: 1,
+                hasMedical: true,
+                emergencyType: 'Trapped in Rising Water',
+                message:
+                    'Water level rising rapidly, 6 people trapped near riverbank.',
+              );
               setState(() {
                 _isSosActive = true;
                 _threatLevel = CitizenThreatLevel.evacuation;
               });
-              _showMessage(_isHindi ? '🚨 SOS भेजा गया! राहत दल को सूचित किया गया है।' : '🚨 SOS Transmitted! Relief team assigned.');
+              _showMessage(
+                _isHindi
+                    ? '🚨 SOS भेजा गया! राहत दल को सूचित किया गया है।'
+                    : '🚨 SOS Transmitted! Relief team assigned.',
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE92828),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text(
               _isHindi ? 'SOS भेजें' : 'SEND SOS',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -6654,7 +8040,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _showLocationPickerModal() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -6667,23 +8055,43 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 const SizedBox(width: 8),
                 Text(
                   _isHindi ? 'स्थान चुनें' : 'Select Location',
-                  style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Color(0xFF013973),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-            ...['Shillong, Meghalaya', 'Bokaro Basin, Jharkhand', 'Ranchi, Jharkhand', 'Guwahati, Assam'].map((loc) {
+            ...[
+              'Shillong, Meghalaya',
+              'Bokaro Basin, Jharkhand',
+              'Ranchi, Jharkhand',
+              'Guwahati, Assam',
+            ].map((loc) {
               final isSel = _currentLocation == loc;
               return ListTile(
                 leading: Icon(
                   isSel ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isSel ? const Color(0xFF007AEB) : const Color(0xFF537392),
+                  color: isSel
+                      ? const Color(0xFF007AEB)
+                      : const Color(0xFF537392),
                 ),
-                title: Text(loc, style: TextStyle(fontWeight: isSel ? FontWeight.w900 : FontWeight.w600)),
+                title: Text(
+                  loc,
+                  style: TextStyle(
+                    fontWeight: isSel ? FontWeight.w900 : FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   setState(() => _currentLocation = loc);
                   Navigator.pop(ctx);
-                  _showMessage(_isHindi ? 'स्थान बदला गया: $loc' : 'Location updated: $loc');
+                  _showMessage(
+                    _isHindi
+                        ? 'स्थान बदला गया: $loc'
+                        : 'Location updated: $loc',
+                  );
                 },
               );
             }),
@@ -6698,7 +8106,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         height: MediaQuery.of(context).size.height * 0.65,
@@ -6707,19 +8117,32 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.notifications_active_rounded, color: Color(0xFF013973)),
+                const Icon(
+                  Icons.notifications_active_rounded,
+                  color: Color(0xFF013973),
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  _isHindi ? 'सूचनाएं (नोटिफिकेशन्स)' : 'Notifications (${_notifications.length})',
-                  style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                  _isHindi
+                      ? 'सूचनाएं (नोटिफिकेशन्स)'
+                      : 'Notifications (${_notifications.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF013973),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _showMessage(_isHindi ? 'सभी सूचनाएं पढ़ी गईं' : 'All marked as read');
+                    _showMessage(
+                      _isHindi ? 'सभी सूचनाएं पढ़ी गईं' : 'All marked as read',
+                    );
                   },
-                  child: Text(_isHindi ? 'पढ़ा हुआ मार्क करें' : 'Mark all read'),
+                  child: Text(
+                    _isHindi ? 'पढ़ा हुआ मार्क करें' : 'Mark all read',
+                  ),
                 ),
               ],
             ),
@@ -6733,15 +8156,36 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
-                      backgroundColor: notif['type'] == 'Emergency' ? const Color(0xFFFFEEEE) : const Color(0xFFE9F4FB),
+                      backgroundColor: notif['type'] == 'Emergency'
+                          ? const Color(0xFFFFEEEE)
+                          : const Color(0xFFE9F4FB),
                       child: Icon(
-                        notif['type'] == 'Emergency' ? Icons.warning_rounded : Icons.info_rounded,
-                        color: notif['type'] == 'Emergency' ? const Color(0xFFE92828) : const Color(0xFF007AEB),
+                        notif['type'] == 'Emergency'
+                            ? Icons.warning_rounded
+                            : Icons.info_rounded,
+                        color: notif['type'] == 'Emergency'
+                            ? const Color(0xFFE92828)
+                            : const Color(0xFF007AEB),
                       ),
                     ),
-                    title: Text(notif['title'], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                    subtitle: Text(notif['body'], style: const TextStyle(fontSize: 11)),
-                    trailing: Text(notif['time'], style: const TextStyle(fontSize: 10, color: Color(0xFF537392))),
+                    title: Text(
+                      notif['title'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    subtitle: Text(
+                      notif['body'],
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    trailing: Text(
+                      notif['time'],
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF537392),
+                      ),
+                    ),
                   );
                 },
               ),
@@ -6757,7 +8201,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           return Container(
@@ -6768,11 +8214,21 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.family_restroom_rounded, color: Color(0xFF7351D8), size: 24),
+                    const Icon(
+                      Icons.family_restroom_rounded,
+                      color: Color(0xFF7351D8),
+                      size: 24,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      _isHindi ? 'परिवार सुरक्षा चेक-इन' : 'Family Safety & Check-in',
-                      style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                      _isHindi
+                          ? 'परिवार सुरक्षा चेक-इन'
+                          : 'Family Safety & Check-in',
+                      style: const TextStyle(
+                        color: Color(0xFF013973),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
@@ -6781,25 +8237,42 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   _isHindi
                       ? 'आपदा के समय अपने परिवार के सदस्यों की सुरक्षा स्थिति ट्रैक करें या स्वयं को सुरक्षित मार्क करें।'
                       : 'Real-time sync of family member check-ins. Works offline via LoRa broadcast.',
-                  style: const TextStyle(color: Color(0xFF537392), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF537392),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      _showMessage(_isHindi ? 'आपने खुद को सुरक्षित मार्क किया!' : 'You marked yourself SAFE!');
+                      _showMessage(
+                        _isHindi
+                            ? 'आपने खुद को सुरक्षित मार्क किया!'
+                            : 'You marked yourself SAFE!',
+                      );
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF15945C),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
+                    icon: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                    ),
                     label: Text(
-                      _isHindi ? 'मैं सुरक्षित हूँ (चेक-इन करें)' : 'I AM SAFE (BROADCAST CHECK-IN)',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      _isHindi
+                          ? 'मैं सुरक्षित हूँ (चेक-इन करें)'
+                          : 'I AM SAFE (BROADCAST CHECK-IN)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -6822,7 +8295,10 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           children: [
                             CircleAvatar(
                               backgroundColor: const Color(0xFFE9F4FB),
-                              child: Icon(m['icon'], color: const Color(0xFF013973)),
+                              child: Icon(
+                                m['icon'],
+                                color: const Color(0xFF013973),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -6831,12 +8307,17 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                                 children: [
                                   Text(
                                     _isHindi ? m['nameHi'] : m['name'],
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   Text(
                                     _isHindi ? m['statusHi'] : m['status'],
                                     style: TextStyle(
-                                      color: isSafe ? const Color(0xFF15945C) : const Color(0xFFF39A20),
+                                      color: isSafe
+                                          ? const Color(0xFF15945C)
+                                          : const Color(0xFFF39A20),
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -6845,8 +8326,12 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.phone_rounded, color: Color(0xFF007AEB)),
-                              onPressed: () => _showMessage('Calling ${m['name']}...'),
+                              icon: const Icon(
+                                Icons.phone_rounded,
+                                color: Color(0xFF007AEB),
+                              ),
+                              onPressed: () =>
+                                  _showMessage('Calling ${m['name']}...'),
                             ),
                           ],
                         ),
@@ -6867,7 +8352,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -6876,17 +8363,33 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.night_shelter_rounded, color: Color(0xFF15945C), size: 28),
+                const Icon(
+                  Icons.night_shelter_rounded,
+                  color: Color(0xFF15945C),
+                  size: 28,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _isHindi ? 'सरकारी राहत केंद्र' : 'Government Relief Centre',
-                        style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                        _isHindi
+                            ? 'सरकारी राहत केंद्र'
+                            : 'Government Relief Centre',
+                        style: const TextStyle(
+                          color: Color(0xFF013973),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      const Text('Sector 4 High Ground, Bokaro • 1.8 km', style: TextStyle(color: Color(0xFF537392), fontSize: 11)),
+                      const Text(
+                        'Sector 4 High Ground, Bokaro • 1.8 km',
+                        style: TextStyle(
+                          color: Color(0xFF537392),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -6894,15 +8397,41 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
             const Divider(height: 20),
             Text(
-              _isHindi ? 'शिविर सुविधाएं एवं स्थिति' : 'Shelter Amenities & Readiness',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF013973)),
+              _isHindi
+                  ? 'शिविर सुविधाएं एवं स्थिति'
+                  : 'Shelter Amenities & Readiness',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: Color(0xFF013973),
+              ),
             ),
             const SizedBox(height: 10),
-            _buildShelterRow(Icons.groups_rounded, _isHindi ? 'क्षमता' : 'Occupancy', '72 / 100 Beds Occupied (28 Remaining)'),
-            _buildShelterRow(Icons.rice_bowl_rounded, _isHindi ? 'भोजन' : 'Clean Food', 'Hot Meals & Drinking Water Stocked'),
-            _buildShelterRow(Icons.medical_services_rounded, _isHindi ? 'चिकित्सा' : 'Medical Staff', '1 Doctor & 2 Registered Nurses On-Duty'),
-            _buildShelterRow(Icons.bolt_rounded, _isHindi ? 'पावर' : 'Generator', 'Emergency Diesel Generator Active'),
-            _buildShelterRow(Icons.wifi_rounded, _isHindi ? 'संचार' : 'Radio Mesh', 'LoRa Relay + Satellite Phone Hub'),
+            _buildShelterRow(
+              Icons.groups_rounded,
+              _isHindi ? 'क्षमता' : 'Occupancy',
+              '72 / 100 Beds Occupied (28 Remaining)',
+            ),
+            _buildShelterRow(
+              Icons.rice_bowl_rounded,
+              _isHindi ? 'भोजन' : 'Clean Food',
+              'Hot Meals & Drinking Water Stocked',
+            ),
+            _buildShelterRow(
+              Icons.medical_services_rounded,
+              _isHindi ? 'चिकित्सा' : 'Medical Staff',
+              '1 Doctor & 2 Registered Nurses On-Duty',
+            ),
+            _buildShelterRow(
+              Icons.bolt_rounded,
+              _isHindi ? 'पावर' : 'Generator',
+              'Emergency Diesel Generator Active',
+            ),
+            _buildShelterRow(
+              Icons.wifi_rounded,
+              _isHindi ? 'संचार' : 'Radio Mesh',
+              'LoRa Relay + Satellite Phone Hub',
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -6911,18 +8440,30 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   Navigator.pop(ctx);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => CitizenSafeRouteView(isHindi: _isHindi)),
+                    MaterialPageRoute(
+                      builder: (_) => CitizenSafeRouteView(isHindi: _isHindi),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF15945C),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                icon: const Icon(Icons.directions_run_rounded, color: Colors.white),
+                icon: const Icon(
+                  Icons.directions_run_rounded,
+                  color: Colors.white,
+                ),
                 label: Text(
-                  _isHindi ? 'इस शिविर का सुरक्षित मार्ग शुरू करें' : 'NAVIGATE SAFE CORRIDOR TO SHELTER',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  _isHindi
+                      ? 'इस शिविर का सुरक्षित मार्ग शुरू करें'
+                      : 'NAVIGATE SAFE CORRIDOR TO SHELTER',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -6940,8 +8481,20 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         children: [
           Icon(icon, size: 16, color: const Color(0xFF007AEB)),
           const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF013973))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F2642)))),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 11.5,
+              color: Color(0xFF013973),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F2642)),
+            ),
+          ),
         ],
       ),
     );
@@ -6951,7 +8504,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _showMedicalDetailsModal() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -6960,27 +8515,59 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_hospital_rounded, color: Color(0xFF0284C7), size: 26),
+                const Icon(
+                  Icons.local_hospital_rounded,
+                  color: Color(0xFF0284C7),
+                  size: 26,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _isHindi ? 'जिला सामान्य अस्पताल' : 'District General Hospital',
-                        style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                        _isHindi
+                            ? 'जिला सामान्य अस्पताल'
+                            : 'District General Hospital',
+                        style: const TextStyle(
+                          color: Color(0xFF013973),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      const Text('Sector 1 Civic Center • 3.2 km away', style: TextStyle(color: Color(0xFF537392), fontSize: 11)),
+                      const Text(
+                        'Sector 1 Civic Center • 3.2 km away',
+                        style: TextStyle(
+                          color: Color(0xFF537392),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
             const Divider(height: 20),
-            _buildShelterRow(Icons.bed_rounded, _isHindi ? 'इमरजेंसी बेड' : 'Emergency Beds', '18 Trauma Beds Available'),
-            _buildShelterRow(Icons.local_shipping_rounded, _isHindi ? 'एम्बुलेंस' : 'Ambulance Units', '3 High-Water Ambulances On Standby'),
-            _buildShelterRow(Icons.bloodtype_rounded, _isHindi ? 'ब्लड बैंक' : 'Blood Bank', 'All Types Available in Emergency Reserve'),
-            _buildShelterRow(Icons.phone_in_talk_rounded, _isHindi ? 'हेल्पलाइन' : 'Direct Helpline', '06542-230001 / 108'),
+            _buildShelterRow(
+              Icons.bed_rounded,
+              _isHindi ? 'इमरजेंसी बेड' : 'Emergency Beds',
+              '18 Trauma Beds Available',
+            ),
+            _buildShelterRow(
+              Icons.local_shipping_rounded,
+              _isHindi ? 'एम्बुलेंस' : 'Ambulance Units',
+              '3 High-Water Ambulances On Standby',
+            ),
+            _buildShelterRow(
+              Icons.bloodtype_rounded,
+              _isHindi ? 'ब्लड बैंक' : 'Blood Bank',
+              'All Types Available in Emergency Reserve',
+            ),
+            _buildShelterRow(
+              Icons.phone_in_talk_rounded,
+              _isHindi ? 'हेल्पलाइन' : 'Direct Helpline',
+              '06542-230001 / 108',
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -7001,9 +8588,18 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       Navigator.pop(ctx);
                       _showMessage('Routing to District Hospital');
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-                    icon: const Icon(Icons.directions, color: Colors.white, size: 16),
-                    label: Text(_isHindi ? 'नेविगेट' : 'Directions', style: const TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                    ),
+                    icon: const Icon(
+                      Icons.directions,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _isHindi ? 'नेविगेट' : 'Directions',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -7018,7 +8614,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _showRoadConditionsModal() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -7027,11 +8625,21 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.traffic_rounded, color: Color(0xFF013973), size: 24),
+                const Icon(
+                  Icons.traffic_rounded,
+                  color: Color(0xFF013973),
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  _isHindi ? 'सड़क एवं पुल स्थिति रिपोर्ट' : 'Local Road & Bridge Report',
-                  style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                  _isHindi
+                      ? 'सड़क एवं पुल स्थिति रिपोर्ट'
+                      : 'Local Road & Bridge Report',
+                  style: const TextStyle(
+                    color: Color(0xFF013973),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
@@ -7067,7 +8675,11 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 _isHindi
                     ? '💡 सलाह: राहत केंद्र पहुंचने के लिए केवल ग्रीन सुरक्षित मार्ग (हाईवे बायपास) का ही उपयोग करें।'
                     : '💡 Safe Corridor Recommendation: Stick strictly to the green Safe Route along high ground.',
-                style: const TextStyle(fontSize: 11.5, color: Color(0xFF15945C), fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: Color(0xFF15945C),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -7080,7 +8692,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void _showWeatherForecastModal() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -7089,18 +8703,34 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.cloud_sync_rounded, color: Color(0xFF007AEB), size: 24),
+                const Icon(
+                  Icons.cloud_sync_rounded,
+                  color: Color(0xFF007AEB),
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  _isHindi ? 'मौसम एवं वर्षा पूर्वानुमान' : 'Weather & Radar Forecast',
-                  style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                  _isHindi
+                      ? 'मौसम एवं वर्षा पूर्वानुमान'
+                      : 'Weather & Radar Forecast',
+                  style: const TextStyle(
+                    color: Color(0xFF013973),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
             const Divider(height: 20),
             Text(
-              _isHindi ? 'अगले 6 घंटे का अनुमान (IMD डॉप्लर रडार)' : 'Next 6 Hours Outlook (Doppler Radar)',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF013973)),
+              _isHindi
+                  ? 'अगले 6 घंटे का अनुमान (IMD डॉप्लर रडार)'
+                  : 'Next 6 Hours Outlook (Doppler Radar)',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: Color(0xFF013973),
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -7134,12 +8764,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       ),
       child: Column(
         children: [
-          Text(time, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF013973))),
+          Text(
+            time,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              color: Color(0xFF013973),
+            ),
+          ),
           const SizedBox(height: 4),
           Text(icon, style: const TextStyle(fontSize: 18)),
           const SizedBox(height: 4),
-          Text(rain, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
-          Text(tag, style: const TextStyle(color: Color(0xFFE92828), fontSize: 9.5, fontWeight: FontWeight.bold)),
+          Text(
+            rain,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
+          ),
+          Text(
+            tag,
+            style: const TextStyle(
+              color: Color(0xFFE92828),
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -7150,7 +8797,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         height: MediaQuery.of(context).size.height * 0.75,
@@ -7159,16 +8808,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.shield_rounded, color: Color(0xFF15945C), size: 26),
+                const Icon(
+                  Icons.shield_rounded,
+                  color: Color(0xFF15945C),
+                  size: 26,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _isHindi ? 'आपदा सुरक्षा गाइड (NDMA)' : 'Citizen Safety Guide (NDMA)',
-                    style: const TextStyle(color: Color(0xFF013973), fontSize: 16, fontWeight: FontWeight.w900),
+                    _isHindi
+                        ? 'आपदा सुरक्षा गाइड (NDMA)'
+                        : 'Citizen Safety Guide (NDMA)',
+                    style: const TextStyle(
+                      color: Color(0xFF013973),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF64748B),
+                  ),
                   onPressed: () => Navigator.of(ctx).pop(),
                   tooltip: 'Close',
                 ),
@@ -7179,7 +8841,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               child: ListView(
                 children: [
                   _buildSafetySection(
-                    _isHindi ? '1. बाढ़ से पहले क्या करें (तैयारी)' : '1. Before Flood Waters Rise (Preparation)',
+                    _isHindi
+                        ? '1. बाढ़ से पहले क्या करें (तैयारी)'
+                        : '1. Before Flood Waters Rise (Preparation)',
                     [
                       'Keep emergency documents, IDs & prescription medicines in water-sealed bags.',
                       'Store at least 3 days of potable water and non-perishable rations.',
@@ -7189,7 +8853,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   ),
                   const SizedBox(height: 14),
                   _buildSafetySection(
-                    _isHindi ? '2. बाढ़ के दौरान क्या करें (निकासी)' : '2. During Flooding (Evacuation & Survival)',
+                    _isHindi
+                        ? '2. बाढ़ के दौरान क्या करें (निकासी)'
+                        : '2. During Flooding (Evacuation & Survival)',
                     [
                       'Never drive or wade through floodwaters — 15 cm of moving water can knock you down.',
                       'Disconnect main power switches before water enters your house.',
@@ -7199,7 +8865,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   ),
                   const SizedBox(height: 14),
                   _buildSafetySection(
-                    _isHindi ? '3. बाढ़ के बाद क्या करें (सुरक्षित वापसी)' : '3. After Flood Waters Recede',
+                    _isHindi
+                        ? '3. बाढ़ के बाद क्या करें (सुरक्षित वापसी)'
+                        : '3. After Flood Waters Recede',
                     [
                       'Do not drink tap or well water until officially verified as potable.',
                       'Beware of venomous snakes and reptiles that seek shelter in dry buildings.',
@@ -7219,18 +8887,43 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Color(0xFF013973), fontWeight: FontWeight.w900, fontSize: 13.5)),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF013973),
+            fontWeight: FontWeight.w900,
+            fontSize: 13.5,
+          ),
+        ),
         const SizedBox(height: 6),
-        ...points.map((p) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2.5),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('• ', style: TextStyle(color: Color(0xFF007AEB), fontWeight: FontWeight.bold, fontSize: 14)),
-                  Expanded(child: Text(p, style: const TextStyle(fontSize: 12, color: Color(0xFF0F2642), height: 1.3))),
-                ],
-              ),
-            )),
+        ...points.map(
+          (p) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2.5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '• ',
+                  style: TextStyle(
+                    color: Color(0xFF007AEB),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    p,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF0F2642),
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -7276,9 +8969,12 @@ class _CardCornerWavePainter extends CustomPainter {
     final path = Path();
     path.moveTo(size.width * 0.46, 0);
     path.cubicTo(
-      size.width * 0.52, size.height * 0.16,
-      size.width * 0.70, size.height * 0.34,
-      size.width, size.height * 0.58,
+      size.width * 0.52,
+      size.height * 0.16,
+      size.width * 0.70,
+      size.height * 0.34,
+      size.width,
+      size.height * 0.58,
     );
     path.lineTo(size.width, 0);
     path.close();
@@ -7290,4 +8986,3 @@ class _CardCornerWavePainter extends CustomPainter {
   bool shouldRepaint(covariant _CardCornerWavePainter oldDelegate) =>
       oldDelegate.color != color;
 }
-

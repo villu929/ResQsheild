@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../../models/incident_models.dart';
+import '../../../../services/river_api_service.dart';
+import '../../../../services/rainfall_api_service.dart';
 
 // ============================================================================
 // HELPER FOR SMOOTH MINUTE-BY-MINUTE SPLINE INTERPOLATION
@@ -50,34 +53,164 @@ class RiverTelemetryCard extends StatefulWidget {
   State<RiverTelemetryCard> createState() => _RiverTelemetryCardState();
 }
 
-class _RiverTelemetryCardState extends State<RiverTelemetryCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-  int? _hoverIndex;
-
-  static const List<double> _anchorLevels = [2.70, 3.20, 4.10, 5.00, 5.80, 6.60, 7.42];
-  late final List<FlSpot> _allMinuteSpots;
+class _RiverTelemetryCardState extends State<RiverTelemetryCard> {
+  List<RiverModel> _rivers = [];
+  RiverModel? _selectedRiver;
+  bool _is12H = true;
 
   @override
   void initState() {
     super.initState();
-    _allMinuteSpots = _generateMinuteSpots(_anchorLevels);
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
-    _controller.forward();
+    _loadRivers();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Future<void> _loadRivers() async {
+    final data = await RiverApiService.fetchRivers();
+    if (mounted) {
+      setState(() {
+        _rivers = data;
+        if (_rivers.isNotEmpty) _selectedRiver = _rivers.first;
+      });
+    }
+  }
+
+  void _showRiverSelector() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Select River Station', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _rivers.length,
+                  itemBuilder: (context, index) {
+                    final r = _rivers[index];
+                    Color statusColor = _getStatusColor(r.status);
+                    return ListTile(
+                      leading: Icon(Icons.waves, color: statusColor),
+                      title: Text('${r.name} — ${r.stationName}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text('Cur: ${r.currentLevel.toStringAsFixed(1)}m • Dngr: ${r.dangerLevelM}m'),
+                      trailing: Text(r.status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w800)),
+                      onTap: () {
+                        setState(() {
+                          _selectedRiver = r;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'DANGER': return const Color(0xFFDC2626);
+      case 'WARNING': return const Color(0xFFEA580C);
+      case 'WATCH': return const Color(0xFFD97706);
+      case 'NORMAL':
+      default: return const Color(0xFF16A34A);
+    }
+  }
+
+  List<FlSpot> _getSpots() {
+    if (_selectedRiver == null || _selectedRiver!.observations.isEmpty) return [];
+    final obs = _selectedRiver!.observations;
+    
+    List<FlSpot> hourlySpots = [];
+
+    for (int i = 0; i < obs.length; i++) {
+      final o = obs[i];
+      int hoursAgo = obs.length - 1 - i; 
+      
+      if (_is12H) {
+        hourlySpots.add(FlSpot((12 - hoursAgo).toDouble(), o.waterLevelM));
+      } else {
+        if (hoursAgo <= 6) {
+          hourlySpots.add(FlSpot((6 - hoursAgo).toDouble(), o.waterLevelM));
+        }
+      }
+    }
+    
+    // Generate dense spots for continuous hover
+    hourlySpots.sort((a, b) => a.x.compareTo(b.x));
+    List<double> values = hourlySpots.map((s) => s.y).toList();
+    List<FlSpot> denseSpots = [];
+    int totalMinutes = _is12H ? 12 * 60 : 6 * 60;
+    for (int m = 0; m <= totalMinutes; m++) {
+      double t = m / 60.0;
+      double y = _interpolateSpline(values, t);
+      denseSpots.add(FlSpot(t, y));
+    }
+    return denseSpots;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedRiver == null) {
+      return Container(
+        height: 300,
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final spots = _getSpots();
+    
+    // Dynamic Y-axis logic
+    double minY = 0.0;
+    double maxY = 10.0;
+    
+    if (spots.isNotEmpty) {
+      double minSpotY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
+      double maxSpotY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+      
+      // Determine minY
+      if (_selectedRiver!.normalMinM > 50) {
+        minY = ((minSpotY - 10) / 10).floor() * 10.0;
+        if (minY < 0) minY = 0;
+      } else if (_selectedRiver!.normalMinM > 20) {
+        minY = ((minSpotY - 5) / 5).floor() * 5.0;
+        if (minY < 0) minY = 0;
+      } else {
+        minY = 0;
+      }
+
+      // Determine maxY
+      double requiredMax = maxSpotY > _selectedRiver!.dangerLevelM ? maxSpotY : _selectedRiver!.dangerLevelM;
+      double range = requiredMax - minY;
+      
+      if (range > 100) {
+        maxY = (requiredMax / 25).ceil() * 25.0;
+      } else if (range > 50) {
+        maxY = (requiredMax / 10).ceil() * 10.0;
+      } else if (range > 20) {
+        maxY = (requiredMax / 5).ceil() * 5.0;
+      } else {
+        maxY = (requiredMax / 2).ceil() * 2.0;
+        if (maxY <= requiredMax) maxY += 2.0;
+      }
+    }
+    
+    // Determine interval for grid
+    double interval = (maxY - minY) / 5;
+    if (interval < 1) interval = 1;
+    
+    final statusColor = _getStatusColor(_selectedRiver!.status);
+    final rate = _selectedRiver!.rateOfRise;
+    final rateStr = '${rate > 0 ? '+' : ''}${(rate * 100).toInt()} cm/hr ${rate > 0.02 ? '↑' : (rate < -0.02 ? '↓' : '')}';
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -97,39 +230,67 @@ class _RiverTelemetryCardState extends State<RiverTelemetryCard> with SingleTick
         children: [
           // Header Row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Icon(Icons.waves_rounded, color: Color(0xFF0284C7), size: 20),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'RIVER TELEMETRY – Umiam (Stn #4)',
-                  style: TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RIVER TELEMETRY',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _showRiverSelector,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${_selectedRiver!.name} — ${_selectedRiver!.stationName}',
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0284C7), size: 16),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Live Indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFEE2E2)),
+                  border: Border.all(color: const Color(0xFFDCFCE7)),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.warning_rounded, color: Color(0xFFDC2626), size: 12),
+                    Icon(Icons.circle, color: Color(0xFF16A34A), size: 8),
                     SizedBox(width: 4),
                     Text(
-                      'Rising rapidly toward danger',
+                      'LIVE',
                       style: TextStyle(
-                        color: Color(0xFFDC2626),
+                        color: Color(0xFF16A34A),
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -137,272 +298,166 @@ class _RiverTelemetryCardState extends State<RiverTelemetryCard> with SingleTick
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Synchronized Live Inspection Area
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              final animatedSpots = _allMinuteSpots
-                  .map((s) => FlSpot(s.x, s.y * _animation.value))
-                  .toList();
-
-              final activeIndex = (_hoverIndex ?? (animatedSpots.length - 1)).clamp(0, animatedSpots.length - 1);
-              final activeSpot = animatedSpots[activeIndex];
-              final isHovering = _hoverIndex != null;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Metrics Bar (syncs with cursor position)
-                  Row(
-                    children: [
-                      _metricColumn(
-                        prefixIcon: isHovering
-                            ? const Icon(Icons.touch_app_rounded, color: Color(0xFFFF5722), size: 14)
-                            : const Icon(Icons.arrow_upward_rounded, color: Color(0xFF16A34A), size: 14),
-                        value: '${activeSpot.y.toStringAsFixed(2)} m',
-                        label: isHovering ? 'Level @ ${_formatTimeFromHour(activeSpot.x)}' : 'Current Level (6h)',
-                        valColor: isHovering ? const Color(0xFFFF5722) : const Color(0xFF0F172A),
-                      ),
-                      _vDivider(),
-                      _metricColumn(
-                        value: '8.00 m',
-                        label: 'Danger Threshold',
-                        valColor: const Color(0xFFDC2626),
-                      ),
-                      _vDivider(),
-                      _metricColumn(
-                        value: '+18 cm/hr',
-                        label: 'Rate of Rise',
-                        valColor: const Color(0xFFDC2626),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Graph with continuous minute-level cursor inspection
-                  SizedBox(
-                    height: 165,
-                    child: LineChart(
-                  LineChartData(
-                    minX: 0,
-                    maxX: 6.05,
-                    minY: 0,
-                    maxY: 10.5,
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 2.0,
-                      getDrawingHorizontalLine: (val) => const FlLine(
-                        color: Color(0xFFF1F5F9),
-                        strokeWidth: 1,
-                      ),
-                    ),
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
-                        axisNameWidget: const Text(
-                          'Water Level (m)',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5, fontWeight: FontWeight.w600),
-                        ),
-                        axisNameSize: 18,
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 24,
-                          interval: 2.0,
-                          getTitlesWidget: (val, meta) => Text(
-                            val.toStringAsFixed(1),
-                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
-                          ),
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 20,
-                          interval: 1.0,
-                          getTitlesWidget: (val, meta) {
-                            // Only show whole hours on bottom axis
-                            if ((val - val.round()).abs() < 0.05) {
-                              return Text(
-                                '${val.toInt()}h',
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    extraLinesData: ExtraLinesData(
-                      horizontalLines: [
-                        HorizontalLine(
-                          y: 8.0,
-                          color: const Color(0xFFEF4444),
-                          strokeWidth: 1.2,
-                          dashArray: [4, 4],
-                          label: HorizontalLineLabel(
-                            show: true,
-                            alignment: Alignment.topLeft,
-                            padding: const EdgeInsets.only(left: 4, bottom: 2),
-                            style: const TextStyle(
-                              color: Color(0xFFEF4444),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            labelResolver: (line) => 'Danger Threshold (8.00 m)',
-                          ),
-                        ),
-                      ],
-                    ),
-                    showingTooltipIndicators: [
-                      ShowingTooltipIndicators([
-                        LineBarSpot(
-                          LineChartBarData(spots: animatedSpots),
-                          0,
-                          activeSpot,
-                        ),
-                      ]),
-                    ],
-                    lineTouchData: LineTouchData(
-                      enabled: true,
-                      handleBuiltInTouches: true,
-                      touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                        if (touchResponse?.lineBarSpots != null && touchResponse!.lineBarSpots!.isNotEmpty) {
-                          final idx = touchResponse.lineBarSpots!.first.spotIndex;
-                          if (_hoverIndex != idx) {
-                            setState(() {
-                              _hoverIndex = idx;
-                            });
-                          }
-                        }
-                      },
-                      getTouchedSpotIndicator: (barData, spotIndexes) {
-                        return spotIndexes.map((i) {
-                          return TouchedSpotIndicatorData(
-                            const FlLine(
-                              color: Color(0xFFFF5722),
-                              strokeWidth: 1.5,
-                              dashArray: [3, 3],
-                            ),
-                            FlDotData(
-                              show: true,
-                              getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                                radius: 5.5,
-                                color: const Color(0xFFFF5722),
-                                strokeWidth: 2.5,
-                                strokeColor: Colors.white,
-                              ),
-                            ),
-                          );
-                        }).toList();
-                      },
-                      touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (_) => const Color(0xFFFF5722),
-                        tooltipPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        tooltipBorderRadius: BorderRadius.circular(6),
-                        tooltipMargin: 8,
-                        fitInsideHorizontally: true,
-                        fitInsideVertically: true,
-                        getTooltipItems: (touchedSpots) {
-                          return touchedSpots.map((spot) {
-                            final timeLabel = _formatTimeFromHour(spot.x);
-                            return LineTooltipItem(
-                              '$timeLabel: ${spot.y.toStringAsFixed(2)} m',
-                              const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            );
-                          }).toList();
-                        },
-                      ),
-                    ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: animatedSpots,
-                        isCurved: true,
-                        curveSmoothness: 0.1,
-                        color: const Color(0xFFFF5722),
-                        barWidth: 2.5,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(
-                          show: true,
-                          checkToShowDot: (spot, barData) {
-                            // Show dots only on whole hours for clean appearance
-                            return (spot.x - spot.x.round()).abs() < 0.005;
-                          },
-                          getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                            radius: 3.5,
-                            color: const Color(0xFFFF5722),
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          ),
-                        ),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFFFF5722).withValues(alpha: 0.22),
-                              const Color(0xFFFF5722).withValues(alpha: 0.01),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    ],
-  ),
-);
-}
-
-  Widget _metricColumn({
-    Widget? prefixIcon,
-    required String value,
-    required String label,
-    required Color valColor,
-  }) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // KPIs Row
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              if (prefixIcon != null) ...[
-                prefixIcon,
-                const SizedBox(width: 3),
-              ],
-              Text(
-                value,
-                style: TextStyle(
-                  color: valColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
+              _kpiBlock('CURRENT', '${_selectedRiver!.currentLevel.toStringAsFixed(1)} m'),
+              _vDivider(),
+              _kpiBlock('NORMAL', '${_selectedRiver!.normalMinM.toInt()}–${_selectedRiver!.normalMaxM.toInt()} m'),
+              _vDivider(),
+              _kpiBlock('DANGER', '${_selectedRiver!.dangerLevelM} m'),
+              _vDivider(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('RATE', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(rateStr, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 1),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 16),
+
+          // Range Selector & Chart Area
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _is12H ? 'Last 12 Hours' : 'Last 6 Hours',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                    child: Text(_selectedRiver!.status, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w800)),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        _rangeToggle('6H', !_is12H, () => setState(() => _is12H = false)),
+                        _rangeToggle('12H', _is12H, () => setState(() => _is12H = true)),
+                      ],
+                    ),
+                  )
+                ],
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 170,
+            child: LineChart(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              LineChartData(
+                minX: 0,
+                maxX: _is12H ? 12 : 6,
+                minY: minY,
+                maxY: maxY,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: interval,
+                  getDrawingHorizontalLine: (val) => const FlLine(color: Color(0xFFF1F5F9), strokeWidth: 1),
+                ),
+                titlesData: FlTitlesData(
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 26,
+                      interval: interval,
+                      getTitlesWidget: (val, meta) => Text(
+                        '${val.toInt()}',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 20,
+                      interval: 2.0,
+                      getTitlesWidget: (val, meta) {
+                        int hoursAgo = _is12H ? (12 - val.toInt()) : (6 - val.toInt());
+                        if (hoursAgo == 0) return const Text('Now', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5));
+                        return Text('${hoursAgo}h', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5));
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(y: _selectedRiver!.watchLevelM, color: const Color(0xFFD97706).withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.bottomRight, style: const TextStyle(color: Color(0xFFD97706), fontSize: 8), labelResolver: (_) => 'Watch')),
+                    HorizontalLine(y: _selectedRiver!.warningLevelM, color: const Color(0xFFEA580C).withValues(alpha: 0.6), strokeWidth: 1, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.bottomRight, style: const TextStyle(color: Color(0xFFEA580C), fontSize: 8), labelResolver: (_) => 'Warning')),
+                    HorizontalLine(y: _selectedRiver!.dangerLevelM, color: const Color(0xFFDC2626).withValues(alpha: 0.8), strokeWidth: 1.5, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.bottomRight, style: const TextStyle(color: Color(0xFFDC2626), fontSize: 8, fontWeight: FontWeight.w700), labelResolver: (_) => 'Danger')),
+                  ],
+                ),
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => const Color(0xFF172033),
+                    tooltipPadding: const EdgeInsets.all(8),
+                    tooltipBorderRadius: BorderRadius.circular(6),
+                  getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        double hoursAgo = _is12H ? (12 - spot.x) : (6 - spot.x);
+                        String timeStr = hoursAgo <= 0 ? 'Now' : _formatTimeFromHour(hoursAgo) + ' ago';
+                        return LineTooltipItem(
+                          '$timeStr\nLvl: ${spot.y.toStringAsFixed(2)} m',
+                          const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        );
+                      }).toList();
+                    },
+                  ),
+                  getTouchedSpotIndicator: (barData, spotIndexes) {
+                    return spotIndexes.map((i) {
+                      return TouchedSpotIndicatorData(
+                        const FlLine(color: Color(0xFF0284C7), strokeWidth: 1.5, dashArray: [3, 3]),
+                        FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 5, color: const Color(0xFF0284C7), strokeWidth: 2, strokeColor: Colors.white)),
+                      );
+                    }).toList();
+                  },
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    curveSmoothness: 0.2,
+                    color: const Color(0xFF0284C7), // Keep line government blue
+                    barWidth: 2.5,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF0284C7).withValues(alpha: 0.15),
+                          const Color(0xFF0284C7).withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -410,18 +465,52 @@ class _RiverTelemetryCardState extends State<RiverTelemetryCard> with SingleTick
     );
   }
 
+  Widget _kpiBlock(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
+        ],
+      ),
+    );
+  }
+
+  Widget _rangeToggle(String label, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _vDivider() {
     return Container(
-      height: 26,
+      height: 24,
       width: 1,
       color: const Color(0xFFE2E8F0),
-      margin: const EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
     );
   }
 }
 
-// ============================================================================
-// RAINFALL TELEMETRY CARD (24H)
 // ============================================================================
 class RainfallTelemetryCard extends StatefulWidget {
   const RainfallTelemetryCard({super.key});
@@ -430,34 +519,137 @@ class RainfallTelemetryCard extends StatefulWidget {
   State<RainfallTelemetryCard> createState() => _RainfallTelemetryCardState();
 }
 
-class _RainfallTelemetryCardState extends State<RainfallTelemetryCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _RainfallTelemetryCardState extends State<RainfallTelemetryCard> {
+  List<RainfallModel> _areas = [];
+  RainfallModel? _selectedArea;
+  bool _is12H = true;
   int? _hoverIndex;
-
-  static const List<double> _anchorRainfall = [22, 38, 60, 95, 130, 162, 186];
-  late final List<FlSpot> _allMinuteSpots;
 
   @override
   void initState() {
     super.initState();
-    _allMinuteSpots = _generateMinuteSpots(_anchorRainfall);
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
-    _controller.forward();
+    _loadAreas();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Future<void> _loadAreas() async {
+    final data = await RainfallApiService.fetchRainfallData();
+    if (mounted) {
+      setState(() {
+        _areas = data;
+        if (_areas.isNotEmpty) _selectedArea = _areas.first;
+      });
+    }
+  }
+
+  void _showAreaSelector() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Select Rainfall Area', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _areas.length,
+                  itemBuilder: (context, index) {
+                    final r = _areas[index];
+                    Color statusColor = _getStatusColor(r.alertLevel);
+                    return ListTile(
+                      leading: Icon(Icons.water_drop, color: statusColor),
+                      title: Text('${r.areaName}, ${r.state}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text('12h: ${r.total12H}mm • Fcst: ${r.forecastMm}mm'),
+                      trailing: Text(r.status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w800)),
+                      onTap: () {
+                        setState(() {
+                          _selectedArea = r;
+                          _hoverIndex = null;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(String alertLevel) {
+    switch (alertLevel) {
+      case 'Red': return const Color(0xFFDC2626);
+      case 'Orange': return const Color(0xFFEA580C);
+      case 'Yellow': return const Color(0xFFD97706);
+      case 'Green':
+      default: return const Color(0xFF16A34A);
+    }
+  }
+
+  List<FlSpot> _getSpots() {
+    if (_selectedArea == null || _selectedArea!.observations.isEmpty) return [];
+    final obs = _selectedArea!.observations;
+    
+    List<FlSpot> hourlySpots = [];
+    double baseMm = 0;
+
+    if (!_is12H && obs.length >= 7) {
+      baseMm = obs[obs.length - 7].cumulativeMm;
+    }
+
+    for (int i = 0; i < obs.length; i++) {
+      final o = obs[i];
+      int hoursAgo = obs.length - 1 - i; // Assumes 1 per hour, last is 0
+      
+      if (_is12H) {
+        hourlySpots.add(FlSpot((12 - hoursAgo).toDouble(), o.cumulativeMm));
+      } else {
+        if (hoursAgo <= 6) {
+          hourlySpots.add(FlSpot((6 - hoursAgo).toDouble(), o.cumulativeMm - baseMm));
+        }
+      }
+    }
+    
+    // Generate dense spots for continuous hover
+    hourlySpots.sort((a, b) => a.x.compareTo(b.x));
+    List<double> values = hourlySpots.map((s) => s.y).toList();
+    List<FlSpot> denseSpots = [];
+    int totalMinutes = _is12H ? 12 * 60 : 6 * 60;
+    for (int m = 0; m <= totalMinutes; m++) {
+      double t = m / 60.0;
+      double y = _interpolateSpline(values, t);
+      denseSpots.add(FlSpot(t, y));
+    }
+    return denseSpots;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedArea == null) {
+      return Container(
+        height: 300,
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final spots = _getSpots();
+    double maxY = 36.0;
+    if (spots.isNotEmpty) {
+      double maxSpotY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+      if (maxSpotY > 36.0) {
+        maxY = ((maxSpotY / 10).ceil() * 10).toDouble() + 5.0; 
+      }
+    }
+    
+    final statusColor = _getStatusColor(_selectedArea!.alertLevel);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -477,39 +669,64 @@ class _RainfallTelemetryCardState extends State<RainfallTelemetryCard> with Sing
         children: [
           // Header Row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Icon(Icons.water_drop_rounded, color: Color(0xFF0284C7), size: 20),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'RAINFALL TELEMETRY (24H)',
-                  style: TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RAINFALL TELEMETRY',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _showAreaSelector,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _selectedArea!.areaName,
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0284C7), size: 16),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Live Indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F9FF),
+                  color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                  border: Border.all(color: const Color(0xFFDCFCE7)),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.info_outline_rounded, color: Color(0xFF0284C7), size: 12),
+                    Icon(Icons.circle, color: Color(0xFF16A34A), size: 8),
                     SizedBox(width: 4),
                     Text(
-                      'Steady rainfall, high cumulative total',
+                      'LIVE',
                       style: TextStyle(
-                        color: Color(0xFF0284C7),
+                        color: Color(0xFF16A34A),
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -517,249 +734,166 @@ class _RainfallTelemetryCardState extends State<RainfallTelemetryCard> with Sing
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Synchronized Live Inspection Area
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              final animatedSpots = _allMinuteSpots
-                  .map((s) => FlSpot(s.x, s.y * _animation.value))
-                  .toList();
-
-              final activeIndex = (_hoverIndex ?? (animatedSpots.length - 1)).clamp(0, animatedSpots.length - 1);
-              final activeSpot = animatedSpots[activeIndex];
-              final isHovering = _hoverIndex != null;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Metrics Bar (syncs with cursor position)
-                  Row(
-                    children: [
-                      _metricColumn(
-                        prefixIcon: isHovering
-                            ? const Icon(Icons.touch_app_rounded, color: Color(0xFF0284C7), size: 14)
-                            : const Icon(Icons.arrow_upward_rounded, color: Color(0xFF0284C7), size: 14),
-                        value: '${activeSpot.y.toInt()} mm',
-                        label: isHovering ? 'Rain @ ${_formatTimeFromHour(activeSpot.x)}' : 'Total (24h)',
-                        valColor: const Color(0xFF0284C7),
-                      ),
-                      _vDivider(),
-                      _metricColumn(
-                        value: '42 mm',
-                        label: 'Last 1 Hour',
-                        valColor: const Color(0xFF0284C7),
-                      ),
-                      _vDivider(),
-                      _metricColumn(
-                        value: '118 mm',
-                        label: 'Last 6 Hours',
-                        valColor: const Color(0xFF0284C7),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Graph with continuous minute-level cursor inspection
-                  SizedBox(
-                    height: 165,
-                    child: LineChart(
-                  LineChartData(
-                    minX: 0,
-                    maxX: 6.05,
-                    minY: 0,
-                    maxY: 250,
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 50.0,
-                      getDrawingHorizontalLine: (val) => const FlLine(
-                        color: Color(0xFFF1F5F9),
-                        strokeWidth: 1,
-                      ),
-                    ),
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
-                        axisNameWidget: const Text(
-                          'Rainfall (mm)',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5, fontWeight: FontWeight.w600),
-                        ),
-                        axisNameSize: 18,
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 26,
-                          interval: 50.0,
-                          getTitlesWidget: (val, meta) => Text(
-                            '${val.toInt()}',
-                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
-                          ),
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 20,
-                          interval: 1.0,
-                          getTitlesWidget: (val, meta) {
-                            if ((val - val.round()).abs() < 0.05) {
-                              return Text(
-                                '${val.toInt()}h',
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    showingTooltipIndicators: [
-                      ShowingTooltipIndicators([
-                        LineBarSpot(
-                          LineChartBarData(spots: animatedSpots),
-                          0,
-                          activeSpot,
-                        ),
-                      ]),
-                    ],
-                    lineTouchData: LineTouchData(
-                      enabled: true,
-                      handleBuiltInTouches: true,
-                      touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                        if (touchResponse?.lineBarSpots != null && touchResponse!.lineBarSpots!.isNotEmpty) {
-                          final idx = touchResponse.lineBarSpots!.first.spotIndex;
-                          if (_hoverIndex != idx) {
-                            setState(() {
-                              _hoverIndex = idx;
-                            });
-                          }
-                        }
-                      },
-                      getTouchedSpotIndicator: (barData, spotIndexes) {
-                        return spotIndexes.map((i) {
-                          return TouchedSpotIndicatorData(
-                            const FlLine(
-                              color: Color(0xFF0284C7),
-                              strokeWidth: 1.5,
-                              dashArray: [3, 3],
-                            ),
-                            FlDotData(
-                              show: true,
-                              getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                                radius: 5.5,
-                                color: const Color(0xFF0284C7),
-                                strokeWidth: 2.5,
-                                strokeColor: Colors.white,
-                              ),
-                            ),
-                          );
-                        }).toList();
-                      },
-                      touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (_) => const Color(0xFF0284C7),
-                        tooltipPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        tooltipBorderRadius: BorderRadius.circular(6),
-                        tooltipMargin: 8,
-                        fitInsideHorizontally: true,
-                        fitInsideVertically: true,
-                        getTooltipItems: (touchedSpots) {
-                          return touchedSpots.map((spot) {
-                            final timeLabel = _formatTimeFromHour(spot.x);
-                            return LineTooltipItem(
-                              '$timeLabel: ${spot.y.toInt()} mm',
-                              const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            );
-                          }).toList();
-                        },
-                      ),
-                    ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: animatedSpots,
-                        isCurved: true,
-                        curveSmoothness: 0.1,
-                        color: const Color(0xFF0284C7),
-                        barWidth: 2.5,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(
-                          show: true,
-                          checkToShowDot: (spot, barData) {
-                            return (spot.x - spot.x.round()).abs() < 0.005;
-                          },
-                          getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                            radius: 3.5,
-                            color: const Color(0xFF0284C7),
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          ),
-                        ),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFF0284C7).withValues(alpha: 0.22),
-                              const Color(0xFF0284C7).withValues(alpha: 0.01),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    ],
-  ),
-);
-}
-
-  Widget _metricColumn({
-    Widget? prefixIcon,
-    required String value,
-    required String label,
-    required Color valColor,
-  }) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // KPIs Row
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              if (prefixIcon != null) ...[
-                prefixIcon,
-                const SizedBox(width: 3),
-              ],
-              Text(
-                value,
-                style: TextStyle(
-                  color: valColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
+              _kpiBlock('1H', '${_selectedArea!.total1H.toStringAsFixed(1)} mm'),
+              _vDivider(),
+              _kpiBlock('6H', '${_selectedArea!.total6H.toStringAsFixed(1)} mm'),
+              _vDivider(),
+              _kpiBlock('12H', '${_selectedArea!.total12H.toStringAsFixed(1)} mm'),
+              _vDivider(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Intensity', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _selectedArea!.status,
+                        style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 1),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 16),
+
+          // Range Selector & Chart Area
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _is12H ? 'Last 12 Hours Cumulative' : 'Last 6 Hours Cumulative',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    _rangeToggle('6H', !_is12H, () => setState(() => _is12H = false)),
+                    _rangeToggle('12H', _is12H, () => setState(() => _is12H = true)),
+                  ],
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 170,
+            child: LineChart(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              LineChartData(
+                minX: 0,
+                maxX: _is12H ? 12 : 6,
+                minY: 0,
+                maxY: maxY,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 9.0,
+                  getDrawingHorizontalLine: (val) => const FlLine(color: Color(0xFFF1F5F9), strokeWidth: 1),
+                ),
+                titlesData: FlTitlesData(
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 26,
+                      interval: 9.0,
+                      getTitlesWidget: (val, meta) => Text(
+                        '${val.toInt()}',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 20,
+                      interval: 2.0,
+                      getTitlesWidget: (val, meta) {
+                        int hoursAgo = _is12H ? (12 - val.toInt()) : (6 - val.toInt());
+                        if (hoursAgo == 0) return const Text('Now', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5));
+                        return Text('${hoursAgo}h', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5));
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(y: 18.0, color: const Color(0xFFD97706).withValues(alpha: 0.3), strokeWidth: 1, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.topRight, style: const TextStyle(color: Color(0xFFD97706), fontSize: 8), labelResolver: (_) => '18mm (Mod)')),
+                    HorizontalLine(y: 27.0, color: const Color(0xFFEA580C).withValues(alpha: 0.4), strokeWidth: 1, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.topRight, style: const TextStyle(color: Color(0xFFEA580C), fontSize: 8), labelResolver: (_) => '27mm (Hvy)')),
+                    HorizontalLine(y: 36.0, color: const Color(0xFFDC2626).withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4], label: HorizontalLineLabel(show: true, alignment: Alignment.topRight, style: const TextStyle(color: Color(0xFFDC2626), fontSize: 8), labelResolver: (_) => '36mm (Dngr)')),
+                  ],
+                ),
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => const Color(0xFF172033),
+                    tooltipPadding: const EdgeInsets.all(8),
+                    tooltipBorderRadius: BorderRadius.circular(6),
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        double hoursAgo = _is12H ? (12 - spot.x) : (6 - spot.x);
+                        String timeStr = hoursAgo <= 0 ? 'Now' : _formatTimeFromHour(hoursAgo) + ' ago';
+                        return LineTooltipItem(
+                          '$timeStr\nCumulative: ${spot.y.toStringAsFixed(1)} mm',
+                          const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        );
+                      }).toList();
+                    },
+                  ),
+                  getTouchedSpotIndicator: (barData, spotIndexes) {
+                    return spotIndexes.map((i) {
+                      return TouchedSpotIndicatorData(
+                        const FlLine(color: Color(0xFF0284C7), strokeWidth: 1.5, dashArray: [3, 3]),
+                        FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 5, color: const Color(0xFF0284C7), strokeWidth: 2, strokeColor: Colors.white)),
+                      );
+                    }).toList();
+                  },
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    curveSmoothness: 0.2,
+                    color: statusColor,
+                    barWidth: 2.5,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          statusColor.withValues(alpha: 0.2),
+                          statusColor.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -767,12 +901,49 @@ class _RainfallTelemetryCardState extends State<RainfallTelemetryCard> with Sing
     );
   }
 
+  Widget _kpiBlock(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
+        ],
+      ),
+    );
+  }
+
+  Widget _rangeToggle(String label, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _vDivider() {
     return Container(
-      height: 26,
+      height: 24,
       width: 1,
       color: const Color(0xFFE2E8F0),
-      margin: const EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
     );
   }
 }
+
