@@ -17,7 +17,72 @@ class IncidentCoordinator extends ChangeNotifier {
   Stream<LiveEvent> get eventStream => _eventController.stream;
 
   // ── Collections ────────────────────────────────────────────────────────────
-  final List<SOSRequest> _sosRequests = [];
+  final List<SOSRequest> _sosRequests = [
+    SOSRequest(
+      id: '#284',
+      callerName: 'Citizen 284',
+      village: 'Mawphlang Riverfront',
+      latitude: 25.4485,
+      longitude: 91.7582,
+      peopleCount: 6,
+      elderlyCount: 1,
+      childrenCount: 0,
+      hasMedical: true,
+      emergencyType: 'Medical Urgency',
+      status: IncidentStatus.teamAssigned,
+      assignedTeamId: 'SDRF-BRAVO-04',
+      assignedTeamName: 'Team 02 (SDRF Bravo)',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 4)),
+    ),
+    SOSRequest(
+      id: '#281',
+      callerName: 'Citizen 281',
+      village: 'Nongstoin Valley Lowland',
+      latitude: 25.5215,
+      longitude: 91.2678,
+      peopleCount: 4,
+      elderlyCount: 0,
+      childrenCount: 0,
+      hasMedical: false,
+      emergencyType: 'General SOS',
+      status: IncidentStatus.teamAssigned,
+      assignedTeamId: 'SDRF-BRAVO-04',
+      assignedTeamName: 'Team 02 (SDRF Bravo)',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 8)),
+    ),
+    SOSRequest(
+      id: '#279',
+      callerName: 'Citizen 279',
+      village: 'Pynursla Riverbed Sector',
+      latitude: 25.3023,
+      longitude: 91.8953,
+      peopleCount: 11,
+      elderlyCount: 3,
+      childrenCount: 0,
+      hasMedical: true,
+      emergencyType: 'Medical Urgency',
+      status: IncidentStatus.teamAssigned,
+      assignedTeamId: 'NDRF-ALPHA-07',
+      assignedTeamName: 'Team 01 (NDRF Alpha)',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
+    ),
+    SOSRequest(
+      id: '#275',
+      callerName: 'Citizen 275',
+      village: 'Cherrapunjee Foothills',
+      latitude: 25.2891,
+      longitude: 91.7335,
+      peopleCount: 3,
+      elderlyCount: 1,
+      childrenCount: 0,
+      hasMedical: false,
+      emergencyType: 'General SOS',
+      status: IncidentStatus.teamAssigned,
+      assignedTeamId: 'CIVIL-DEF-03',
+      assignedTeamName: 'Team 03 (Civil Defense)',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 24)),
+    ),
+  ];
   final List<MissionAssignment> _missions = [];
   final List<ResponderTeamLocation> _responderTeams = [];
   final List<FieldHazardReport> _hazardReports = [];
