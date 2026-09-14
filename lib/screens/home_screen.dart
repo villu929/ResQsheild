@@ -20,7 +20,7 @@ import 'relief_camp_detail_screen.dart';
 import '../models/incident_models.dart';
 import '../models/evacuation_models.dart';
 import '../services/flood_api_service.dart';
-import '../services/medical_api_service.dart';
+import '../services/resource_api_service.dart';
 import '../services/incident_coordinator.dart';
 import '../widgets/dos_donts_section.dart';
 import '../widgets/role_quick_switcher.dart';
@@ -1979,7 +1979,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
 
                 if (_layerShelters)
-                  ...IncidentCoordinator.instance.shelters.map(
+                  ...ResourceApiService.instance.shelters.map(
                     (sh) => Marker(
                       point: LatLng(sh.latitude, sh.longitude),
                       width: 38,
@@ -3688,35 +3688,8 @@ class _HomeScreenState extends State<HomeScreen>
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFEE2E2)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDC2626),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                const Text(
-                  'Active',
-                  style: TextStyle(
-                    color: Color(0xFFDC2626),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: _buildDynamicStatusPill(sos.status),
+        ),
         ),
         team: FittedBox(
           fit: BoxFit.scaleDown,
@@ -3805,6 +3778,91 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDynamicStatusPill(IncidentStatus status) {
+    Color color;
+    Color bg;
+    String text;
+
+    switch (status) {
+      case IncidentStatus.newSos:
+        color = const Color(0xFFDC2626);
+        bg = const Color(0xFFFEF2F2);
+        text = 'Active';
+        break;
+      case IncidentStatus.authorityAcknowledged:
+        color = const Color(0xFFD97706);
+        bg = const Color(0xFFFFFBEB);
+        text = 'Verifying';
+        break;
+      case IncidentStatus.teamAssigned:
+        color = const Color(0xFF0284C7);
+        bg = const Color(0xFFF0F9FF);
+        text = 'Assigned';
+        break;
+      case IncidentStatus.responderAccepted:
+        color = const Color(0xFF4F46E5);
+        bg = const Color(0xFFEEF2FF);
+        text = 'Team Accepted';
+        break;
+      case IncidentStatus.enRoute:
+        color = const Color(0xFF7C3AED);
+        bg = const Color(0xFFF5F3FF);
+        text = 'En Route';
+        break;
+      case IncidentStatus.onSite:
+        color = const Color(0xFF059669);
+        bg = const Color(0xFFECFDF5);
+        text = 'On Scene';
+        break;
+      case IncidentStatus.rescueInProgress:
+        color = const Color(0xFFEA580C);
+        bg = const Color(0xFFFFF7ED);
+        text = 'Extracting';
+        break;
+      case IncidentStatus.completed:
+        color = const Color(0xFF16A34A);
+        bg = const Color(0xFFF0FDF4);
+        text = 'Resolved';
+        break;
+      default:
+        color = const Color(0xFF64748B);
+        bg = const Color(0xFFF8FAFC);
+        text = status.name;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -4820,7 +4878,7 @@ class _HomeScreenState extends State<HomeScreen>
   // 16-20. MODERN SHELTERS & RELIEF RESOURCES (MATCHING SCREENSHOT)
   // ==========================================================================
   Widget _buildShelterAndReliefSection() {
-    final liveShelters = IncidentCoordinator.instance.shelters;
+    final liveShelters = ResourceApiService.instance.shelters;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -7133,7 +7191,7 @@ class _HomeScreenState extends State<HomeScreen>
                 '2. OPERATIONAL DEPLOYMENTS:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
-              Text('• Rescue Teams Active: ${IncidentCoordinator.instance.responderTeams.length} (Team 02 deployed to Mawphlang)\n• Shelters Active: ${IncidentCoordinator.instance.shelters.length} (2 near capacity, 1 full)\n• Critical Lifeline: Route A verified operational'),
+              Text('• Rescue Teams Active: ${IncidentCoordinator.instance.responderTeams.length} (Team 02 deployed to Mawphlang)\n• Shelters Active: ${ResourceApiService.instance.shelters.length} (2 near capacity, 1 full)\n• Critical Lifeline: Route A verified operational'),
               const SizedBox(height: 8),
               const Text(
                 '3. CRITICAL RELIEF DEFICIT:',

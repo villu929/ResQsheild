@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/incident_models.dart';
 import '../../services/incident_coordinator.dart';
+import '../../services/resource_api_service.dart';
 import '../relief_camp_detail_screen.dart';
 
 class ResourceShelterMapScreen extends StatefulWidget {
@@ -26,11 +27,13 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
       initialIndex: widget.initialTabIndex,
     );
     IncidentCoordinator.instance.addListener(_onCoordUpdate);
+    ResourceApiService.instance.addListener(_onCoordUpdate);
   }
 
   @override
   void dispose() {
     IncidentCoordinator.instance.removeListener(_onCoordUpdate);
+    ResourceApiService.instance.removeListener(_onCoordUpdate);
     _tabController.dispose();
     super.dispose();
   }
@@ -268,7 +271,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
 
   // 2. Shelters Tab (Fully Reactive & Dynamic from IncidentCoordinator)
   Widget _buildSheltersTab() {
-    final allShelters = IncidentCoordinator.instance.shelters;
+    final allShelters = ResourceApiService.instance.shelters;
 
     // Summary calculations
     final totalCap = allShelters.fold<int>(0, (sum, s) => sum + s.capacity);
@@ -550,18 +553,31 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.network(
-                            s.photoUrl,
-                            width: imageWidth,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFF0F172A),
-                              child: const Center(
-                                child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                              ),
-                            ),
-                          ),
+                          s.photoUrl.startsWith('http')
+                              ? Image.network(
+                                  s.photoUrl,
+                                  width: imageWidth,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: const Color(0xFF0F172A),
+                                    child: const Center(
+                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                    ),
+                                  ),
+                                )
+                              : Image.asset(
+                                  s.photoUrl,
+                                  width: imageWidth,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: const Color(0xFF0F172A),
+                                    child: const Center(
+                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                    ),
+                                  ),
+                                ),
                           DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -1128,16 +1144,27 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                                       child: Stack(
                                         fit: StackFit.expand,
                                         children: [
-                                          Image.network(
-                                            p['url']!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Container(
-                                              color: const Color(0xFF0F172A),
-                                              child: const Center(
-                                                child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
-                                              ),
-                                            ),
-                                          ),
+                                          p['url']!.startsWith('http')
+                                              ? Image.network(
+                                                  p['url']!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) => Container(
+                                                    color: const Color(0xFF0F172A),
+                                                    child: const Center(
+                                                      child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
+                                                    ),
+                                                  ),
+                                                )
+                                              : Image.asset(
+                                                  p['url']!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) => Container(
+                                                    color: const Color(0xFF0F172A),
+                                                    child: const Center(
+                                                      child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
+                                                    ),
+                                                  ),
+                                                ),
                                           Container(color: Colors.black.withValues(alpha: isSel ? 0.2 : 0.45)),
                                           Align(
                                             alignment: Alignment.bottomCenter,
@@ -1320,7 +1347,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                                 final lng = double.tryParse(lngCtrl.text.trim()) ?? 91.7500;
 
                                 if (isEditing) {
-                                  IncidentCoordinator.instance.updateShelter(
+                                  ResourceApiService.instance.updateShelter(
                                     id: shelterToEdit.id,
                                     name: nameCtrl.text.trim(),
                                     locationName: locationCtrl.text.trim(),
@@ -1342,7 +1369,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                                   );
                                   _showNotification('✓ Shelter "${nameCtrl.text.trim()}" updated successfully!');
                                 } else {
-                                  IncidentCoordinator.instance.addShelter(
+                                  ResourceApiService.instance.addShelter(
                                     name: nameCtrl.text.trim(),
                                     locationName: locationCtrl.text.trim(),
                                     capacity: cap,
@@ -1384,7 +1411,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                             Center(
                               child: TextButton.icon(
                                 onPressed: () {
-                                  IncidentCoordinator.instance.deleteShelter(shelterToEdit.id);
+                                  ResourceApiService.instance.deleteShelter(shelterToEdit.id);
                                   Navigator.pop(ctx);
                                   _showNotification('Shelter decommissioned');
                                 },

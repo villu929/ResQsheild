@@ -11,8 +11,7 @@ import 'citizen_medical_centers_view.dart';
 import '../role_selection_screen.dart';
 import '../../models/incident_models.dart';
 import '../../services/incident_coordinator.dart';
-import '../../services/medical_api_service.dart';
-import '../../services/shelter_api_service.dart';
+import '../../services/resource_api_service.dart';
 import '../../widgets/role_quick_switcher.dart';
 
 enum CitizenThreatLevel { safe, watch, warning, evacuation }
@@ -485,8 +484,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   String _fullMapFilter = 'All';
 
   // API State
-  late Future<ShelterOccupancy?> _nearestShelterFuture;
-  late Future<MedicalCenterModel?> _nearestMedicalCenterFuture;
+
 
   // Key Coordinates (Local Basin)
   final LatLng _userPos = const LatLng(23.7957, 86.4304);
@@ -658,9 +656,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     _fullMapController = MapController();
     _rainMapController = MapController();
 
-    // Fetch data from fake API
-    _nearestShelterFuture = ShelterApiService.getNearestShelter();
-    _nearestMedicalCenterFuture = MedicalApiService.getNearestMedicalCenter();
+    ResourceApiService.instance.addListener(_onResourceChanged);
 
     IncidentCoordinator.instance.addListener(_onIncidentCoordChanged);
     if (!_isTestEnvironment()) {
@@ -671,8 +667,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   @override
   void dispose() {
     IncidentCoordinator.instance.removeListener(_onIncidentCoordChanged);
+    ResourceApiService.instance.removeListener(_onResourceChanged);
     _dosAutoSlideTimer?.cancel();
     super.dispose();
+  }
+
+  void _onResourceChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onIncidentCoordChanged() {
@@ -3965,39 +3966,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // 5. NEAREST SAFE SHELTER & GOVT RELIEF CENTER CARD
   // --------------------------------------------------------------------------
   Widget _buildNearestSafeShelterCard() {
-    return FutureBuilder<ShelterOccupancy?>(
-      future: _nearestShelterFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            height: 250,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-            ),
-            child: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF007AEB)),
-            ),
-          );
-        }
-
-        final shelter = snapshot.data;
-        if (shelter == null) {
-          return Container(
-            height: 250,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-            ),
-            child: Center(
-              child: Text(
-                _isHindi ? 'कोई आश्रय नहीं मिला' : 'No shelter found',
-              ),
-            ),
-          );
-        }
+    final shelter = ResourceApiService.instance.nearestShelter;
+    if (shelter == null) {
+      return Container(
+        height: 250,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        ),
+        child: Center(
+          child: Text(
+            _isHindi ? 'कोई आश्रय नहीं मिला' : 'No shelter found',
+          ),
+        ),
+      );
+    }
 
         final capacityPercent = shelter.capacity > 0
             ? shelter.occupied / shelter.capacity
@@ -4412,8 +4396,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ),
         );
-      },
-    );
   }
 
   Widget _buildShelterSupplyChip({
@@ -5635,45 +5617,28 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // 10. NEARBY MEDICAL / HOSPITAL HELP CARD
   // --------------------------------------------------------------------------
   Widget _buildMedicalHelpCard() {
-    return FutureBuilder<MedicalCenterModel?>(
-      future: _nearestMedicalCenterFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            height: 250,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+    final center = ResourceApiService.instance.nearestMedicalCenter;
+    if (center == null) {
+      return Container(
+        height: 250,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        ),
+        child: Center(
+          child: Text(
+            _isHindi
+                ? 'कोई चिकित्सा केंद्र नहीं मिला'
+                : 'No medical centers found',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
             ),
-            child: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF007AEB)),
-            ),
-          );
-        }
-
-        final center = snapshot.data;
-        if (center == null) {
-          return Container(
-            height: 250,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-            ),
-            child: Center(
-              child: Text(
-                _isHindi
-                    ? 'कोई चिकित्सा केंद्र नहीं मिला'
-                    : 'No medical centers found',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          );
-        }
+          ),
+        ),
+      );
+    }
 
         return Container(
           height: 250,
@@ -6073,8 +6038,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ),
         );
-      },
-    );
   }
 
   Widget _buildHospitalMetricBox({
@@ -7239,56 +7202,56 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                     ),
                   ),
                 ),
-                // Shelter 1
+                // Dynamic Shelters
                 if (_fullMapFilter == 'All' || _fullMapFilter == 'Shelters')
-                  Marker(
-                    point: _shelterPos1,
-                    width: 40,
-                    height: 40,
-                    child: GestureDetector(
-                      onTap: _showShelterDetailsModal,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE92828),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.5),
+                  ...ResourceApiService.instance.shelters.map((s) => Marker(
+                        point: LatLng(s.latitude, s.longitude),
+                        width: 40,
+                        height: 40,
+                        child: GestureDetector(
+                          onTap: _showShelterDetailsModal,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE92828),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2.5),
+                            ),
+                            child: const Icon(
+                              Icons.night_shelter_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.night_shelter_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                // Hospital
+                      )),
+                // Dynamic Hospitals
                 if (_fullMapFilter == 'All' || _fullMapFilter == 'Hospitals')
-                  Marker(
-                    point: _hospitalPos,
-                    width: 40,
-                    height: 40,
-                    child: GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              CitizenMedicalCentersView(isHindi: _isHindi),
+                  ...ResourceApiService.instance.medicalCenters.map((m) => Marker(
+                        point: LatLng(m.latitude, m.longitude),
+                        width: 40,
+                        height: 40,
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CitizenMedicalCentersView(isHindi: _isHindi),
+                            ),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2.5),
+                            ),
+                            child: const Icon(
+                              Icons.local_hospital_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.5),
-                        ),
-                        child: const Icon(
-                          Icons.local_hospital_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
+                      )),
                 // Road Block
                 if (_fullMapFilter == 'All' || _fullMapFilter == 'Roads')
                   Marker(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resqshield/models/incident_models.dart';
-import 'package:resqshield/services/medical_api_service.dart';
+import 'package:resqshield/services/resource_api_service.dart';
 import 'citizen_safe_route_view.dart';
 
 class CitizenMedicalCentersView extends StatefulWidget {
@@ -14,12 +14,20 @@ class CitizenMedicalCentersView extends StatefulWidget {
 }
 
 class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
-  late Future<List<MedicalCenterModel>> _medicalCentersFuture;
-
   @override
   void initState() {
     super.initState();
-    _medicalCentersFuture = MedicalApiService.getMedicalCenters();
+    ResourceApiService.instance.addListener(_onResourceUpdate);
+  }
+
+  @override
+  void dispose() {
+    ResourceApiService.instance.removeListener(_onResourceUpdate);
+    super.dispose();
+  }
+
+  void _onResourceUpdate() {
+    if (mounted) setState(() {});
   }
 
   void _showMessage(String msg) {
@@ -72,17 +80,10 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
           child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
       ),
-      body: FutureBuilder<List<MedicalCenterModel>>(
-        future: _medicalCentersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0284C7)),
-            );
-          }
-          if (snapshot.hasError ||
-              !snapshot.hasData ||
-              snapshot.data!.isEmpty) {
+      body: Builder(
+        builder: (context) {
+          final centers = ResourceApiService.instance.medicalCenters;
+          if (centers.isEmpty) {
             return Center(
               child: Text(
                 widget.isHindi
@@ -96,7 +97,6 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
             );
           }
 
-          final centers = snapshot.data!;
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: centers.length,
@@ -140,16 +140,27 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        center.photoUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFF0F172A),
-                          child: const Center(
-                            child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
-                          ),
-                        ),
-                      ),
+                      center.photoUrl.startsWith('http')
+                          ? Image.network(
+                              center.photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: const Color(0xFF0F172A),
+                                child: const Center(
+                                  child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
+                                ),
+                              ),
+                            )
+                          : Image.asset(
+                              center.photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: const Color(0xFF0F172A),
+                                child: const Center(
+                                  child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
+                                ),
+                              ),
+                            ),
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

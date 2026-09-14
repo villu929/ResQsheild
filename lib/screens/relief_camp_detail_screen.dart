@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/incident_models.dart';
 import '../services/incident_coordinator.dart';
+import '../services/resource_api_service.dart';
 import 'citizen/citizen_safe_route_view.dart';
 import 'authority/resource_shelter_map_screen.dart';
 
@@ -41,10 +42,10 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
 
   ShelterOccupancy? get _shelter {
     try {
-      return IncidentCoordinator.instance.shelters.firstWhere((s) => s.id == widget.shelterId);
+      return ResourceApiService.instance.shelters.firstWhere((s) => s.id == widget.shelterId);
     } catch (_) {
-      return IncidentCoordinator.instance.shelters.isNotEmpty
-          ? IncidentCoordinator.instance.shelters.first
+      return ResourceApiService.instance.shelters.isNotEmpty
+          ? ResourceApiService.instance.shelters.first
           : null;
     }
   }
@@ -125,7 +126,7 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
             ),
             tooltip: 'Favorite Camp',
             onPressed: () {
-              IncidentCoordinator.instance.toggleFavoriteShelter(s.id);
+              ResourceApiService.instance.toggleFavoriteShelter(s.id);
             },
           ),
           if (widget.isAuthority)
@@ -161,16 +162,27 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
                     color: const Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Image.network(
-                    s.photoUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFF0A2540),
-                      child: const Center(
-                        child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 54),
-                      ),
-                    ),
-                  ),
+                  child: s.photoUrl.startsWith('http')
+                      ? Image.network(
+                          s.photoUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFF0A2540),
+                            child: const Center(
+                              child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 54),
+                            ),
+                          ),
+                        )
+                      : Image.asset(
+                          s.photoUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFF0A2540),
+                            child: const Center(
+                              child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 54),
+                            ),
+                          ),
+                        ),
                 ),
               ),
 

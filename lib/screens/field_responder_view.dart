@@ -8,6 +8,7 @@ import 'role_selection_screen.dart';
 import '../models/incident_models.dart';
 import '../models/evacuation_models.dart';
 import '../services/incident_coordinator.dart';
+import '../services/resource_api_service.dart';
 import '../widgets/role_quick_switcher.dart';
 import 'citizen/citizen_shelters_view.dart';
 import 'relief_camp_detail_screen.dart';
@@ -687,6 +688,34 @@ class _FieldResponderViewState extends State<FieldResponderView>
     if (!mounted) return;
     if (event.type == LiveEventType.teamAssigned) {
       final mission = event.payload as MissionAssignment;
+      
+      final localMission = _Mission(
+        id: mission.id.startsWith('#') ? mission.id : '#${mission.id}',
+        title: mission.missionTitle.isNotEmpty ? mission.missionTitle : '${mission.location} Extraction',
+        incidentType: mission.incidentType,
+        location: mission.location,
+        coordinates: '${mission.latitude}° N, ${mission.longitude}° E',
+        priority: mission.priority,
+        distance: 'Unknown',
+        eta: 'Unknown',
+        trapped: mission.trappedCount,
+        medicalCount: mission.medicalCount,
+        childrenCount: mission.childrenCount,
+        elderlyCount: mission.elderlyCount,
+        floodDepth: 'Unknown',
+        waterFlow: 'Unknown',
+        landslideRisk: 'Low',
+        roadBridgeCondition: 'Unknown',
+        requiredEquipment: ['Boat', 'Life Jackets', 'Ropes'],
+        recommendedShelter: 'Nearest Safe Shelter',
+        recommendedHospital: 'General Hospital',
+        stepIndex: 0,
+      );
+
+      setState(() {
+        IncidentCoordinator.instance.missionAssignments.insert(0, localMission);
+      });
+
       _showIncomingMissionAlert(mission);
     } else if (event.type == LiveEventType.evacOrderIssued) {
       final op = event.payload as EvacuationOperation;
@@ -5111,7 +5140,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${IncidentCoordinator.instance.shelters.where((s) => s.status.toUpperCase() == "OPEN" || s.available > 0).length} open camps with food, water & medical',
+                              '${ResourceApiService.instance.shelters.where((s) => s.status.toUpperCase() == "OPEN" || s.available > 0).length} open camps with food, water & medical',
                               style: const TextStyle(
                                 color: Color(0xFF93C5FD),
                                 fontSize: 11,

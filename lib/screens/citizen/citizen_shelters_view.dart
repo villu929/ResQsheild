@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/incident_models.dart';
-import '../../services/incident_coordinator.dart';
+import '../../services/resource_api_service.dart';
 import '../relief_camp_detail_screen.dart';
 import '../authority/resource_shelter_map_screen.dart';
 
@@ -28,13 +28,13 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
   @override
   void initState() {
     super.initState();
-    IncidentCoordinator.instance.addListener(_onCoordUpdate);
+    ResourceApiService.instance.addListener(_onCoordUpdate);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    IncidentCoordinator.instance.removeListener(_onCoordUpdate);
+    ResourceApiService.instance.removeListener(_onCoordUpdate);
     super.dispose();
   }
 
@@ -43,7 +43,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
   }
 
   List<ShelterOccupancy> get _filteredShelters {
-    final all = IncidentCoordinator.instance.shelters;
+    final all = ResourceApiService.instance.shelters;
     List<ShelterOccupancy> list = all;
 
     if (_searchQuery.trim().isNotEmpty) {
@@ -85,7 +85,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
 
   @override
   Widget build(BuildContext context) {
-    final all = IncidentCoordinator.instance.shelters;
+    final all = ResourceApiService.instance.shelters;
     final allCount = all.length;
     final openCount = all.where((s) => s.status.toUpperCase() == 'OPEN' || s.available > 0).length;
     final fullCount = all.where((s) =>
@@ -378,18 +378,31 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.network(
-                            s.photoUrl,
-                            width: imageWidth,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFF0F172A),
-                              child: const Center(
-                                child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                              ),
-                            ),
-                          ),
+                          s.photoUrl.startsWith('http')
+                              ? Image.network(
+                                  s.photoUrl,
+                                  width: imageWidth,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: const Color(0xFF0F172A),
+                                    child: const Center(
+                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                    ),
+                                  ),
+                                )
+                              : Image.asset(
+                                  s.photoUrl,
+                                  width: imageWidth,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: const Color(0xFF0F172A),
+                                    child: const Center(
+                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                    ),
+                                  ),
+                                ),
                           DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(

@@ -86,7 +86,6 @@ class IncidentCoordinator extends ChangeNotifier {
   final List<MissionAssignment> _missions = [];
   final List<ResponderTeamLocation> _responderTeams = [];
   final List<FieldHazardReport> _hazardReports = [];
-  final List<ShelterOccupancy> _shelters = [];
   final List<AssignmentStatusHistoryItem> _statusHistory = [];
   final List<EvacuationOperation> _activeEvacuations = [];
 
@@ -99,7 +98,6 @@ class IncidentCoordinator extends ChangeNotifier {
       List.unmodifiable(_responderTeams);
   List<FieldHazardReport> get hazardReports =>
       List.unmodifiable(_hazardReports);
-  List<ShelterOccupancy> get shelters => List.unmodifiable(_shelters);
   List<AssignmentStatusHistoryItem> get statusHistory =>
       List.unmodifiable(_statusHistory);
   List<EvacuationOperation> get activeEvacuations => List.unmodifiable(_activeEvacuations);
@@ -216,250 +214,6 @@ class IncidentCoordinator extends ChangeNotifier {
         lastUpdate: DateTime.now(),
       ),
     ]);
-
-    // 2. Shelters
-    _shelters.addAll([
-      ShelterOccupancy(
-        id: 'SH-01',
-        name: 'Govt. Higher Secondary School',
-        locationName: 'Bokaro, Jharkhand',
-        capacity: 500,
-        occupied: 180,
-        latitude: 23.6693,
-        longitude: 86.1511,
-        distance: '2.8 km',
-        foodAvailable: true,
-        foodDetails: '1200 packs hot meals & nutrient rations',
-        waterAvailable: true,
-        waterDetails: '1800 bottles sealed drinking water',
-        medicalAvailable: true,
-        medicalDetails: '2 triage teams on active duty',
-        foodPacks: 1200,
-        waterBottles: 1800,
-        medicalTeams: 2,
-        photoUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 98765 43210',
-        inchargeName: 'R. K. Verma (Principal)',
-        status: 'OPEN',
-      ),
-      ShelterOccupancy(
-        id: 'SH-02',
-        name: 'Community Hall, Kurma',
-        locationName: 'Giridih, Jharkhand',
-        capacity: 300,
-        occupied: 180,
-        latitude: 24.1860,
-        longitude: 86.3090,
-        distance: '3.6 km',
-        foodAvailable: true,
-        foodDetails: '800 packs community food rations',
-        waterAvailable: true,
-        waterDetails: '1100 bottles potable water',
-        medicalAvailable: true,
-        medicalDetails: '1 doctor team on standby',
-        foodPacks: 800,
-        waterBottles: 1100,
-        medicalTeams: 1,
-        photoUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging'],
-        contact: '+91 98765 43211',
-        inchargeName: 'Sunil Soren (Coordinator)',
-        status: 'LIMITED',
-      ),
-      ShelterOccupancy(
-        id: 'SH-03',
-        name: 'Ranchi Sadar Hospital',
-        locationName: 'Ranchi, Jharkhand',
-        capacity: 450,
-        occupied: 240,
-        latitude: 23.3441,
-        longitude: 85.3096,
-        distance: '4.2 km',
-        foodAvailable: true,
-        foodDetails: '1000 packs medical diet rations',
-        waterAvailable: true,
-        waterDetails: '1500 bottles purified water',
-        medicalAvailable: true,
-        medicalDetails: '4 doctor & trauma teams on-site',
-        foodPacks: 1000,
-        waterBottles: 1500,
-        medicalTeams: 4,
-        photoUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 98765 43212',
-        inchargeName: 'Dr. Amit Sinha (CMO)',
-        status: 'OPEN',
-      ),
-      ShelterOccupancy(
-        id: 'SH-04',
-        name: 'Relief Camp - Dhansar',
-        locationName: 'Hazaribagh, Jharkhand',
-        capacity: 800,
-        occupied: 240,
-        latitude: 23.9925,
-        longitude: 85.3637,
-        distance: '5.1 km',
-        foodAvailable: true,
-        foodDetails: '2200 packs cooked food & baby nutrition',
-        waterAvailable: true,
-        waterDetails: '3100 bottles & 2 water tankers',
-        medicalAvailable: true,
-        medicalDetails: '3 emergency response medical teams',
-        foodPacks: 2200,
-        waterBottles: 3100,
-        medicalTeams: 3,
-        photoUrl: 'https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 98765 43213',
-        inchargeName: 'Maj. V. K. Singh (Retd.)',
-        status: 'OPEN',
-      ),
-      ShelterOccupancy(
-        id: 'SH-05',
-        name: 'Bokaro Relief Camp',
-        locationName: 'Bokaro, Jharkhand',
-        capacity: 500,
-        occupied: 180,
-        latitude: 23.6650,
-        longitude: 86.1550,
-        distance: '2.8 km',
-        foodAvailable: true,
-        foodDetails: '1200 packs food & energy supplements',
-        waterAvailable: true,
-        waterDetails: '1800 bottles drinking water',
-        medicalAvailable: true,
-        medicalDetails: '2 medical teams 24/7 active',
-        foodPacks: 1200,
-        waterBottles: 1800,
-        medicalTeams: 2,
-        photoUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 98765 43210',
-        inchargeName: 'District Relief Officer',
-        status: 'OPEN',
-      ),
-      ShelterOccupancy(
-        id: 'SH-06',
-        name: 'Meenakshipuram Community Center',
-        locationName: 'Sector A • 2.3 km',
-        capacity: 100,
-        occupied: 72,
-        latitude: 25.4550,
-        longitude: 91.7620,
-        distance: '2.3 km',
-        foodAvailable: true,
-        foodDetails: 'Cooked Meals & Hot Soup Kitchen',
-        waterAvailable: true,
-        waterDetails: '24/7 RO Potable Drinking Water',
-        medicalAvailable: true,
-        medicalDetails: 'Doctor & Red Cross Medical Desk',
-        foodPacks: 600,
-        waterBottles: 800,
-        medicalTeams: 1,
-        photoUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Charging', 'Sanitation'],
-        contact: '+91 94361 20011',
-        inchargeName: 'K. S. Varma (DRO)',
-        status: 'Available',
-      ),
-      ShelterOccupancy(
-        id: 'SH-07',
-        name: 'St. Anthony Relief Hall',
-        locationName: 'Sector B • 4.1 km',
-        capacity: 200,
-        occupied: 184,
-        latitude: 25.5650,
-        longitude: 91.8820,
-        distance: '4.1 km',
-        foodAvailable: true,
-        foodDetails: 'High-Calorie Biscuits & Packaged Meals',
-        waterAvailable: true,
-        waterDetails: 'Municipal Tanker Water Supply',
-        medicalAvailable: true,
-        medicalDetails: 'SDRF Paramedic Triage Post',
-        foodPacks: 450,
-        waterBottles: 600,
-        medicalTeams: 1,
-        photoUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Sanitation', 'Charging'],
-        contact: '+91 94361 20022',
-        inchargeName: 'Sister Teresa',
-        status: 'Near Capacity',
-      ),
-      ShelterOccupancy(
-        id: 'SH-08',
-        name: 'Valley Convent High School',
-        locationName: 'Sector C • 6.8 km',
-        capacity: 200,
-        occupied: 200,
-        latitude: 25.5180,
-        longitude: 91.2750,
-        distance: '6.8 km',
-        foodAvailable: true,
-        foodDetails: 'Emergency Rations Only',
-        waterAvailable: true,
-        waterDetails: 'Packaged Water Bottles',
-        medicalAvailable: false,
-        medicalDetails: 'First Aid Kit Only',
-        foodPacks: 200,
-        waterBottles: 300,
-        medicalTeams: 0,
-        photoUrl: 'https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Sanitation'],
-        contact: '+91 94361 20033',
-        inchargeName: 'Camp Lead Roy',
-        status: 'Full',
-      ),
-      ShelterOccupancy(
-        id: 'SH-09',
-        name: 'Northeast Indoor Stadium',
-        locationName: 'Sector D • 3.6 km',
-        capacity: 250,
-        occupied: 120,
-        latitude: 25.5890,
-        longitude: 91.9050,
-        distance: '3.6 km',
-        foodAvailable: true,
-        foodDetails: 'Mega Community Kitchen (2,000 Meals/Day)',
-        waterAvailable: true,
-        waterDetails: 'Continuous Municipal Supply & 3 Tankers',
-        medicalAvailable: true,
-        medicalDetails: 'Full Field Hospital with 10 Beds',
-        foodPacks: 1500,
-        waterBottles: 2400,
-        medicalTeams: 3,
-        photoUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 364 222 4455',
-        inchargeName: 'Dr. A. Bannerjee',
-        status: 'Available',
-      ),
-      ShelterOccupancy(
-        id: 'SH-10',
-        name: 'Mawphlang Relief Centre',
-        locationName: 'Sector 4 High Ground, Mawphlang',
-        capacity: 200,
-        occupied: 150,
-        latitude: 25.4520,
-        longitude: 91.7610,
-        distance: '1.6 km',
-        foodAvailable: true,
-        foodDetails: '3 Fresh Cooked Meals Daily & Dry Rations',
-        waterAvailable: true,
-        waterDetails: '24/7 RO Potable Water & Municipal Tanker',
-        medicalAvailable: true,
-        medicalDetails: 'Doctor & SDRF Triage Unit On-Site',
-        foodPacks: 900,
-        waterBottles: 1200,
-        medicalTeams: 2,
-        photoUrl: 'https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&w=600&q=80',
-        services: ['Food', 'Water', 'Medical', 'Sanitation', 'Charging', 'Security'],
-        contact: '+91 94361 20055',
-        inchargeName: 'P. Lyngdoh (DRO)',
-        status: 'Available',
-      ),
-    ]);
   }
 
   // ── Workflows ──────────────────────────────────────────────────────────────
@@ -496,7 +250,7 @@ class IncidentCoordinator extends ChangeNotifier {
 
     _sosRequests.insert(0, sos);
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.newSos,
       title: '🔴 NEW CRITICAL SOS $newId',
       message:
@@ -558,7 +312,7 @@ class IncidentCoordinator extends ChangeNotifier {
       ),
     );
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.teamAssigned,
       title: '🚨 MISSION ASSIGNED: $missionId',
       message: '${team.name} assigned to SOS ${sos.id} (${sos.village})',
@@ -595,7 +349,7 @@ class IncidentCoordinator extends ChangeNotifier {
         ),
       );
 
-      _broadcastEvent(LiveEvent(
+      broadcastEvent(LiveEvent(
         type: LiveEventType.missionAccepted,
         title: '✓ MISSION ACCEPTED: $missionId',
         message: '${mission.teamName} accepted mission at ${_formatTime(now)}. ETA: ${mission.eta}',
@@ -612,7 +366,7 @@ class IncidentCoordinator extends ChangeNotifier {
         rMission.status = 'accepted';
         op.status = 'active'; // Ensure active
         
-        _broadcastEvent(LiveEvent(
+        broadcastEvent(LiveEvent(
           type: LiveEventType.missionAccepted,
           title: '✓ EVAC MISSION ACCEPTED: $missionId',
           message: '${rMission.assignedTeam} accepted evac mission at ${_formatTime(now)}.',
@@ -647,7 +401,7 @@ class IncidentCoordinator extends ChangeNotifier {
       }
       
       _statusHistory.insert(0, AssignmentStatusHistoryItem(missionId: missionId, status: IncidentStatus.enRoute, timestamp: now, note: '${team.name} en route at 24 km/h. ETA 7 min.'));
-      _broadcastEvent(LiveEvent(type: LiveEventType.responderMoving, title: '🚒 TEAM EN ROUTE: ${team.name}', message: 'Navigation initiated toward ${mission.location}. Speed 24 km/h.', payload: mission));
+      broadcastEvent(LiveEvent(type: LiveEventType.responderMoving, title: '🚒 TEAM EN ROUTE: ${team.name}', message: 'Navigation initiated toward ${mission.location}. Speed 24 km/h.', payload: mission));
       _startMovementSimulation(mission, team);
       notifyListeners();
       return;
@@ -681,7 +435,7 @@ class IncidentCoordinator extends ChangeNotifier {
       mission.currentDistance = '${(2.8 - (tick * 0.4)).clamp(0.4, 2.8).toStringAsFixed(1)} km';
       mission.eta = '${(9 - (tick * 1.5)).clamp(1, 9).toInt()} min';
 
-      _broadcastEvent(LiveEvent(
+      broadcastEvent(LiveEvent(
         type: LiveEventType.responderMoving,
         title: '📍 GPS TELEMETRY UPDATE',
         message: '${team.name}: ${mission.currentDistance} away, ETA ${mission.eta}',
@@ -719,7 +473,7 @@ class IncidentCoordinator extends ChangeNotifier {
       m.safeRouteSummary = 'Rerouted via Hill Road Bypass ($title avoided)';
     }
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.hazardReported,
       title: '⚠️ FIELD UPDATE: $title',
       message:
@@ -764,7 +518,7 @@ class IncidentCoordinator extends ChangeNotifier {
         ),
       );
 
-      _broadcastEvent(LiveEvent(
+      broadcastEvent(LiveEvent(
         type: LiveEventType.onSiteArrived,
         title: '📍 TEAM ON SITE: ${team.name}',
         message: 'Rescue team has reached ${mission.location}. Extraction underway.',
@@ -806,7 +560,7 @@ class IncidentCoordinator extends ChangeNotifier {
       sos.status = IncidentStatus.rescueInProgress;
     }
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.rescueUpdated,
       title: '👥 RESCUE PROGRESS: $missionId',
       message:
@@ -822,7 +576,7 @@ class IncidentCoordinator extends ChangeNotifier {
     final mission = _missions.firstWhere((m) => m.id == missionId);
     mission.medicalCount = count;
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.medicalDispatched,
       title: '🚑 MEDICAL SUPPORT REQUIRED',
       message:
@@ -837,7 +591,7 @@ class IncidentCoordinator extends ChangeNotifier {
   void dispatchAmbulance(String missionId) {
     final mission = _missions.firstWhere((m) => m.id == missionId);
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.medicalDispatched,
       title: '🚑 AMBULANCE AMB-12 DISPATCHED',
       message:
@@ -855,15 +609,14 @@ class IncidentCoordinator extends ChangeNotifier {
     required int evacueeCount,
   }) {
     final mission = _missions.firstWhere((m) => m.id == missionId);
-    final shelter = _shelters.firstWhere((s) => s.id == shelterId);
     final now = DateTime.now();
 
     mission.status = IncidentStatus.transporting;
     mission.stepIndex = 6;
     mission.stepTimestamps[6] = _formatTime(now);
 
-    // Update Shelter Capacity (e.g. 150/200 + 8 = 158/200)
-    shelter.occupied = (shelter.occupied + evacueeCount).clamp(0, shelter.capacity);
+    // Note: Shelter occupancy logic is handled in ResourceApiService now.
+    // We would need to call ResourceApiService to update the shelter.
 
     final sos = _findSos(mission.linkedSosId);
     if (sos != null) {
@@ -876,16 +629,16 @@ class IncidentCoordinator extends ChangeNotifier {
         missionId: missionId,
         status: IncidentStatus.transporting,
         timestamp: now,
-        note: 'Transporting $evacueeCount evacuees to ${shelter.name}. Capacity: ${shelter.occupied}/${shelter.capacity}',
+        note: 'Transporting $evacueeCount evacuees to shelter.',
       ),
     );
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.shelterUpdated,
       title: '🏠 SHELTER OCCUPANCY UPDATED',
       message:
-          '${shelter.name}: +$evacueeCount evacuees arrived. Occupancy: ${shelter.occupied}/${shelter.capacity} (${shelter.available} available).',
-      payload: shelter,
+          'Shelter: +$evacueeCount evacuees arrived.',
+      payload: mission,
     ));
 
     notifyListeners();
@@ -923,7 +676,7 @@ class IncidentCoordinator extends ChangeNotifier {
         ),
       );
 
-      _broadcastEvent(LiveEvent(
+      broadcastEvent(LiveEvent(
         type: LiveEventType.missionCompleted,
         title: '✓ MISSION COMPLETED: $missionId',
         message:
@@ -952,7 +705,7 @@ class IncidentCoordinator extends ChangeNotifier {
       sos.status = IncidentStatus.closed;
     }
 
-    _broadcastEvent(LiveEvent(
+    broadcastEvent(LiveEvent(
       type: LiveEventType.incidentClosed,
       title: '🔒 INCIDENT CLOSED: $sosId',
       message: 'SOS $sosId has been fully resolved and archived.',
@@ -962,161 +715,7 @@ class IncidentCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Shelter Management Workflows (Authority Add & Update) ──────────────────
 
-  /// Authority Adds a New Relief Shelter Camp
-  ShelterOccupancy addShelter({
-    required String name,
-    required String locationName,
-    required int capacity,
-    int occupied = 0,
-    required double latitude,
-    required double longitude,
-    String distance = '2.0 km away',
-    bool foodAvailable = true,
-    String foodDetails = 'Hot Cooked Meals & Dry Rations',
-    bool waterAvailable = true,
-    String waterDetails = '24/7 RO Purified Water & Tankers',
-    bool medicalAvailable = true,
-    String medicalDetails = 'Doctor & Paramedic Triage Station',
-    String photoUrl = 'https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&w=600&q=80',
-    List<String> services = const ['Meals', 'Drinking Water', 'Medical Station', 'Power Backup', 'Sanitation'],
-    String contact = '+91 94361 20099',
-    String inchargeName = 'Camp Commander',
-    String status = 'OPEN',
-    int foodPacks = 1200,
-    int waterBottles = 1800,
-    int medicalTeams = 2,
-  }) {
-    final newId = 'SH-${(_shelters.length + 1).toString().padLeft(2, "0")}';
-    final shelter = ShelterOccupancy(
-      id: newId,
-      name: name,
-      locationName: locationName,
-      capacity: capacity,
-      occupied: occupied,
-      latitude: latitude,
-      longitude: longitude,
-      distance: distance,
-      foodAvailable: foodAvailable,
-      foodDetails: foodDetails,
-      waterAvailable: waterAvailable,
-      waterDetails: waterDetails,
-      medicalAvailable: medicalAvailable,
-      medicalDetails: medicalDetails,
-      photoUrl: photoUrl,
-      services: List.from(services),
-      contact: contact,
-      inchargeName: inchargeName,
-      status: status,
-      foodPacks: foodPacks,
-      waterBottles: waterBottles,
-      medicalTeams: medicalTeams,
-      lastUpdated: DateTime.now(),
-    );
-
-    _shelters.insert(0, shelter);
-
-    _broadcastEvent(LiveEvent(
-      type: LiveEventType.shelterUpdated,
-      title: '🏠 NEW RELIEF SHELTER OPENED',
-      message: '$name opened at $locationName with $capacity bed capacity. Food, water, and medical provisions active.',
-      payload: shelter,
-    ));
-
-    notifyListeners();
-    return shelter;
-  }
-
-  /// Authority Updates Existing Relief Shelter
-  void updateShelter({
-    required String id,
-    String? name,
-    String? locationName,
-    int? capacity,
-    int? occupied,
-    double? latitude,
-    double? longitude,
-    String? distance,
-    bool? foodAvailable,
-    String? foodDetails,
-    bool? waterAvailable,
-    String? waterDetails,
-    bool? medicalAvailable,
-    String? medicalDetails,
-    String? photoUrl,
-    List<String>? services,
-    String? contact,
-    String? inchargeName,
-    String? status,
-    int? foodPacks,
-    int? waterBottles,
-    int? medicalTeams,
-  }) {
-    final index = _shelters.indexWhere((s) => s.id == id);
-    if (index == -1) return;
-
-    final old = _shelters[index];
-    final updated = old.copyWith(
-      name: name,
-      locationName: locationName,
-      capacity: capacity,
-      occupied: occupied,
-      latitude: latitude,
-      longitude: longitude,
-      distance: distance,
-      foodAvailable: foodAvailable,
-      foodDetails: foodDetails,
-      waterAvailable: waterAvailable,
-      waterDetails: waterDetails,
-      medicalAvailable: medicalAvailable,
-      medicalDetails: medicalDetails,
-      photoUrl: photoUrl,
-      services: services,
-      contact: contact,
-      inchargeName: inchargeName,
-      status: status,
-      foodPacks: foodPacks,
-      waterBottles: waterBottles,
-      medicalTeams: medicalTeams,
-      lastUpdated: DateTime.now(),
-    );
-
-    _shelters[index] = updated;
-
-    _broadcastEvent(LiveEvent(
-      type: LiveEventType.shelterUpdated,
-      title: '🏠 SHELTER DETAILS UPDATED',
-      message: '${updated.name}: Capacity ${updated.occupied}/${updated.capacity} (${updated.available} available). Provisions & Medical facilities updated.',
-      payload: updated,
-    ));
-
-    notifyListeners();
-  }
-
-  /// Toggle Favorite Bookmark
-  void toggleFavoriteShelter(String id) {
-    final index = _shelters.indexWhere((s) => s.id == id);
-    if (index == -1) return;
-    _shelters[index].isFavorite = !_shelters[index].isFavorite;
-    notifyListeners();
-  }
-
-  /// Authority Removes or Decommissions a Shelter
-  void deleteShelter(String id) {
-    final index = _shelters.indexWhere((s) => s.id == id);
-    if (index == -1) return;
-    final removed = _shelters.removeAt(index);
-
-    _broadcastEvent(LiveEvent(
-      type: LiveEventType.shelterUpdated,
-      title: '🏠 SHELTER DECOMMISSIONED',
-      message: '${removed.name} has been archived/decommissioned.',
-      payload: removed,
-    ));
-
-    notifyListeners();
-  }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   SOSRequest? _findSos(String id) {
@@ -1127,7 +726,7 @@ class IncidentCoordinator extends ChangeNotifier {
     }
   }
 
-  void _broadcastEvent(LiveEvent event) {
+  void broadcastEvent(LiveEvent event) {
     if (!_eventController.isClosed) {
       _eventController.add(event);
     }
