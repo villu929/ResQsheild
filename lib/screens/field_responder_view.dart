@@ -804,9 +804,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   // ── Mission Getters & Handlers ─────────────────────────────────────────────
-  _Mission get _activeMission =>
-      IncidentCoordinator.instance.missions[_activeMissionIdx]
-          as _Mission;
+  _Mission get _activeMission {
+    final missions = IncidentCoordinator.instance.missions;
+    if (missions.isEmpty) {
+      // Fallback placeholder to prevent RangeError crash
+      return MissionAssignment(
+        id: 'RS-000',
+        linkedSosId: '#000',
+        teamId: 'SDRF-BRAVO-04',
+        teamName: 'SDRF Bravo - Team 04',
+        title: 'Loading Mission...',
+        incidentType: 'Unknown',
+        location: 'Unknown',
+        latitude: 25.4490,
+        longitude: 91.7580,
+        trapped: 0,
+        medicalCount: 0,
+      );
+    }
+    final idx = _activeMissionIdx.clamp(0, missions.length - 1);
+    return missions[idx] as _Mission;
+  }
 
   void _advanceMissionLifecycle() {
     final m = _activeMission;
@@ -4252,14 +4270,14 @@ class _FieldResponderViewState extends State<FieldResponderView>
   // TAB 2 — SOS DESK (OPERATIONAL INBOX)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildSOSDeskTab() {
-    final criticalCount = _sosList
-        .where((s) => s.priority == 'CRITICAL')
-        .length;
+    final criticalCount = _sosList.where((s) => s.priority == 'CRITICAL').length;
     final highCount = _sosList.where((s) => s.priority == 'HIGH').length;
-    final normalCount = _sosList.where((s) => s.priority == 'NORMAL').length;
+    final normalCount = _sosList.where((s) => s.priority == 'NORMAL' || (s.priority != 'CRITICAL' && s.priority != 'HIGH')).length;
+    final totalCount = _sosList.length;
 
     final filtered = _sosList.where((s) {
       if (_sosFilter == 'Critical') return s.priority == 'CRITICAL';
+      if (_sosFilter == 'Nearby') return double.tryParse(s.distance.replaceAll(' km', '')) != null && (double.tryParse(s.distance.replaceAll(' km', '')) ?? 99) <= 2.5;
       if (_sosFilter == 'Unassigned') return !s.assigned;
       if (_sosFilter == 'Assigned') return s.assigned;
       return true;
@@ -4267,100 +4285,330 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
     return Column(
       children: [
-        _buildSectionHeader(
-          title: 'SOS Operational Inbox',
-          icon: Icons.sos_rounded,
-          subtitle: 'Distress calls prioritized for field action',
-        ),
-        // Top Counters
+        // ── Header ─────────────────────────────────────────────────────────
         Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          color: const Color(0xFF0C2340),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _sosCounterCard('Critical', '$criticalCount', _C.critical),
-              const SizedBox(width: 8),
-              _sosCounterCard('High', '$highCount', _C.warning),
-              const SizedBox(width: 8),
-              _sosCounterCard('Normal', '$normalCount', _C.govBlue),
+              // SOS Icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A5F),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.4), width: 1.2),
+                ),
+                child: const Icon(Icons.sos_rounded, color: Color(0xFF60A5FA), size: 24),
+              ),
+              const SizedBox(width: 12),
+              // Title + subtitle
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SOS Operational Inbox',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Distress calls prioritized for field action',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              // Right tagline
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF163352),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.groups_rounded, color: Color(0xFF60A5FA), size: 16),
+                        const SizedBox(width: 6),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Every Call Matters',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'Faster Response. Safer Lives.',
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
-        // Filter row
+
+        // ── Priority Counter Tiles ──────────────────────────────────────────
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: ['All', 'Critical', 'Nearby', 'Unassigned', 'Assigned']
-                  .map((f) {
-                    final active = _sosFilter == f;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(f),
-                        selected: active,
-                        onSelected: (val) {
-                          if (val) setState(() => _sosFilter = f);
-                        },
-                        selectedColor: _C.navy,
-                        backgroundColor: _C.pageBg,
-                        labelStyle: TextStyle(
-                          color: active ? Colors.white : _C.textSecondary,
-                          fontSize: 11,
-                          fontWeight: active
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    );
-                  })
-                  .toList(),
-            ),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          child: Row(
+            children: [
+              _sosCounterTile(
+                label: 'Critical',
+                count: criticalCount,
+                color: const Color(0xFFDC2626),
+                bgColor: const Color(0xFFFEF2F2),
+                borderColor: const Color(0xFFFECACA),
+                icon: Icons.warning_rounded,
+              ),
+              const SizedBox(width: 8),
+              _sosCounterTile(
+                label: 'High',
+                count: highCount,
+                color: const Color(0xFFD97706),
+                bgColor: const Color(0xFFFFFBEB),
+                borderColor: const Color(0xFFFDE68A),
+                icon: Icons.priority_high_rounded,
+              ),
+              const SizedBox(width: 8),
+              _sosCounterTile(
+                label: 'Normal',
+                count: normalCount,
+                color: const Color(0xFF005EA8),
+                bgColor: const Color(0xFFEFF6FF),
+                borderColor: const Color(0xFFBFDBFE),
+                icon: Icons.bar_chart_rounded,
+              ),
+            ],
           ),
         ),
-        const Divider(height: 1, color: Color(0xFFE2E8F0)),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: filtered.length,
-            itemBuilder: (context, idx) {
-              final item = filtered[idx];
-              return _buildSOSCard(item);
-            },
+
+        // ── Filter Chips + Sort ────────────────────────────────────────────
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // "All (n)" chip
+                      _sosFilterChip(
+                        label: 'All ($totalCount)',
+                        filterKey: 'All',
+                        icon: Icons.grid_view_rounded,
+                      ),
+                      const SizedBox(width: 6),
+                      _sosFilterChip(
+                        label: 'Critical ($criticalCount)',
+                        filterKey: 'Critical',
+                        icon: Icons.warning_rounded,
+                      ),
+                      const SizedBox(width: 6),
+                      _sosFilterChip(
+                        label: 'Nearby',
+                        filterKey: 'Nearby',
+                        icon: Icons.location_on_rounded,
+                      ),
+                      const SizedBox(width: 6),
+                      _sosFilterChip(
+                        label: 'Unassigned',
+                        filterKey: 'Unassigned',
+                        icon: Icons.person_off_rounded,
+                      ),
+                      const SizedBox(width: 6),
+                      _sosFilterChip(
+                        label: 'Assigned',
+                        filterKey: 'Assigned',
+                        icon: Icons.check_circle_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Sort dropdown
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.swap_vert_rounded, size: 14, color: Color(0xFF64748B)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Latest First',
+                      style: TextStyle(
+                        color: Color(0xFF334155),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
+                  ],
+                ),
+              ),
+            ],
           ),
+        ),
+
+        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+        // ── SOS Cards List ─────────────────────────────────────────────────
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF16A34A), size: 32),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No active SOS alerts',
+                        style: TextStyle(color: Color(0xFF334155), fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'All distress calls have been addressed',
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, idx) => _buildSOSCard(filtered[idx]),
+                ),
         ),
       ],
     );
   }
 
-  Widget _sosCounterCard(String label, String count, Color color) {
+  /// Large tiled counter card matching screenshot
+  Widget _sosCounterTile({
+    required String label,
+    required int count,
+    required Color color,
+    required Color bgColor,
+    required Color borderColor,
+    required IconData icon,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      child: GestureDetector(
+        onTap: () => setState(() => _sosFilter = label == 'Critical' ? 'Critical' : label == 'High' ? 'Critical' : 'All'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor, width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$count',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        height: 1.0,
+                      ),
+                    ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              Icon(Icons.chevron_right_rounded, color: color.withValues(alpha: 0.5), size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Filter chip matching screenshot style
+  Widget _sosFilterChip({
+    required String label,
+    required String filterKey,
+    required IconData icon,
+  }) {
+    final active = _sosFilter == filterKey;
+    return GestureDetector(
+      onTap: () => setState(() => _sosFilter = filterKey),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF0B2341) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? const Color(0xFF0B2341) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: active ? Colors.white : const Color(0xFF64748B),
             ),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+                color: active ? Colors.white : const Color(0xFF475569),
+                fontSize: 11,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -4369,197 +4617,367 @@ class _FieldResponderViewState extends State<FieldResponderView>
     );
   }
 
+  /// New SOS card design matching the screenshot
   Widget _buildSOSCard(_SOSAlert s) {
     final isCrit = s.priority == 'CRITICAL';
-    final cardColor = isCrit ? _C.critical : _C.warning;
+    final isHigh = s.priority == 'HIGH';
+    final stripColor = isCrit
+        ? const Color(0xFFDC2626)
+        : isHigh
+            ? const Color(0xFFD97706)
+            : const Color(0xFF005EA8);
+    final priorityBg = isCrit
+        ? const Color(0xFFDC2626)
+        : isHigh
+            ? const Color(0xFFD97706)
+            : const Color(0xFF005EA8);
+    final typeColor = isCrit
+        ? const Color(0xFFDC2626)
+        : isHigh
+            ? const Color(0xFFD97706)
+            : const Color(0xFF005EA8);
+
+    // Avatar initials + color
+    final initials = s.callerName.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join();
+    final avatarBg = isCrit
+        ? const Color(0xFFFEE2E2)
+        : isHigh
+            ? const Color(0xFFFEF3C7)
+            : const Color(0xFFDBEAFE);
+    final avatarFg = isCrit
+        ? const Color(0xFFDC2626)
+        : isHigh
+            ? const Color(0xFFD97706)
+            : const Color(0xFF2563EB);
 
     return AnimatedBuilder(
       animation: _pulseAnim,
-      builder: (_, child) {
-        return Transform.scale(
-          scale: isCrit && !s.acknowledged ? _pulseAnim.value : 1.0,
-          child: child,
-        );
-      },
+      builder: (_, child) => Transform.scale(
+        scale: isCrit && !s.acknowledged ? _pulseAnim.value : 1.0,
+        child: child,
+      ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: s.acknowledged ? const Color(0xFFCBD5E1) : cardColor,
-            width: s.acknowledged ? 1 : 1.5,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      s.priority,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+              // ── Left color strip ──────────────────────────────────────
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  color: stripColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    s.id,
-                    style: const TextStyle(
-                      color: _C.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    s.receivedTime,
-                    style: const TextStyle(color: _C.textMuted, fontSize: 11),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                s.callerName,
-                style: const TextStyle(
-                  color: _C.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                s.emergencyType,
-                style: TextStyle(
-                  color: isCrit ? _C.critical : _C.govBlue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on_rounded,
-                    color: _C.textMuted,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '${s.location} (${s.distance})',
-                      style: const TextStyle(
-                        color: _C.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                children: [
-                  _metricChip(
-                    Icons.people_rounded,
-                    '${s.peopleCount} people',
-                    _C.navy,
-                  ),
-                  if (s.hasElderly)
-                    _metricChip(Icons.elderly_rounded, 'Elderly', _C.warning),
-                  if (s.hasChildren)
-                    _metricChip(
-                      Icons.child_care_rounded,
-                      'Children',
-                      _C.govBlue,
-                    ),
-                  if (s.hasMedical)
-                    _metricChip(
-                      Icons.medical_services_rounded,
-                      'Medical Case',
-                      _C.critical,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() => s.acknowledged = true);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: _C.safe,
-                            content: Text(
-                              'SOS ${s.id} acknowledged by SDRF Bravo',
+
+              // ── Card Content ──────────────────────────────────────────
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Row 1: Priority badge + SOS ID + time
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Priority badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: priorityBg,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.warning_rounded, color: Colors.white, size: 10),
+                                const SizedBox(width: 3),
+                                Text(
+                                  s.priority,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _C.safe,
-                        side: const BorderSide(color: _C.safe),
-                        minimumSize: const Size(0, 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            s.id,
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          // Time
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 3),
+                              Text(
+                                s.receivedTime,
+                                style: const TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        s.acknowledged ? 'Acknowledged' : 'Accept SOS',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+
+                      const SizedBox(height: 10),
+
+                      // Row 2: Avatar + name/type + buttons
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Avatar circle
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: avatarBg,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: avatarFg.withValues(alpha: 0.25), width: 1.5),
+                            ),
+                            child: Center(
+                              child: Text(
+                                initials,
+                                style: TextStyle(
+                                  color: avatarFg,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+
+                          // Name + emergency type + location
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.callerName,
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  s.emergencyType,
+                                  style: TextStyle(
+                                    color: typeColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on_rounded, size: 13, color: const Color(0xFF94A3B8)),
+                                    const SizedBox(width: 3),
+                                    Expanded(
+                                      child: Text(
+                                        '${s.location} (${s.distance})',
+                                        style: const TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 11,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          // ── Action buttons (stacked) ──────────────────
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Accept SOS button
+                              SizedBox(
+                                height: 36,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() => s.acknowledged = true);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(0xFF16A34A),
+                                        content: Text('SOS ${s.id} accepted by SDRF Bravo'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    s.acknowledged ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+                                    size: 14,
+                                    color: const Color(0xFF16A34A),
+                                  ),
+                                  label: Text(
+                                    s.acknowledged ? 'Accepted' : 'Accept SOS',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF16A34A),
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: s.acknowledged
+                                        ? const Color(0xFFF0FDF4)
+                                        : Colors.white,
+                                    side: const BorderSide(color: Color(0xFF16A34A), width: 1.5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // Navigate button
+                              SizedBox(
+                                height: 36,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (_activeMission.stepIndex > 0 &&
+                                        _activeMission.stepIndex < 7 &&
+                                        !s.assigned) {
+                                      _showCapacityGuardDialog(s);
+                                    } else {
+                                      setState(() {
+                                        s.assigned = true;
+                                        _tab = 0;
+                                      });
+                                    }
+                                  },
+                                  icon: const Icon(Icons.navigation_rounded, size: 13),
+                                  label: const Text(
+                                    'Navigate',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF087BE7),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
+
+                      const SizedBox(height: 10),
+
+                      // Row 3: Tag chips
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          _sosTagChip(
+                            Icons.groups_rounded,
+                            '${s.peopleCount} people',
+                            const Color(0xFF1E3A5F),
+                            const Color(0xFFEFF6FF),
+                          ),
+                          if (s.hasElderly)
+                            _sosTagChip(
+                              Icons.elderly_rounded,
+                              'Elderly',
+                              const Color(0xFFB45309),
+                              const Color(0xFFFFFBEB),
+                            ),
+                          if (s.hasChildren)
+                            _sosTagChip(
+                              Icons.child_care_rounded,
+                              'Children',
+                              const Color(0xFF2563EB),
+                              const Color(0xFFEFF6FF),
+                            ),
+                          if (s.hasMedical)
+                            _sosTagChip(
+                              Icons.medical_services_rounded,
+                              'Medical Case',
+                              const Color(0xFFDC2626),
+                              const Color(0xFFFEF2F2),
+                            ),
+                          if (s.acknowledged)
+                            _sosTagChip(
+                              Icons.check_circle_rounded,
+                              'Acknowledged',
+                              const Color(0xFF16A34A),
+                              const Color(0xFFF0FDF4),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Capacity check: if already on a critical mission
-                        if (_activeMission.stepIndex > 0 &&
-                            _activeMission.stepIndex < 7 &&
-                            !s.assigned) {
-                          _showCapacityGuardDialog(s);
-                        } else {
-                          setState(() {
-                            s.assigned = true;
-                            _tab = 0;
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.navigation_rounded, size: 14),
-                      label: const Text('Navigate'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _C.actionBlue,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sosTagChip(IconData icon, String label, Color fgColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: fgColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: fgColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: fgColor,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -4569,9 +4987,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: _C.warning),
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
             SizedBox(width: 8),
             Text(
               'Team Capacity Guard',
@@ -4581,7 +5000,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
         content: Text(
           'Your team is currently engaged in Critical Mission ${_activeMission.id} (${_activeMission.trapped} trapped). Accepting an additional critical operation may exceed team capability.',
-          style: const TextStyle(fontSize: 13, color: _C.textPrimary),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF172033)),
         ),
         actions: [
           TextButton(
@@ -4589,10 +5008,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: _C.govBlue,
-                  content: Text(
-                    'SOS ${s.id} forwarded to nearest available unit SDRF Delta',
-                  ),
+                  backgroundColor: const Color(0xFF005EA8),
+                  content: Text('SOS ${s.id} forwarded to nearest available unit SDRF Delta'),
                 ),
               );
             },
@@ -4606,8 +5023,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 _tab = 0;
               });
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _C.critical),
-            child: const Text('Add to Queue'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+            child: const Text('Add to Queue', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
