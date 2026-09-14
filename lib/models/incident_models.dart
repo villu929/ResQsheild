@@ -151,17 +151,27 @@ class MissionAssignment {
   final int elderlyCount;
   String recommendedShelter;
   String recommendedHospital;
+  String floodDepth;
+  String waterFlow;
+  String landslideRisk;
+  String roadBridgeCondition;
+  List<String> requiredEquipment;
+  int disabledCount;
   final Map<int, String> stepTimestamps;
   DateTime? acceptedAt;
   DateTime? enRouteAt;
   DateTime? arrivedAt;
   DateTime? completedAt;
 
-  // Computed helpers matching _Mission API for consistent usage
+  // Computed helpers for UI compatibility
   String get missionTitle => title;
   String get village => location;
   int get trappedCount => trapped;
+  String get distance => currentDistance;
+  double get distanceKm =>
+      double.tryParse(currentDistance.replaceAll(' km', '')) ?? 0.0;
   int get etaMins => int.tryParse(eta.replaceAll(' min', '')) ?? 0;
+  String get coordinates => '${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
 
   MissionAssignment({
     required this.id,
@@ -189,6 +199,12 @@ class MissionAssignment {
     this.elderlyCount = 0,
     this.recommendedShelter = 'Mawphlang Relief Centre',
     this.recommendedHospital = 'District Hospital',
+    this.floodDepth = 'Unknown',
+    this.waterFlow = 'Unknown',
+    this.landslideRisk = 'Low',
+    this.roadBridgeCondition = 'Good',
+    this.requiredEquipment = const ['Boat', 'Life Jackets'],
+    this.disabledCount = 0,
     Map<int, String>? stepTimestamps,
     this.acceptedAt,
     this.enRouteAt,

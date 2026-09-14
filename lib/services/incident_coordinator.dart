@@ -102,11 +102,7 @@ class IncidentCoordinator extends ChangeNotifier {
       List.unmodifiable(_statusHistory);
   List<EvacuationOperation> get activeEvacuations => List.unmodifiable(_activeEvacuations);
 
-  /// Mutable mission list for field responder view (local _Mission wrappers are inserted here)
-  final List<dynamic> _missionAssignments = [];
-  List<dynamic> get missionAssignments => _missionAssignments;
-
-  /// Current filter used by field responder's mission tab ('Active', 'Pending', 'Completed')
+  /// Mutable mission list for field responder  // ── Local Mock Assignments for Responder App ───────────
   String missionAssignmentsFilter = 'Active';
 
   /// Get current user's active SOS (if any)
@@ -300,8 +296,6 @@ class IncidentCoordinator extends ChangeNotifier {
       stepTimestamps: {0: _formatTime(DateTime.now())},
     );
 
-    _missions.insert(0, mission);
-
     _statusHistory.insert(
       0,
       AssignmentStatusHistoryItem(
@@ -312,10 +306,12 @@ class IncidentCoordinator extends ChangeNotifier {
       ),
     );
 
+    _missions.insert(0, mission);
+
     broadcastEvent(LiveEvent(
       type: LiveEventType.teamAssigned,
-      title: '🚨 MISSION ASSIGNED: $missionId',
-      message: '${team.name} assigned to SOS ${sos.id} (${sos.village})',
+      title: '🔵 TEAM DISPATCHED: ${team.name}',
+      message: 'Assigned to SOS ${sos.id} (${sos.village}) - ETA: ${team.etaEstimate}',
       payload: mission,
     ));
 
@@ -323,10 +319,9 @@ class IncidentCoordinator extends ChangeNotifier {
     return mission;
   }
 
+  /// Step 3: Field Responder accepts the mission
   void acceptMission(String missionId) {
     final now = DateTime.now();
-
-    // Check standalone missions first
     try {
       final mission = _missions.firstWhere((m) => m.id == missionId);
       mission.status = IncidentStatus.responderAccepted;

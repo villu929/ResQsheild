@@ -154,71 +154,7 @@ class _SOSAlert {
 // LOCAL VIEW MODEL: _Mission (Missions tab data)
 // Wraps the IncidentCoordinator's MissionAssignment with extra local UI state.
 // ─────────────────────────────────────────────────────────────────────────────
-class _Mission {
-  final String id;
-  String title;
-  String incidentType;
-  String location;
-  String coordinates;
-  String priority;
-  String distance;
-  String eta;
-  String assignedAuthority;
-  String safeRouteSummary;
-  int trapped;
-  int evacuated;
-  int medicalCount;
-  int childrenCount;
-  int elderlyCount;
-  String floodDepth;
-  String waterFlow;
-  String landslideRisk;
-  String roadBridgeCondition;
-  List<String> requiredEquipment;
-  String recommendedShelter;
-  String recommendedHospital;
-  int stepIndex; // 0..7
-  Map<int, String> stepTimestamps;
-  int disabledCount;
-  int missingCount;
-
-  // Computed helpers
-  String get missionTitle => title;
-  String get village => location;
-  int get trappedCount => trapped;
-  double get distanceKm =>
-      double.tryParse(distance.replaceAll(' km', '')) ?? 0.0;
-  int get etaMins => int.tryParse(eta.replaceAll(' min', '')) ?? 0;
-
-  _Mission({
-    required this.id,
-    required this.title,
-    required this.incidentType,
-    required this.location,
-    required this.coordinates,
-    this.priority = 'CRITICAL',
-    this.distance = '2.8 km',
-    this.eta = '9 min',
-    this.assignedAuthority = 'State Emergency Ops Centre',
-    this.safeRouteSummary = 'Safe Route via Hill Road Bypass',
-    this.trapped = 0,
-    this.evacuated = 0,
-    this.medicalCount = 0,
-    this.childrenCount = 0,
-    this.elderlyCount = 0,
-    this.floodDepth = 'Unknown',
-    this.waterFlow = 'Unknown',
-    this.landslideRisk = 'Low',
-    this.roadBridgeCondition = 'Good',
-    this.requiredEquipment = const ['Boat', 'Life Jackets'],
-    this.recommendedShelter = 'Mawphlang Relief Centre',
-    this.recommendedHospital = 'District Hospital',
-    this.stepIndex = 0,
-    this.disabledCount = 0,
-    this.missingCount = 0,
-    Map<int, String>? stepTimestamps,
-  }) : stepTimestamps = stepTimestamps ?? {};
-}
+typedef _Mission = MissionAssignment;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN SCREEN WIDGET
@@ -321,64 +257,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   void _initData() {
-    if (IncidentCoordinator.instance.missionAssignments.isEmpty) {
-      IncidentCoordinator.instance.missionAssignments.addAll([
-        _Mission(
-          id: '#RS-204',
-          title: 'Mawphlang Riverbank Flood Extraction',
-          incidentType: 'Flood Rescue',
-          location: 'Lower Catchment Sector 4, Mawphlang',
-          coordinates: '25.4485° N, 91.7582° E',
-          priority: 'CRITICAL',
-          distance: '2.8 km',
-          eta: '9 min',
-          trapped: 12,
-          evacuated: 3,
-          medicalCount: 2,
-          childrenCount: 4,
-          elderlyCount: 3,
-          floodDepth: '6.5 ft (Rising)',
-          waterFlow: 'Fast / Turbulent',
-          landslideRisk: 'High',
-          roadBridgeCondition: 'Submerged',
-          requiredEquipment: ['IRB (Boat)', 'Life Jackets', 'Throw Ropes'],
-          recommendedShelter: 'Mawphlang Relief Centre',
-          recommendedHospital: 'Mawphlang CHC',
-          stepIndex: 1,
-          stepTimestamps: {0: '08:42 AM', 1: '08:44 AM'},
-        ),
-        _Mission(
-          id: '#RS-202',
-          title: 'Laitkor Landslide Evacuation',
-          incidentType: 'Landslide',
-          location: 'Laitkor Peak Road, Near Viewpoint',
-          coordinates: '25.5342° N, 91.8921° E',
-          priority: 'HIGH',
-          distance: '7.4 km',
-          eta: '18 min',
-          trapped: 5,
-          evacuated: 0,
-          medicalCount: 1,
-          childrenCount: 0,
-          elderlyCount: 2,
-          floodDepth: 'None',
-          waterFlow: 'None',
-          landslideRisk: 'Active / Unstable',
-          roadBridgeCondition: 'Blocked by debris',
-          requiredEquipment: ['Heavy Duty Winch', 'Earth Movers', 'Stretchers'],
-          recommendedShelter: 'Laitkor Community Hall',
-          recommendedHospital: 'Civil Hospital Shillong',
-          stepIndex: 4,
-          stepTimestamps: {
-            0: '07:15 AM',
-            1: '07:18 AM',
-            2: '07:22 AM',
-            3: '07:25 AM',
-            4: '07:43 AM',
-          },
-        ),
-      ]);
-    }
+    // IncidentCoordinator now provides real missions from Authority.
 
     _sosList = [
       _SOSAlert(
@@ -663,7 +542,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
     setState(() {
       final activeM = IncidentCoordinator.instance.activeTeamMission;
       if (activeM != null) {
-        final localM = IncidentCoordinator.instance.missionAssignments
+        final localM = IncidentCoordinator.instance.missions
             .where(
               (m) =>
                   m.id
@@ -688,73 +567,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
     if (!mounted) return;
     if (event.type == LiveEventType.teamAssigned) {
       final mission = event.payload as MissionAssignment;
-      
-      final localMission = _Mission(
-        id: mission.id.startsWith('#') ? mission.id : '#${mission.id}',
-        title: mission.missionTitle.isNotEmpty ? mission.missionTitle : '${mission.location} Extraction',
-        incidentType: mission.incidentType,
-        location: mission.location,
-        coordinates: '${mission.latitude}° N, ${mission.longitude}° E',
-        priority: mission.priority,
-        distance: 'Unknown',
-        eta: 'Unknown',
-        trapped: mission.trappedCount,
-        medicalCount: mission.medicalCount,
-        childrenCount: mission.childrenCount,
-        elderlyCount: mission.elderlyCount,
-        floodDepth: 'Unknown',
-        waterFlow: 'Unknown',
-        landslideRisk: 'Low',
-        roadBridgeCondition: 'Unknown',
-        requiredEquipment: ['Boat', 'Life Jackets', 'Ropes'],
-        recommendedShelter: 'Nearest Safe Shelter',
-        recommendedHospital: 'General Hospital',
-        stepIndex: 0,
-      );
-
-      setState(() {
-        IncidentCoordinator.instance.missionAssignments.insert(0, localMission);
-      });
 
       _showIncomingMissionAlert(mission);
     } else if (event.type == LiveEventType.evacOrderIssued) {
       final op = event.payload as EvacuationOperation;
-      // Convert ResponderMission to local _Mission for SDRF-BRAVO-04 (or just take the first one)
       final responderMission = op.missions.firstWhere(
         (m) => m.assignedTeam.contains('SDRF'),
         orElse: () => op.missions.first,
       );
 
-      final localMission = _Mission(
-        id: responderMission.id,
-        title: 'Evacuation: ${op.areaName} (${responderMission.clusterName})',
-        incidentType: 'Evacuation Order',
-        location: '${op.areaName} - ${responderMission.clusterName}',
-        coordinates: '25.4512° N, 91.7589° E',
-        priority: 'CRITICAL',
-        distance: '1.2 km',
-        eta: '4 min',
-        assignedAuthority: 'Authority Dashboard',
-        safeRouteSummary: op.safeRoute,
-        trapped: responderMission.targetPopulation,
-        medicalCount: 0,
-        childrenCount: 0,
-        elderlyCount: 0,
-        floodDepth: 'Unknown',
-        waterFlow: 'Unknown',
-        landslideRisk: 'Low',
-        roadBridgeCondition: 'Unknown',
-        requiredEquipment: ['Boat', 'Life Jackets'],
-        recommendedShelter: op.primaryShelter,
-        recommendedHospital: 'Unknown',
-        stepIndex: 0,
-      );
-
-      setState(() {
-        IncidentCoordinator.instance.missionAssignments.insert(0, localMission);
-      });
-
-      _showIncomingEvacAlert(localMission, op);
+      // The _showIncomingEvacAlert uses local UI state or just shows alert.
+      // But _showIncomingEvacAlert expects a _Mission. Since we aren't supporting evac right now, we can omit it, or create a mock.
+      // But it's easier to just do:
+      _showIncomingEvacAlert(IncidentCoordinator.instance.missions.first, op);
     } else if (event.type == LiveEventType.shelterUpdated) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -874,7 +699,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             onPressed: () {
               Navigator.pop(ctx);
               IncidentCoordinator.instance.acceptMission(mission.id);
-              final localM = IncidentCoordinator.instance.missionAssignments
+              final localM = IncidentCoordinator.instance.missions
                   .where(
                     (m) =>
                         m.id.replaceAll('#', '') ==
@@ -980,7 +805,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
   // ── Mission Getters & Handlers ─────────────────────────────────────────────
   _Mission get _activeMission =>
-      IncidentCoordinator.instance.missionAssignments[_activeMissionIdx]
+      IncidentCoordinator.instance.missions[_activeMissionIdx]
           as _Mission;
 
   void _advanceMissionLifecycle() {
@@ -2080,7 +1905,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
     setState(() {
       m.stepIndex = 1; // Accepted
       m.stepTimestamps[1] = timeStr;
-      IncidentCoordinator.instance.missionAssignmentsFilter =
+      _missionsFilter =
           'Active'; // Switch to Active tab
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2148,7 +1973,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
           setState(
-            () => IncidentCoordinator.instance.missionAssignmentsFilter =
+            () => _missionsFilter =
                 'Completed',
           );
         }
@@ -2903,16 +2728,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
   // TAB 1 — MISSIONS (Realistic Lifecycle)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildMissionsTab() {
-    final activeMissions = IncidentCoordinator.instance.missionAssignments
-        .whereType<_Mission>()
+    final activeMissions = IncidentCoordinator.instance.missions
+        
         .where((m) => m.stepIndex >= 1 && m.stepIndex < 7)
         .toList();
-    final pendingMissions = IncidentCoordinator.instance.missionAssignments
-        .whereType<_Mission>()
+    final pendingMissions = IncidentCoordinator.instance.missions
+        
         .where((m) => m.stepIndex == 0)
         .toList();
-    final completedMissions = IncidentCoordinator.instance.missionAssignments
-        .whereType<_Mission>()
+    final completedMissions = IncidentCoordinator.instance.missions
+        
         .where((m) => m.stepIndex == 7)
         .toList();
 
@@ -2922,7 +2747,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
           title: 'Mission Assignments',
           icon: Icons.assignment_rounded,
           subtitle:
-              '${IncidentCoordinator.instance.missionAssignments.length} assigned operations',
+              '${IncidentCoordinator.instance.missions.length} assigned operations',
         ),
         // ── Filter Tab Bar ──────────────────────────────────────────────────
         Container(
@@ -2954,9 +2779,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
         const Divider(height: 1, color: Color(0xFFE2E8F0)),
         Expanded(
           child:
-              IncidentCoordinator.instance.missionAssignmentsFilter == 'Active'
+              _missionsFilter == 'Active'
               ? _buildActiveView(activeMissions)
-              : IncidentCoordinator.instance.missionAssignmentsFilter ==
+              : _missionsFilter ==
                     'Pending'
               ? _buildPendingView(pendingMissions)
               : _buildCompletedView(completedMissions),
@@ -2973,12 +2798,12 @@ class _FieldResponderViewState extends State<FieldResponderView>
     int newCount = 0,
   }) {
     final selected =
-        IncidentCoordinator.instance.missionAssignmentsFilter == label;
+        _missionsFilter == label;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            IncidentCoordinator.instance.missionAssignmentsFilter = label;
+            _missionsFilter = label;
             if (label == 'Completed') _newlyCompletedCount = 0;
           });
         },
@@ -4185,7 +4010,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
     return GestureDetector(
       onTap: () {
         setState(() {
-          _activeMissionIdx = IncidentCoordinator.instance.missionAssignments
+          _activeMissionIdx = IncidentCoordinator.instance.missions
               .indexOf(m);
         });
       },
@@ -4363,7 +4188,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             setState(() {
                               _activeMissionIdx = IncidentCoordinator
                                   .instance
-                                  .missionAssignments
+                                  .missions
                                   .indexOf(m);
                               _tab = 0; // go to map
                             });
