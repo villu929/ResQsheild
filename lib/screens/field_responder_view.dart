@@ -258,6 +258,14 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
   void _initData() {
     // IncidentCoordinator now provides real missions from Authority.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final activeOps = IncidentCoordinator.instance.activeEvacuations;
+      if (activeOps.isNotEmpty) {
+        // Show alert for the most recently issued evacuation order
+        _showIncomingEvacAlert(activeOps.last);
+      }
+    });
 
     _sosList = [
       _SOSAlert(
@@ -571,15 +579,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
       _showIncomingMissionAlert(mission);
     } else if (event.type == LiveEventType.evacOrderIssued) {
       final op = event.payload as EvacuationOperation;
-      final responderMission = op.missions.firstWhere(
-        (m) => m.assignedTeam.contains('SDRF'),
-        orElse: () => op.missions.first,
-      );
 
-      // The _showIncomingEvacAlert uses local UI state or just shows alert.
-      // But _showIncomingEvacAlert expects a _Mission. Since we aren't supporting evac right now, we can omit it, or create a mock.
-      // But it's easier to just do:
-      _showIncomingEvacAlert(IncidentCoordinator.instance.missions.first, op);
+
+      // The _showIncomingEvacAlert just shows the alert using the EvacuationOperation op
+      _showIncomingEvacAlert(op);
     } else if (event.type == LiveEventType.shelterUpdated) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -724,7 +727,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
     );
   }
 
-  void _showIncomingEvacAlert(_Mission mission, EvacuationOperation op) {
+  void _showIncomingEvacAlert(EvacuationOperation op) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -739,7 +742,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '🚨 EVACUATION: ${mission.id}',
+                '🚨 EVACUATION: ${op.id}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 15,
@@ -753,26 +756,28 @@ class _FieldResponderViewState extends State<FieldResponderView>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              mission.missionTitle,
-              style: const TextStyle(
-                color: Colors.white,
+            const Text(
+              '⚠️ Fatafat Pohncho! Is area ke logo ko turant evacuate karwana hai!',
+              style: TextStyle(
+                color: Color(0xFFF87171),
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
-              'Location: ${mission.village}',
-              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+              'Location: ${op.areaName}',
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 4),
             Text(
-              'Target: ${mission.trappedCount} people',
-              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+              'Target Population: ${op.targetPopulation} people',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
             ),
+            const SizedBox(height: 4),
             Text(
-              'Shelter: ${mission.recommendedShelter}',
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+              'Shelter: ${op.primaryShelter}',
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
             ),
           ],
         ),
@@ -787,14 +792,13 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _acceptMission(mission);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               foregroundColor: Colors.white,
             ),
             child: const Text(
-              'ACCEPT MISSION',
+              'ACKNOWLEDGE',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -934,6 +938,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 final selected = _tab == i;
                 final d = destinations[i];
                 final isSOS = i == 2;
+                final isMissions = i == 1;
 
                 return Expanded(
                   child: InkWell(
@@ -983,6 +988,29 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                     ),
                                     child: Text(
                                       '${unackSOS > 0 ? unackSOS : 3}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (isMissions && IncidentCoordinator.instance.missions.where((m) => m.stepIndex == 0).isNotEmpty)
+                                Positioned(
+                                  right: 6,
+                                  top: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEA580C),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${IncidentCoordinator.instance.missions.where((m) => m.stepIndex == 0).length}',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 9.5,
@@ -2755,9 +2783,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
         .where((m) => m.stepIndex == 0)
         .toList();
     final completedMissions = IncidentCoordinator.instance.missions
-        
         .where((m) => m.stepIndex == 7)
         .toList();
+    final activeEvacuations = IncidentCoordinator.instance.activeEvacuations;
 
     return Column(
       children: [
@@ -2773,6 +2801,12 @@ class _FieldResponderViewState extends State<FieldResponderView>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
+              _buildMissionFilterTab(
+                label: 'Evacuation',
+                count: activeEvacuations.length,
+                badgeColor: const Color(0xFF9333EA),
+              ),
+              const SizedBox(width: 8),
               _buildMissionFilterTab(
                 label: 'Active',
                 count: activeMissions.length,
@@ -2796,13 +2830,13 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
         const Divider(height: 1, color: Color(0xFFE2E8F0)),
         Expanded(
-          child:
-              _missionsFilter == 'Active'
-              ? _buildActiveView(activeMissions)
-              : _missionsFilter ==
-                    'Pending'
-              ? _buildPendingView(pendingMissions)
-              : _buildCompletedView(completedMissions),
+          child: _missionsFilter == 'Evacuation'
+              ? _buildEvacuationMissionsView(activeEvacuations)
+              : _missionsFilter == 'Active'
+                  ? _buildActiveView(activeMissions)
+                  : _missionsFilter == 'Pending'
+                      ? _buildPendingView(pendingMissions)
+                      : _buildCompletedView(completedMissions),
         ),
       ],
     );
@@ -2887,6 +2921,93 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
         ),
       ),
+    );
+  }
+
+  // ── EVACUATION VIEW — Active Evacuation Operations ──────────────────────
+  Widget _buildEvacuationMissionsView(List<EvacuationOperation> evacuations) {
+    if (evacuations.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.security_rounded,
+        message: 'No active evacuations',
+        sub: 'There are no active evacuation operations assigned.',
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: evacuations.length,
+      itemBuilder: (context, i) {
+        final op = evacuations[i];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.3), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.security_rounded, color: Color(0xFF9333EA)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      op.areaName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Target Population: ${op.targetPopulation} people',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Text(
+                  op.status.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF16A34A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -3078,6 +3199,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ],
             ),
           ),
+          const SizedBox(height: 16),
           // ── Action Buttons ────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -4650,13 +4772,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             ? const Color(0xFFD97706)
             : const Color(0xFF2563EB);
 
-    return AnimatedBuilder(
-      animation: _pulseAnim,
-      builder: (_, child) => Transform.scale(
-        scale: isCrit && !s.acknowledged ? _pulseAnim.value : 1.0,
-        child: child,
-      ),
-      child: Container(
+    return Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -4952,8 +5068,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _sosTagChip(IconData icon, String label, Color fgColor, Color bgColor) {

@@ -102,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _layerHospitals = false;
   bool _layerRoads = true;
   bool _layerTeams = true;
+  bool _showAllRescueTeams = false;
 
   // Pulse animation for critical alerts & pins
   late AnimationController _pulseController;
@@ -1214,7 +1215,7 @@ class _HomeScreenState extends State<HomeScreen>
                   badge: '+1.2k 2h',
                   bgColor: CmdColors.redLight,
                   borderColor: const Color(0xFFFEE2E2),
-                  onTap: () => setState(() => _activeNavIndex = 2),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => _buildAtRiskDetailsScreen(context))),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1240,7 +1241,7 @@ class _HomeScreenState extends State<HomeScreen>
                   badge: '8 Critical',
                   bgColor: CmdColors.redLight,
                   borderColor: const Color(0xFFFEE2E2),
-                  onTap: () => setState(() => _activeNavIndex = 3),
+                  onTap: () => setState(() => _activeNavIndex = 10),
                 ),
               ),
             ],
@@ -1257,7 +1258,7 @@ class _HomeScreenState extends State<HomeScreen>
                   badge: '2 Near Cap',
                   bgColor: CmdColors.greenLight,
                   borderColor: const Color(0xFFDCFCE7),
-                  onTap: () => setState(() => _activeNavIndex = 5),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CitizenSheltersView(isAuthority: true))),
                 ),
               ),
               const SizedBox(width: 8),
@@ -2564,11 +2565,11 @@ class _HomeScreenState extends State<HomeScreen>
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                      color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
-                      Icons.priority_high_rounded,
+                      Icons.warning_amber_rounded,
                       color: Color(0xFFDC2626),
                       size: 20,
                     ),
@@ -2582,8 +2583,8 @@ class _HomeScreenState extends State<HomeScreen>
                           'Evacuation Decision Queue',
                           style: TextStyle(
                             color: Color(0xFF0F172A),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
                             letterSpacing: -0.2,
                           ),
                         ),
@@ -2591,11 +2592,20 @@ class _HomeScreenState extends State<HomeScreen>
                           'AI ranked areas requiring immediate attention',
                           style: TextStyle(
                             color: Color(0xFF64748B),
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const Text(
+                    'JALGUARD • PROTECTING PEOPLE, SAFER TOMORROWS',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ],
@@ -2607,7 +2617,7 @@ class _HomeScreenState extends State<HomeScreen>
                 rank: '1',
                 villageName: 'Mawphlang Sector',
                 severity: 'Critical',
-                badgeColor: CmdColors.criticalRed,
+                badgeColor: const Color(0xFFDC2626),
                 priorityScore: '94 / 100',
                 population: '2,840',
                 vulnerable: '380 (Elderly & Kids)',
@@ -2627,17 +2637,17 @@ class _HomeScreenState extends State<HomeScreen>
                 rank: '2',
                 villageName: 'Nongstoin Valley Lowland',
                 severity: 'High',
-                badgeColor: CmdColors.warningOrange,
+                badgeColor: const Color(0xFFEA580C),
                 priorityScore: '78 / 100',
                 population: '1,920',
                 vulnerable: '210',
                 sosCount: '3 SOS',
-                roadAccess: 'Passable (Caution)',
+                roadAccess: 'Possible (Caution)',
                 onView: () {
                   _mapController.move(const LatLng(25.5230, 91.2680), 13.0);
                 },
                 onOrderEvac: () {},
-                actionLabel: 'PREPARE',
+                actionLabel: 'Prepare',
               ),
 
               const SizedBox(height: 8),
@@ -2647,7 +2657,7 @@ class _HomeScreenState extends State<HomeScreen>
                 rank: '3',
                 villageName: 'Pynursla Riverbed Basin',
                 severity: 'High',
-                badgeColor: CmdColors.cautionAmber,
+                badgeColor: const Color(0xFFD97706),
                 priorityScore: '65 / 100',
                 population: '1,450',
                 vulnerable: '160',
@@ -2681,189 +2691,254 @@ class _HomeScreenState extends State<HomeScreen>
   }) {
     bool isEvacActive = activeOp != null;
 
+    final String scoreStr = priorityScore.split(' ')[0]; // e.g. '94'
+    final double scoreVal = double.tryParse(scoreStr) ?? 0;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isEvacActive ? const Color(0xFFF8FAFC) : CmdColors.bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isEvacActive ? const Color(0xFF0284C7) : CmdColors.cardBorder, width: isEvacActive ? 1.5 : 1),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x05000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: badgeColor, width: 4)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 1. P Badge
               Container(
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: badgeColor,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
                   child: Text(
                     'P$rank',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 14),
+
+              // 2. Info Block
               Expanded(
+                flex: 4,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       villageName,
                       style: const TextStyle(
-                        color: CmdColors.textPrimary,
-                        fontSize: 13,
+                        color: Color(0xFF0F172A),
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Text(
-                      isEvacActive ? 'Target: $population people' : '$population people · Vulnerable: $vulnerable',
-                      style: const TextStyle(
-                        color: CmdColors.textSecondary,
-                        fontSize: 10.5,
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.people_alt_rounded, size: 12, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$population people',
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6),
+                          child: Text('|', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                        ),
+                        const Icon(Icons.group_rounded, size: 12, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Vulnerable: $vulnerable',
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.people_alt_rounded, size: 12, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 4),
+                          Text(
+                            sosCount,
+                            style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w900),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              if (!isEvacActive)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+
+              // 3. Score Block
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Score: $priorityScore',
-                      style: TextStyle(
-                        color: badgeColor,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Score',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600),
+                        ),
+                        const Spacer(),
+                        Text(
+                          scoreStr,
+                          style: TextStyle(color: badgeColor, fontSize: 16, fontWeight: FontWeight.w900),
+                        ),
+                        const Text(
+                          ' / 100',
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                      ],
                     ),
-                    Text(
-                      roadAccess,
-                      style: TextStyle(
-                        color: roadAccess.contains('Blocked')
-                            ? CmdColors.criticalRed
-                            : CmdColors.textSecondary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: scoreVal / 100,
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        valueColor: AlwaysStoppedAnimation<Color>(badgeColor),
+                        minHeight: 6,
                       ),
                     ),
                   ],
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'EVACUATION ACTIVE',
-                    style: TextStyle(color: Color(0xFF0284C7), fontSize: 10, fontWeight: FontWeight.w900),
+                ),
+              ),
+
+              const SizedBox(width: 24),
+
+              // 4. Status Pill
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: roadAccess.contains('Blocked')
+                          ? const Color(0xFFFEF2F2)
+                          : roadAccess.contains('Caution') || roadAccess.contains('Possible')
+                              ? const Color(0xFFFFFBEB)
+                              : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          roadAccess.contains('Blocked')
+                              ? Icons.block_rounded
+                              : roadAccess.contains('Caution') || roadAccess.contains('Possible')
+                                  ? Icons.warning_amber_rounded
+                                  : Icons.check_circle_rounded,
+                          size: 14,
+                          color: roadAccess.contains('Blocked')
+                              ? const Color(0xFFDC2626)
+                              : roadAccess.contains('Caution') || roadAccess.contains('Possible')
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFF16A34A),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          roadAccess,
+                          style: TextStyle(
+                            color: roadAccess.contains('Blocked')
+                                ? const Color(0xFFDC2626)
+                                : roadAccess.contains('Caution') || roadAccess.contains('Possible')
+                                    ? const Color(0xFFD97706)
+                                    : const Color(0xFF16A34A),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              ),
+
+              // 5. Actions
+              Expanded(
+                flex: 3,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (onView != null) ...[
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color(0xFFEFF6FF),
+                          foregroundColor: const Color(0xFF2563EB),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                        label: const Text('View', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                        onPressed: onView,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    
+                    if (onOrderEvac != null)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: actionLabel != null ? const Color(0xFFEA580C) : const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: Icon(actionLabel != null ? Icons.assignment_rounded : Icons.security_rounded, size: 16),
+                        label: Text('${actionLabel ?? 'Order Evac'} →', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                        onPressed: onOrderEvac,
+                      )
+                    else if (isEvacActive)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'EVACUATION ACTIVE',
+                          style: TextStyle(color: Color(0xFF0284C7), fontSize: 11, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-
-          if (isEvacActive) ...[
-            const Divider(color: CmdColors.divider),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatText('${activeOp.totalEvacuated} / ${activeOp.targetPopulation}', 'evacuated'),
-                _buildStatText('${activeOp.activeTeamsCount}', 'teams deployed'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-                icon: const Icon(Icons.monitor_heart_rounded, size: 16),
-                label: const Text('MONITOR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                onPressed: () {},
-              ),
-            ),
-          ] else ...[
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: CmdColors.redLight,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    sosCount,
-                    style: const TextStyle(
-                      color: CmdColors.criticalRed,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (onView != null)
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: const Size(50, 28),
-                    ),
-                    icon: const Icon(
-                      Icons.location_searching_rounded,
-                      size: 14,
-                      color: CmdColors.primaryBlue,
-                    ),
-                    label: const Text(
-                      'VIEW',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: CmdColors.primaryBlue,
-                      ),
-                    ),
-                    onPressed: onView,
-                  ),
-                if (onOrderEvac != null) ...[
-                  const SizedBox(width: 6),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CmdColors.criticalRed,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      minimumSize: const Size(60, 28),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    onPressed: onOrderEvac,
-                    child: Text(
-                      actionLabel ?? 'ORDER EVAC',
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -4004,9 +4079,9 @@ class _HomeScreenState extends State<HomeScreen>
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const Text(
-                ' / 4 Total',
-                style: TextStyle(
+              Text(
+                ' / ${IncidentCoordinator.instance.responderTeams.length} Total',
+                style: const TextStyle(
                   color: Color(0xFF64748B),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -4014,7 +4089,11 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               const SizedBox(width: 12),
               OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                  setState(() {
+                    _showAllRescueTeams = !_showAllRescueTeams;
+                  });
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF007AEB),
                   side: const BorderSide(color: Color(0xFF007AEB), width: 1.2),
@@ -4023,13 +4102,13 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text(
-                      'View Teams',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      _showAllRescueTeams ? 'Show Less' : 'View Teams',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, size: 14),
+                    const SizedBox(width: 4),
+                    Icon(_showAllRescueTeams ? Icons.keyboard_arrow_up_rounded : Icons.arrow_forward_rounded, size: 14),
                   ],
                 ),
               ),
@@ -4040,18 +4119,17 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 900;
               final isMedium = constraints.maxWidth >= 560;
-              final display = IncidentCoordinator.instance.responderTeams.take(4).toList();
+              final display = _showAllRescueTeams 
+                  ? IncidentCoordinator.instance.responderTeams
+                  : IncidentCoordinator.instance.responderTeams.take(4).toList();
 
               if (isWide) {
                 const spacing = 12.0;
                 final cardW = (constraints.maxWidth - spacing * 3) / 4;
-                return Row(
-                  children: [
-                    for (int i = 0; i < display.length; i++) ...[
-                      if (i > 0) const SizedBox(width: spacing),
-                      SizedBox(width: cardW, child: _rescueTeamTile(display[i])),
-                    ],
-                  ],
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: display.map((t) => SizedBox(width: cardW, child: _rescueTeamTile(t))).toList(),
                 );
               } else if (isMedium) {
                 const spacing = 10.0;
@@ -5930,6 +6008,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildCurrentView() {
     switch (_activeNavIndex) {
+      case 10:
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: _buildSosManagementSection(),
+          ),
+        );
       case 1:
         // Fullscreen Disaster Map View
         return _buildLiveDisasterMapSection(isFullScreen: true);
@@ -5985,10 +6070,10 @@ class _HomeScreenState extends State<HomeScreen>
               _buildKeyStatisticsCards(),
               _buildMapAndAnalyticsSection(),
               _buildRiverAndRainfallSection(),
+              _buildRescueTeamsSection(),
               _buildAiRiskAndPrioritySection(),
               _buildPopulationAtRiskSection(),
               _buildSosManagementSection(),
-              _buildRescueTeamsSection(),
               _buildEvacuationSection(),
               _buildShelterAndReliefSection(),
               _buildSitrepAndAuditSection(),
@@ -6847,13 +6932,14 @@ class _HomeScreenState extends State<HomeScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: CmdColors.cardBg,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Padding(
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
         padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -6861,9 +6947,11 @@ class _HomeScreenState extends State<HomeScreen>
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
             ),
             const SizedBox(height: 10),
-            ...IncidentCoordinator.instance.responderTeams.map(
-              (team) => ListTile(
-                leading: Icon(
+            Expanded(
+              child: ListView(
+                children: IncidentCoordinator.instance.responderTeams.map(
+                  (team) => ListTile(
+                    leading: Icon(
                   Icons.directions_boat,
                   color: team.status == 'Available'
                       ? CmdColors.safeGreen
@@ -6932,9 +7020,82 @@ class _HomeScreenState extends State<HomeScreen>
                   child: const Text('Deploy'),
                 ),
               ),
-            ),
+            ).toList(),
+          ),
+        ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAssignEvacTeamsModal(EvacuationOperation op) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: CmdColors.cardBg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ASSIGN TEAMS TO EVACUATION: ${op.areaName.toUpperCase()}',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView(
+                    children: IncidentCoordinator.instance.responderTeams.map(
+                      (team) => ListTile(
+                        leading: Icon(
+                          Icons.directions_boat,
+                          color: team.status == 'Available'
+                              ? CmdColors.safeGreen
+                              : CmdColors.warningOrange,
+                        ),
+                        title: Text('${team.name} (${team.unit})'),
+                        subtitle: Text('Status: ${team.status} · ETA: ${team.etaEstimate}'),
+                        trailing: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: team.status == 'Available' ? CmdColors.deepBlue : Colors.grey,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: team.status == 'Available' ? () {
+                            setState(() {
+                              team.status = 'On Mission';
+                              team.currentMissionId = 'Evacuating ${op.areaName}';
+                              _actionLogs.insert(
+                                0,
+                                '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, "0")} — Assigned ${team.name} to Evacuation ${op.areaName}',
+                              );
+                            });
+                            // Update modal state to reflect changes without closing
+                            setModalState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${team.name} assigned to Evacuation ${op.areaName} successfully!',
+                                ),
+                              ),
+                            );
+                          } : null,
+                          child: const Text('Assign'),
+                        ),
+                      ),
+                    ).toList(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       ),
     );
   }
@@ -7010,8 +7171,61 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(height: 16),
                       
                       const Text('Available Teams', style: TextStyle(fontWeight: FontWeight.w700, color: CmdColors.textSecondary)),
-                      const SizedBox(height: 4),
-                      const Text('• SDRF Bravo — 2.1 km\n• NDRF Alpha — 4.8 km\n• Local Rescue 03 — 3.4 km', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      ...[
+                        {'name': 'SDRF Bravo', 'dist': '2.1 km'},
+                        {'name': 'NDRF Alpha', 'dist': '4.8 km'},
+                        {'name': 'Local Rescue 03', 'dist': '3.4 km'},
+                      ].map((team) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: CmdColors.cardBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: CmdColors.divider),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(team['name']!, style: const TextStyle(fontWeight: FontWeight.w700, color: CmdColors.textPrimary)),
+                                Text(team['dist']!, style: const TextStyle(fontSize: 12, color: CmdColors.textSecondary)),
+                              ],
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: CmdColors.deepBlue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                              ),
+                              onPressed: () {
+                                final op = EvacuationOperation(
+                                  id: 'EVAC-2026-041',
+                                  areaName: areaName,
+                                  targetPopulation: population,
+                                  primaryShelter: 'Mawphlang Community Centre',
+                                  safeRoute: 'Road C',
+                                  missions: [
+                                    ResponderMission(
+                                      id: 'RS-208',
+                                      clusterName: 'Assigned Area',
+                                      targetPopulation: population,
+                                      assignedTeam: team['name']!,
+                                    )
+                                  ],
+                                );
+                                IncidentCoordinator.instance.issueEvacuationOrder(op);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${team['name']} assigned! Alert sent to field responder.')),
+                                );
+                              },
+                              child: const Text('Assign task of evacuation', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      )).toList(),
                     ],
                   ),
                 ),
@@ -7058,6 +7272,8 @@ class _HomeScreenState extends State<HomeScreen>
                         IncidentCoordinator.instance.issueEvacuationOrder(op);
                         
                         Navigator.pop(context);
+                        _showAssignEvacTeamsModal(op);
+                        
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             backgroundColor: CmdColors.criticalRed,
@@ -7242,6 +7458,140 @@ class _HomeScreenState extends State<HomeScreen>
       (route) => false,
     );
   }
+  Widget _buildAtRiskDetailsScreen(BuildContext context) {
+    final evacs = IncidentCoordinator.instance.activeEvacuations;
+    EvacuationOperation? getOp(String name) {
+      try {
+        return evacs.firstWhere((e) => e.areaName.toLowerCase().contains(name.toLowerCase()));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFEFF6FC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFEFF6FC),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: CmdColors.textPrimary),
+        title: const Text(
+          'AT RISK POPULATION BREAKDOWN',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: CmdColors.textPrimary,
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Total: 12,480 People • Region: Jharkhand',
+                style: TextStyle(color: CmdColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              
+              _villagePriorityCard(
+                rank: '1',
+                villageName: 'Sahibganj (Diara Area)',
+                severity: 'Critical',
+                badgeColor: const Color(0xFFDC2626),
+                priorityScore: '98 / 100',
+                population: '4,520',
+                vulnerable: '1,200',
+                sosCount: '15 SOS',
+                roadAccess: 'Road Blocked',
+                activeOp: getOp('Sahibganj'),
+                onView: () {
+                  Navigator.pop(context); // Go back to map
+                  _mapController.move(const LatLng(25.2425, 87.6449), 13.0);
+                },
+                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Sahibganj (Diara Area)', 4520, 1200, '15 SOS', 'Road Blocked', 98),
+              ),
+
+              _villagePriorityCard(
+                rank: '2',
+                villageName: 'Dumka (Masanjore Downstream)',
+                severity: 'Critical',
+                badgeColor: const Color(0xFFEA580C),
+                priorityScore: '88 / 100',
+                population: '3,100',
+                vulnerable: '800',
+                sosCount: '10 SOS',
+                roadAccess: 'Possible (Caution)',
+                activeOp: getOp('Dumka'),
+                onView: () {
+                  Navigator.pop(context);
+                  _mapController.move(const LatLng(24.2683, 87.2483), 13.0);
+                },
+                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Dumka (Masanjore Downstream)', 3100, 800, '10 SOS', 'Possible (Caution)', 88),
+                actionLabel: 'Prepare',
+              ),
+
+              _villagePriorityCard(
+                rank: '3',
+                villageName: 'Godda (Low lying sectors)',
+                severity: 'High',
+                badgeColor: const Color(0xFFEA580C),
+                priorityScore: '75 / 100',
+                population: '2,840',
+                vulnerable: '500',
+                sosCount: '5 SOS',
+                roadAccess: 'Possible (Caution)',
+                activeOp: getOp('Godda'),
+                onView: () {
+                  Navigator.pop(context);
+                  _mapController.move(const LatLng(24.8273, 87.2114), 13.0);
+                },
+                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Godda (Low lying sectors)', 2840, 500, '5 SOS', 'Possible (Caution)', 75),
+                actionLabel: 'Prepare',
+              ),
+
+              _villagePriorityCard(
+                rank: '4',
+                villageName: 'Pakur (River banks)',
+                severity: 'Moderate',
+                badgeColor: const Color(0xFFD97706),
+                priorityScore: '60 / 100',
+                population: '1,200',
+                vulnerable: '200',
+                sosCount: '2 SOS',
+                roadAccess: 'Open',
+                activeOp: getOp('Pakur'),
+                onView: () {
+                  Navigator.pop(context);
+                  _mapController.move(const LatLng(24.6335, 87.8493), 13.0);
+                },
+                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Pakur (River banks)', 1200, 200, '2 SOS', 'Open', 60),
+                actionLabel: 'Prepare',
+              ),
+
+              _villagePriorityCard(
+                rank: '5',
+                villageName: 'Ranchi (Urban Flooding)',
+                severity: 'Moderate',
+                badgeColor: const Color(0xFFD97706),
+                priorityScore: '55 / 100',
+                population: '820',
+                vulnerable: '150',
+                sosCount: '1 SOS',
+                roadAccess: 'Open',
+                activeOp: getOp('Ranchi'),
+                onView: () {
+                  Navigator.pop(context);
+                  _mapController.move(const LatLng(23.3441, 85.3096), 13.0);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ============================================================================
@@ -7276,8 +7626,3 @@ class _MapLegendDot extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

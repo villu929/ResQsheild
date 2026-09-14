@@ -24,6 +24,8 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
   bool _isTransmitting = false;
   bool _isSent = false;
   String _sosId = '#284';
+  int _peopleCount = 1;
+  bool _shareLiveLocation = true;
 
   final List<Map<String, dynamic>> _reasons = [
     {
@@ -59,14 +61,14 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
     final sos = IncidentCoordinator.instance.createSos(
       callerName: 'Rohit',
       village: 'Mawphlang Riverbank',
-      latitude: 25.4502,
-      longitude: 91.7592,
-      peopleCount: 6,
-      elderlyCount: 1,
-      childrenCount: 1,
+      latitude: _shareLiveLocation ? 25.4502 : 0.0,
+      longitude: _shareLiveLocation ? 91.7592 : 0.0,
+      peopleCount: _peopleCount,
+      elderlyCount: _selectedReason.contains('Elderly') ? 1 : 0,
+      childrenCount: _peopleCount > 2 ? 1 : 0,
       hasMedical: _selectedReason.contains('Medical'),
       emergencyType: _selectedReason,
-      message: 'Trapped near riverbank, flood water rising rapidly.',
+      message: _peopleCount == 1 ? 'Trapped alone. Flood water rising rapidly.' : 'Trapped with group. Flood water rising rapidly.',
     );
 
     if (!mounted) return;
@@ -151,11 +153,63 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
 
             const SizedBox(height: 16),
 
-            // Live Telemetry Metadata Box
+            // ── Live Location Toggle ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _shareLiveLocation ? const Color(0xFFF3F8FD) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _shareLiveLocation ? const Color(0xFFD6E8F7) : const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.gps_fixed_rounded,
+                    size: 18,
+                    color: _shareLiveLocation ? const Color(0xFF007AEB) : const Color(0xFF94A3B8),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.isHindi ? 'लाइव लोकेशन साझा करें' : 'Share Live Location',
+                          style: TextStyle(
+                            color: _shareLiveLocation ? const Color(0xFF013973) : const Color(0xFF64748B),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          _shareLiveLocation
+                              ? '25.4502° N, 91.7592° E (Accuracy: 4m)'
+                              : (widget.isHindi ? 'लोकेशन साझा करना बंद है' : 'Location sharing disabled'),
+                          style: TextStyle(
+                            color: _shareLiveLocation ? const Color(0xFF537392) : const Color(0xFF94A3B8),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _shareLiveLocation,
+                    onChanged: (val) => setState(() => _shareLiveLocation = val),
+                    activeColor: const Color(0xFF007AEB),
+                    activeTrackColor: const Color(0xFFBEDCF5),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── People Counter ──
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F8FD),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFD6E8F7)),
               ),
@@ -163,14 +217,14 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.gps_fixed_rounded, size: 14, color: Color(0xFF007AEB)),
-                      SizedBox(width: 6),
+                    children: [
+                      const Icon(Icons.groups_rounded, size: 18, color: Color(0xFF013973)),
+                      const SizedBox(width: 10),
                       Text(
-                        '23.7957° N, 86.4304° E',
-                        style: TextStyle(
+                        widget.isHindi ? 'फंसे हुए लोग' : 'People Trapped',
+                        style: const TextStyle(
                           color: Color(0xFF013973),
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -178,15 +232,33 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF537392)),
-                      const SizedBox(width: 6),
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
-                          color: Color(0xFF537392),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                      _counterBtn(
+                        icon: Icons.remove_rounded,
+                        onTap: () {
+                          if (_peopleCount > 1) {
+                            setState(() => _peopleCount--);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 24,
+                        child: Text(
+                          '$_peopleCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF013973),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      _counterBtn(
+                        icon: Icons.add_rounded,
+                        onTap: () {
+                          setState(() => _peopleCount++);
+                        },
                       ),
                     ],
                   ),
@@ -346,6 +418,21 @@ class _CitizenSosDialogState extends State<CitizenSosDialog> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _counterBtn({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F8FD),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFD6E8F7)),
+        ),
+        child: Icon(icon, size: 18, color: const Color(0xFF007AEB)),
       ),
     );
   }

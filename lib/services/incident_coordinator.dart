@@ -155,6 +155,24 @@ class IncidentCoordinator extends ChangeNotifier {
 
   // ── Seed Initial Data ──────────────────────────────────────────────────────
   void _initDefaultData() {
+    for (int i = 5; i <= 27; i++) {
+      final isMedical = i % 3 == 0;
+      _sosRequests.add(SOSRequest(
+        id: '#${200 + i}',
+        callerName: 'Citizen ${200 + i}',
+        village: 'Sector ${i} Area',
+        latitude: 25.0 + (i * 0.01),
+        longitude: 91.0 + (i * 0.01),
+        peopleCount: 1 + (i % 5),
+        elderlyCount: isMedical ? 1 : 0,
+        childrenCount: 0,
+        hasMedical: isMedical,
+        emergencyType: isMedical ? 'Medical Urgency' : 'General SOS',
+        status: IncidentStatus.newSos,
+        timestamp: DateTime.now().subtract(Duration(minutes: i * 5)),
+      ));
+    }
+
     // 1. Teams
     _responderTeams.addAll([
       ResponderTeamLocation(
@@ -205,6 +223,58 @@ class IncidentCoordinator extends ChangeNotifier {
         longitude: 91.7700,
         batteryLevel: 82,
         membersCount: 4,
+        boatCount: 0,
+        ambulanceCount: 0,
+        lastUpdate: DateTime.now(),
+      ),
+      ResponderTeamLocation(
+        teamId: 'NDRF-CHARLIE-02',
+        name: 'NDRF Charlie - Team 02',
+        unit: 'Swift Water Rescue',
+        status: 'Available',
+        latitude: 25.4510,
+        longitude: 91.7600,
+        batteryLevel: 95,
+        membersCount: 10,
+        boatCount: 4,
+        ambulanceCount: 1,
+        lastUpdate: DateTime.now(),
+      ),
+      ResponderTeamLocation(
+        teamId: 'MED-UNIT-05',
+        name: 'Medical Unit 05',
+        unit: 'Mobile Medical Team',
+        status: 'Available',
+        latitude: 25.4600,
+        longitude: 91.7500,
+        batteryLevel: 100,
+        membersCount: 5,
+        boatCount: 0,
+        ambulanceCount: 2,
+        lastUpdate: DateTime.now(),
+      ),
+      ResponderTeamLocation(
+        teamId: 'SDRF-DELTA-08',
+        name: 'SDRF Delta - Team 08',
+        unit: 'Search and Rescue',
+        status: 'On Mission',
+        latitude: 25.4450,
+        longitude: 91.7650,
+        batteryLevel: 65,
+        membersCount: 9,
+        boatCount: 2,
+        ambulanceCount: 0,
+        lastUpdate: DateTime.now(),
+      ),
+      ResponderTeamLocation(
+        teamId: 'AIR-RESCUE-01',
+        name: 'Air Rescue Heli-01',
+        unit: 'Airlift & Evac',
+        status: 'Available',
+        latitude: 25.4700,
+        longitude: 91.7400,
+        batteryLevel: 100,
+        membersCount: 3,
         boatCount: 0,
         ambulanceCount: 0,
         lastUpdate: DateTime.now(),

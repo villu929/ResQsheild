@@ -10,6 +10,7 @@ import 'citizen_alerts_view.dart';
 import 'citizen_medical_centers_view.dart';
 import '../role_selection_screen.dart';
 import '../../models/incident_models.dart';
+import '../../models/evacuation_models.dart';
 import '../../services/incident_coordinator.dart';
 import '../../services/resource_api_service.dart';
 import '../../widgets/role_quick_switcher.dart';
@@ -649,6 +650,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     },
   ];
 
+  StreamSubscription? _eventSub;
+  bool _isEvacBannerDismissed = false;
+
   @override
   void initState() {
     super.initState();
@@ -659,6 +663,20 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     ResourceApiService.instance.addListener(_onResourceChanged);
 
     IncidentCoordinator.instance.addListener(_onIncidentCoordChanged);
+    
+    _eventSub = IncidentCoordinator.instance.eventStream.listen((event) {
+      if (!mounted) return;
+      if (event.type == LiveEventType.evacOrderIssued) {
+        setState(() {
+          _isEvacBannerDismissed = false;
+        });
+        final op = event.payload as EvacuationOperation;
+        if (op.areaName.toLowerCase().contains('mawphlang')) {
+          _showEvacuationAlertModal(op);
+        }
+      }
+    });
+
     if (!_isTestEnvironment()) {
       _startDosTimer();
     }
@@ -668,8 +686,106 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void dispose() {
     IncidentCoordinator.instance.removeListener(_onIncidentCoordChanged);
     ResourceApiService.instance.removeListener(_onResourceChanged);
+    _eventSub?.cancel();
     _dosAutoSlideTimer?.cancel();
     super.dispose();
+  }
+
+  void _showEvacuationAlertModal(EvacuationOperation op) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFEF2F2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFDC2626), width: 3),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: const Icon(
+                    Icons.warning_rounded,
+                    color: Color(0xFFDC2626),
+                    size: 76,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'CRITICAL FLOOD RISK\nRAPIDLY RISING WATER LEVEL',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF991B1B),
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'EVACUATE ${op.areaName.toUpperCase()} NOW',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Follow designated safe routes to the nearest shelter.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFDC2626),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Shelter: ${op.primaryShelter}\nRoute: ${op.safeRoute}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('I UNDERSTAND - EVACUATE NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onResourceChanged() {
@@ -1210,14 +1326,130 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     String subtitle;
     Color bannerBg;
 
-    if (activeEvac != null) {
-      title = _isHindi
-          ? '🚨 निकासी आदेश: ${activeEvac.areaName}'
-          : '🚨 EVACUATION ORDER: ${activeEvac.areaName}';
-      subtitle = _isHindi
-          ? 'सुरक्षित मार्ग: ${activeEvac.safeRoute} • गंतव्य: ${activeEvac.primaryShelter}'
-          : 'Safe Route: ${activeEvac.safeRoute} • Dest: ${activeEvac.primaryShelter}';
-      bannerBg = const Color(0xFFDC2626);
+    if (activeEvac != null && !_isEvacBannerDismissed) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 5,
+                width: double.infinity,
+                color: const Color(0xFF1E3A8A),
+              ),
+              Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFE91E1E), Color(0xFFB71111)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: CustomPaint(
+                        size: const Size(180, 100),
+                        painter: _BannerWavePainter(color: Colors.white.withOpacity(0.12)),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 8, top: 10, bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const _PulsingDangerIcon(),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'CRITICAL FLOOD RISK • RAPIDLY RISING WATER LEVEL',
+                                  style: TextStyle(
+                                    color: Colors.yellowAccent,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 10,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'EVACUATE ${activeEvac.areaName.toUpperCase()} NOW',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 20,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Follow designated safe routes to the nearest shelter.',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isEvacBannerDismissed = true;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.close, color: Colors.white70, size: 20),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Dismiss',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (activeEvac != null && _isEvacBannerDismissed && activeSos == null) {
+      return const SizedBox.shrink();
     } else if (activeSos != null) {
       switch (activeSos.status) {
         case IncidentStatus.newSos:
@@ -7896,123 +8128,186 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
   // 1. SOS CONFIRMATION & ACTIVE TRANSMIT MODAL
   void _showSosConfirmationDialog() {
+    int totalPeople = 1;
+    int women = 0;
+    int elderly = 0;
+    int children = 0;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(
-              Icons.warning_rounded,
-              color: Color(0xFFE92828),
-              size: 28,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _isHindi ? 'आपातकालीन SOS' : 'Emergency SOS',
-                style: const TextStyle(
-                  color: Color(0xFF013973),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _isHindi
-                  ? 'क्या आप या आपके साथ के लोग तात्कालिक खतरे में हैं?'
-                  : 'Are you in immediate danger? Triggering SOS will dispatch your exact GPS coordinates to the nearest NDRF & police rescue team.',
-              style: const TextStyle(fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEEEE),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.group_rounded,
-                    color: Color(0xFFE92828),
-                    size: 18,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          Widget counterRow(String title, int count, Function(int) onChanged) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF013973),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _isHindi
-                          ? 'साथ में लोग: 3 सदस्य'
-                          : 'People with you: 3 members',
-                      style: const TextStyle(
-                        color: Color(0xFFE92828),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFE92828), size: 20),
+                      onPressed: count > 0 ? () => onChanged(count - 1) : null,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 20,
+                      child: Text(
+                        '$count',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF013973)),
                       ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline, color: Color(0xFFE92828), size: 20),
+                      onPressed: () => onChanged(count + 1),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(
+                  Icons.warning_rounded,
+                  color: Color(0xFFE92828),
+                  size: 28,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _isHindi ? 'आपातकालीन SOS' : 'Emergency SOS',
+                    style: const TextStyle(
+                      color: Color(0xFF013973),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _isHindi
+                        ? 'क्या आप या आपके साथ के लोग तात्कालिक खतरे में हैं?'
+                        : 'Are you in immediate danger? Triggering SOS will dispatch your exact GPS coordinates to the nearest NDRF & police rescue team.',
+                    style: const TextStyle(fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F8FD),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFD6E8F7)),
+                    ),
+                    child: Column(
+                      children: [
+                        counterRow(
+                          _isHindi ? 'कुल लोग' : 'Total People',
+                          totalPeople,
+                          (val) {
+                            if (val >= 1) setStateDialog(() => totalPeople = val);
+                          },
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Divider(color: Color(0xFFD6E8F7), height: 1),
+                        ),
+                        counterRow(
+                          _isHindi ? 'महिलाएं' : 'Women',
+                          women,
+                          (val) => setStateDialog(() => women = val),
+                        ),
+                        const SizedBox(height: 10),
+                        counterRow(
+                          _isHindi ? 'बुजुर्ग' : 'Elderly',
+                          elderly,
+                          (val) => setStateDialog(() => elderly = val),
+                        ),
+                        const SizedBox(height: 10),
+                        counterRow(
+                          _isHindi ? 'बच्चे' : 'Children',
+                          children,
+                          (val) => setStateDialog(() => children = val),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              _isHindi ? 'रद्द करें' : 'CANCEL',
-              style: const TextStyle(
-                color: Color(0xFF537392),
-                fontWeight: FontWeight.bold,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  _isHindi ? 'रद्द करें' : 'CANCEL',
+                  style: const TextStyle(
+                    color: Color(0xFF537392),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              IncidentCoordinator.instance.createSos(
-                callerName: 'Rohit',
-                village: 'Mawphlang Riverbank',
-                latitude: 25.4502,
-                longitude: 91.7592,
-                peopleCount: 6,
-                elderlyCount: 1,
-                childrenCount: 1,
-                hasMedical: true,
-                emergencyType: 'Trapped in Rising Water',
-                message:
-                    'Water level rising rapidly, 6 people trapped near riverbank.',
-              );
-              setState(() {
-                _isSosActive = true;
-                _threatLevel = CitizenThreatLevel.evacuation;
-              });
-              _showMessage(
-                _isHindi
-                    ? '🚨 SOS भेजा गया! राहत दल को सूचित किया गया है।'
-                    : '🚨 SOS Transmitted! Relief team assigned.',
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE92828),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  IncidentCoordinator.instance.createSos(
+                    callerName: 'Rohit',
+                    village: 'Mawphlang Riverbank',
+                    latitude: 25.4502,
+                    longitude: 91.7592,
+                    peopleCount: totalPeople,
+                    elderlyCount: elderly,
+                    childrenCount: children,
+                    hasMedical: false,
+                    emergencyType: 'Trapped in Rising Water',
+                    message: 'Water level rising rapidly, $totalPeople people trapped near riverbank. Details: $women women, $elderly elderly, $children children.',
+                  );
+                  setState(() {
+                    _isSosActive = true;
+                    _threatLevel = CitizenThreatLevel.evacuation;
+                  });
+                  _showMessage(
+                    _isHindi
+                        ? '🚨 SOS भेजा गया! राहत दल को सूचित किया गया है।'
+                        : '🚨 SOS Transmitted! Relief team assigned.',
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE92828),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  _isHindi ? 'SOS भेजें' : 'SEND SOS',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
-            ),
-            child: Text(
-              _isHindi ? 'SOS भेजें' : 'SEND SOS',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -8910,6 +9205,39 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 }
 
+class _PulsingDangerIcon extends StatefulWidget {
+  const _PulsingDangerIcon({Key? key}) : super(key: key);
+
+  @override
+  State<_PulsingDangerIcon> createState() => _PulsingDangerIconState();
+}
+
+class _PulsingDangerIconState extends State<_PulsingDangerIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.3).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: const Icon(Icons.warning_rounded, color: Colors.yellowAccent, size: 40),
+    );
+  }
+}
+
 class _QuickActionItem {
   final String title;
   final String subtitle;
@@ -8967,3 +9295,39 @@ class _CardCornerWavePainter extends CustomPainter {
   bool shouldRepaint(covariant _CardCornerWavePainter oldDelegate) =>
       oldDelegate.color != color;
 }
+
+// ---------------------------------------------------------------------------
+// Banner Wave Painter
+// ---------------------------------------------------------------------------
+class _BannerWavePainter extends CustomPainter {
+  final Color color;
+  const _BannerWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, size.height);
+    path.quadraticBezierTo(size.width * 0.2, size.height * 0.6, size.width * 0.5, size.height * 0.7);
+    path.quadraticBezierTo(size.width * 0.8, size.height * 0.8, size.width, size.height * 0.3);
+    path.lineTo(size.width, size.height);
+    path.close();
+
+    final path2 = Path();
+    path2.moveTo(size.width * 0.2, size.height);
+    path2.quadraticBezierTo(size.width * 0.4, size.height * 0.5, size.width * 0.7, size.height * 0.6);
+    path2.quadraticBezierTo(size.width * 0.9, size.height * 0.7, size.width, size.height * 0.2);
+    path2.lineTo(size.width, size.height);
+    path2.close();
+
+    canvas.drawPath(path, paint);
+    canvas.drawPath(path2, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BannerWavePainter oldDelegate) => oldDelegate.color != color;
+}
+

@@ -12,20 +12,13 @@ class ResourceShelterMapScreen extends StatefulWidget {
   State<ResourceShelterMapScreen> createState() => _ResourceShelterMapScreenState();
 }
 
-class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
   String _shelterFilter = 'All'; // 'All', 'Available', 'Near Full', 'Medical On-Site'
   String _shelterSearch = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: 4,
-      vsync: this,
-      initialIndex: widget.initialTabIndex,
-    );
     IncidentCoordinator.instance.addListener(_onCoordUpdate);
     ResourceApiService.instance.addListener(_onCoordUpdate);
   }
@@ -34,7 +27,6 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
   void dispose() {
     IncidentCoordinator.instance.removeListener(_onCoordUpdate);
     ResourceApiService.instance.removeListener(_onCoordUpdate);
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -80,20 +72,12 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text(
-              'RESOURCE & SHELTER MAP',
+              'SHELTERS & RELIEF CAMPS SCREEN',
               style: TextStyle(
                 color: Color(0xFF013973),
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.3,
-              ),
-            ),
-            Text(
-              'NDRF Units, Shelter Capacities & Route Infrastructure',
-              style: TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -106,43 +90,19 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
           ),
           const SizedBox(width: 4),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF007AEB),
-          unselectedLabelColor: const Color(0xFF64748B),
-          indicatorColor: const Color(0xFF007AEB),
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-          tabs: const [
-            Tab(icon: Icon(Icons.support_rounded, size: 18), text: 'NDRF Teams'),
-            Tab(icon: Icon(Icons.night_shelter_rounded, size: 18), text: 'Shelters'),
-            Tab(icon: Icon(Icons.local_hospital_rounded, size: 18), text: 'Medical'),
-            Tab(icon: Icon(Icons.alt_route_rounded, size: 18), text: 'Bridges/Roads'),
-          ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openShelterForm(context),
+        backgroundColor: const Color(0xFF013973),
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_location_alt_rounded, size: 20),
+        label: const Text(
+          'Add New Shelter',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
         ),
       ),
-      floatingActionButton: _tabController.index == 1
-          ? FloatingActionButton.extended(
-              onPressed: () => _openShelterForm(context),
-              backgroundColor: const Color(0xFF013973),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(Icons.add_location_alt_rounded, size: 20),
-              label: const Text(
-                'Add New Shelter',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-              ),
-            )
-          : null,
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildNdrfTab(),
-          _buildSheltersTab(),
-          _buildMedicalTab(),
-          _buildRoadsTab(),
-        ],
-      ),
+      body: _buildSheltersTab(),
     );
   }
 
