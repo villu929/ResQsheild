@@ -4033,7 +4033,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.network(shelter.photoUrl, fit: BoxFit.cover),
+                          Image.network(
+                            shelter.photoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: const Color(0xFF0F172A),
+                              child: const Center(
+                                child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                              ),
+                            ),
+                          ),
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -5695,7 +5704,16 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.network(center.photoUrl, fit: BoxFit.cover),
+                          Image.network(
+                            center.photoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: const Color(0xFF0F172A),
+                              child: const Center(
+                                child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
+                              ),
+                            ),
+                          ),
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(

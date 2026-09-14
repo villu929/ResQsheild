@@ -140,7 +140,16 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(center.photoUrl, fit: BoxFit.cover),
+                      Image.network(
+                        center.photoUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFF0F172A),
+                          child: const Center(
+                            child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
+                          ),
+                        ),
+                      ),
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

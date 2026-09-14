@@ -1128,7 +1128,16 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen>
                                       child: Stack(
                                         fit: StackFit.expand,
                                         children: [
-                                          Image.network(p['url']!, fit: BoxFit.cover),
+                                          Image.network(
+                                            p['url']!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              color: const Color(0xFF0F172A),
+                                              child: const Center(
+                                                child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
+                                              ),
+                                            ),
+                                          ),
                                           Container(color: Colors.black.withValues(alpha: isSel ? 0.2 : 0.45)),
                                           Align(
                                             alignment: Alignment.bottomCenter,
