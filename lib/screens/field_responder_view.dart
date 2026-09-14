@@ -51,7 +51,6 @@ const List<String> _kMissionLifecycle = [
 // DATA MODELS
 // ─────────────────────────────────────────────────────────────────────────────
 
-
 class _AssetItem {
   final String name;
   final List<String> tags; // e.g. ['Water Rescue', 'Boat']
@@ -186,7 +185,8 @@ class _Mission {
   String get missionTitle => title;
   String get village => location;
   int get trappedCount => trapped;
-  double get distanceKm => double.tryParse(distance.replaceAll(' km', '')) ?? 0.0;
+  double get distanceKm =>
+      double.tryParse(distance.replaceAll(' km', '')) ?? 0.0;
   int get etaMins => int.tryParse(eta.replaceAll(' min', '')) ?? 0;
 
   _Mission({
@@ -264,7 +264,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
   late Animation<double> _pulseAnim;
 
   // ── Datasets ───────────────────────────────────────────────────────────────
-    int _activeMissionIdx = 0;
+  int _activeMissionIdx = 0;
   late List<_SOSAlert> _sosList;
   late List<_AssetItem> _assetsList;
   late List<_OfflineQueueItem> _offlineQueue;
@@ -314,12 +314,70 @@ class _FieldResponderViewState extends State<FieldResponderView>
     _initData();
 
     IncidentCoordinator.instance.addListener(_onIncidentCoordUpdate);
-    _coordEventSub =
-        IncidentCoordinator.instance.eventStream.listen(_onLiveEventReceived);
+    _coordEventSub = IncidentCoordinator.instance.eventStream.listen(
+      _onLiveEventReceived,
+    );
   }
 
   void _initData() {
-    
+    if (IncidentCoordinator.instance.missionAssignments.isEmpty) {
+      IncidentCoordinator.instance.missionAssignments.addAll([
+        _Mission(
+          id: '#RS-204',
+          title: 'Mawphlang Riverbank Flood Extraction',
+          incidentType: 'Flood Rescue',
+          location: 'Lower Catchment Sector 4, Mawphlang',
+          coordinates: '25.4485° N, 91.7582° E',
+          priority: 'CRITICAL',
+          distance: '2.8 km',
+          eta: '9 min',
+          trapped: 12,
+          evacuated: 3,
+          medicalCount: 2,
+          childrenCount: 4,
+          elderlyCount: 3,
+          floodDepth: '6.5 ft (Rising)',
+          waterFlow: 'Fast / Turbulent',
+          landslideRisk: 'High',
+          roadBridgeCondition: 'Submerged',
+          requiredEquipment: ['IRB (Boat)', 'Life Jackets', 'Throw Ropes'],
+          recommendedShelter: 'Mawphlang Relief Centre',
+          recommendedHospital: 'Mawphlang CHC',
+          stepIndex: 1,
+          stepTimestamps: {0: '08:42 AM', 1: '08:44 AM'},
+        ),
+        _Mission(
+          id: '#RS-202',
+          title: 'Laitkor Landslide Evacuation',
+          incidentType: 'Landslide',
+          location: 'Laitkor Peak Road, Near Viewpoint',
+          coordinates: '25.5342° N, 91.8921° E',
+          priority: 'HIGH',
+          distance: '7.4 km',
+          eta: '18 min',
+          trapped: 5,
+          evacuated: 0,
+          medicalCount: 1,
+          childrenCount: 0,
+          elderlyCount: 2,
+          floodDepth: 'None',
+          waterFlow: 'None',
+          landslideRisk: 'Active / Unstable',
+          roadBridgeCondition: 'Blocked by debris',
+          requiredEquipment: ['Heavy Duty Winch', 'Earth Movers', 'Stretchers'],
+          recommendedShelter: 'Laitkor Community Hall',
+          recommendedHospital: 'Civil Hospital Shillong',
+          stepIndex: 4,
+          stepTimestamps: {
+            0: '07:15 AM',
+            1: '07:18 AM',
+            2: '07:22 AM',
+            3: '07:25 AM',
+            4: '07:43 AM',
+          },
+        ),
+      ]);
+    }
 
     _sosList = [
       _SOSAlert(
@@ -604,9 +662,17 @@ class _FieldResponderViewState extends State<FieldResponderView>
     setState(() {
       final activeM = IncidentCoordinator.instance.activeTeamMission;
       if (activeM != null) {
-        final localM = IncidentCoordinator.instance.missionAssignments.where((m) =>
-            m.id.replaceAll('#', '').contains(activeM.id.replaceAll('#', '')) ||
-            activeM.id.replaceAll('#', '').contains(m.id.replaceAll('#', ''))).firstOrNull;
+        final localM = IncidentCoordinator.instance.missionAssignments
+            .where(
+              (m) =>
+                  m.id
+                      .replaceAll('#', '')
+                      .contains(activeM.id.replaceAll('#', '')) ||
+                  activeM.id
+                      .replaceAll('#', '')
+                      .contains(m.id.replaceAll('#', '')),
+            )
+            .firstOrNull;
         if (localM != null) {
           localM.stepIndex = activeM.stepIndex;
           localM.trapped = activeM.trapped;
@@ -629,7 +695,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         (m) => m.assignedTeam.contains('SDRF'),
         orElse: () => op.missions.first,
       );
-      
+
       final localMission = _Mission(
         id: responderMission.id,
         title: 'Evacuation: ${op.areaName} (${responderMission.clusterName})',
@@ -654,11 +720,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
         recommendedHospital: 'Unknown',
         stepIndex: 0,
       );
-      
+
       setState(() {
         IncidentCoordinator.instance.missionAssignments.insert(0, localMission);
       });
-      
+
       _showIncomingEvacAlert(localMission, op);
     } else if (event.type == LiveEventType.shelterUpdated) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -666,12 +732,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.night_shelter_rounded, color: Color(0xFF38BDF8), size: 18),
+              const Icon(
+                Icons.night_shelter_rounded,
+                color: Color(0xFF38BDF8),
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${event.title}: ${event.message}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -707,16 +780,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded,
-                color: Color(0xFF38BDF8), size: 26),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFF38BDF8),
+              size: 26,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 '🚨 NEW CRITICAL MISSION ${mission.id}',
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -728,17 +805,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
             Text(
               mission.missionTitle,
               style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               'Linked SOS: ${mission.linkedSosId}',
               style: const TextStyle(
-                  color: Color(0xFF38BDF8),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12),
+                color: Color(0xFF38BDF8),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
             Text(
               'Location: ${mission.village}',
@@ -757,15 +836,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child:
-                const Text('View', style: TextStyle(color: Color(0xFF94A3B8))),
+            child: const Text(
+              'View',
+              style: TextStyle(color: Color(0xFF94A3B8)),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               IncidentCoordinator.instance.acceptMission(mission.id);
-              final localM = IncidentCoordinator.instance.missionAssignments.where((m) =>
-                  m.id.replaceAll('#', '') == mission.id.replaceAll('#', '')).firstOrNull;
+              final localM = IncidentCoordinator.instance.missionAssignments
+                  .where(
+                    (m) =>
+                        m.id.replaceAll('#', '') ==
+                        mission.id.replaceAll('#', ''),
+                  )
+                  .firstOrNull;
               if (localM != null) {
                 _acceptMission(localM);
               }
@@ -774,8 +860,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
               backgroundColor: const Color(0xFF0284C7),
               foregroundColor: Colors.white,
             ),
-            child: const Text('ACCEPT MISSION',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'ACCEPT MISSION',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -798,7 +886,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
             Expanded(
               child: Text(
                 '🚨 EVACUATION: ${mission.id}',
-                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -807,17 +899,36 @@ class _FieldResponderViewState extends State<FieldResponderView>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(mission.missionTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              mission.missionTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('Location: ${mission.village}', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
-            Text('Target: ${mission.trappedCount} people', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
-            Text('Shelter: ${mission.recommendedShelter}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+            Text(
+              'Location: ${mission.village}',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+            Text(
+              'Target: ${mission.trappedCount} people',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+            Text(
+              'Shelter: ${mission.recommendedShelter}',
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('View', style: TextStyle(color: Color(0xFF94A3B8))),
+            child: const Text(
+              'View',
+              style: TextStyle(color: Color(0xFF94A3B8)),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -828,7 +939,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
               backgroundColor: const Color(0xFF0284C7),
               foregroundColor: Colors.white,
             ),
-            child: const Text('ACCEPT MISSION', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'ACCEPT MISSION',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -836,9 +950,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   // ── Mission Getters & Handlers ─────────────────────────────────────────────
-  _Mission get _activeMission => IncidentCoordinator.instance.missionAssignments[_activeMissionIdx] as _Mission;
-
-
+  _Mission get _activeMission =>
+      IncidentCoordinator.instance.missionAssignments[_activeMissionIdx]
+          as _Mission;
 
   void _advanceMissionLifecycle() {
     final m = _activeMission;
@@ -944,85 +1058,90 @@ class _FieldResponderViewState extends State<FieldResponderView>
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
-            children: List.generate(destinations.length, (i) {
-              final selected = _tab == i;
-              final d = destinations[i];
-              final isSOS = i == 2;
+              children: List.generate(destinations.length, (i) {
+                final selected = _tab == i;
+                final d = destinations[i];
+                final isSOS = i == 2;
 
-              return Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _tab = i),
-                  splashColor: _C.actionBlue.withValues(alpha: 0.08),
-                  highlightColor: Colors.transparent,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? _C.actionBlue.withValues(alpha: 0.10)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _tab = i),
+                    splashColor: _C.actionBlue.withValues(alpha: 0.08),
+                    highlightColor: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? _C.actionBlue.withValues(alpha: 0.10)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  d['icon'] as IconData,
+                                  color: selected
+                                      ? _C.actionBlue
+                                      : const Color(0xFF94A3B8),
+                                  size: 22,
+                                ),
                               ),
-                              child: Icon(
-                                d['icon'] as IconData,
-                                color: selected
-                                    ? _C.actionBlue
-                                    : const Color(0xFF94A3B8),
-                                size: 22,
-                              ),
-                            ),
-                            if (isSOS && (unackSOS > 0 || true))
-                              Positioned(
-                                right: 6,
-                                top: -2,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDC2626),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${unackSOS > 0 ? unackSOS : 3}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
+                              if (isSOS && (unackSOS > 0 || true))
+                                Positioned(
+                                  right: 6,
+                                  top: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${unackSOS > 0 ? unackSOS : 3}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          d['label'] as String,
-                          style: TextStyle(
-                            color: selected
-                                ? _C.actionBlue
-                                : const Color(0xFF94A3B8),
-                            fontSize: 10,
-                            fontWeight:
-                                selected ? FontWeight.w800 : FontWeight.w500,
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Text(
+                            d['label'] as String,
+                            style: TextStyle(
+                              color: selected
+                                  ? _C.actionBlue
+                                  : const Color(0xFF94A3B8),
+                              fontSize: 10,
+                              fontWeight: selected
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -1076,9 +1195,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
           // ── Back to Role button ──────────────────────────────────────────
           GestureDetector(
             onTap: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => const RoleSelectionScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -1086,13 +1203,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.18), width: 1),
+                  color: Colors.white.withValues(alpha: 0.18),
+                  width: 1,
+                ),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white70, size: 13),
+                  Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white70,
+                    size: 13,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'Back to Role',
@@ -1191,7 +1313,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   backgroundColor: Color(0xFF0C2340),
-                  content: Text('DEOC Dispatch: 3 High-priority flood alerts in Sector 4'),
+                  content: Text(
+                    'DEOC Dispatch: 3 High-priority flood alerts in Sector 4',
+                  ),
                 ),
               );
             },
@@ -1212,7 +1336,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     decoration: BoxDecoration(
                       color: const Color(0xFFDC2626),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF0C2340), width: 1.2),
+                      border: Border.all(
+                        color: const Color(0xFF0C2340),
+                        width: 1.2,
+                      ),
                     ),
                   ),
                 ),
@@ -1271,10 +1398,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFFCA5A5),
-          width: 1.2,
-        ),
+        border: Border.all(color: const Color(0xFFFCA5A5), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -1358,8 +1482,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
             alignment: Alignment.centerLeft,
             child: Row(
               children: [
-                const Icon(Icons.location_on_rounded,
-                    color: Color(0xFF475569), size: 13),
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: Color(0xFF475569),
+                  size: 13,
+                ),
                 const SizedBox(width: 3),
                 Text(
                   '${m.trapped} people trapped',
@@ -1369,10 +1496,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const Text('  •  ',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5)),
-                const Icon(Icons.person_rounded,
-                    color: Color(0xFF475569), size: 13),
+                const Text(
+                  '  •  ',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5),
+                ),
+                const Icon(
+                  Icons.person_rounded,
+                  color: Color(0xFF475569),
+                  size: 13,
+                ),
                 const SizedBox(width: 3),
                 Text(
                   '${m.elderlyCount} elderly',
@@ -1383,10 +1515,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   ),
                 ),
                 if (m.medicalCount > 0) ...[
-                  const Text('  •  ',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5)),
-                  const Icon(Icons.medical_services_rounded,
-                      color: Color(0xFF475569), size: 12),
+                  const Text(
+                    '  •  ',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5),
+                  ),
+                  const Icon(
+                    Icons.medical_services_rounded,
+                    color: Color(0xFF475569),
+                    size: 12,
+                  ),
                   const SizedBox(width: 3),
                   Text(
                     '${m.medicalCount} medical',
@@ -1406,8 +1543,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
             alignment: Alignment.centerLeft,
             child: Row(
               children: [
-                const Icon(Icons.navigation_rounded,
-                    color: Color(0xFF475569), size: 13),
+                const Icon(
+                  Icons.navigation_rounded,
+                  color: Color(0xFF475569),
+                  size: 13,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${m.distance}    |    ETA ${m.eta}',
@@ -1428,8 +1568,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   onPressed: () {
                     setState(() => _tab = 1);
                   },
-                  icon: const Icon(Icons.explore_outlined,
-                      color: Color(0xFF0066D6), size: 16),
+                  icon: const Icon(
+                    Icons.explore_outlined,
+                    color: Color(0xFF0066D6),
+                    size: 16,
+                  ),
                   label: const Text(
                     'View Mission',
                     style: TextStyle(
@@ -1440,7 +1583,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                        color: Color(0xFF0066D6), width: 1.4),
+                      color: Color(0xFF0066D6),
+                      width: 1.4,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -1525,7 +1670,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: _C.critical,
                           borderRadius: BorderRadius.circular(4),
@@ -1585,7 +1732,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
         const SizedBox(height: 8),
         Row(
           children: [
-            const Icon(Icons.location_on_rounded, color: _C.textMuted, size: 14),
+            const Icon(
+              Icons.location_on_rounded,
+              color: _C.textMuted,
+              size: 14,
+            ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
@@ -1601,13 +1752,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
           runSpacing: 4,
           children: [
             _metricChip(Icons.people_rounded, '${m.trapped} Trapped', _C.navy),
-            _metricChip(Icons.child_care_rounded, '${m.childrenCount} Children',
-                _C.govBlue),
             _metricChip(
-                Icons.elderly_rounded, '${m.elderlyCount} Elderly', _C.warning),
+              Icons.child_care_rounded,
+              '${m.childrenCount} Children',
+              _C.govBlue,
+            ),
+            _metricChip(
+              Icons.elderly_rounded,
+              '${m.elderlyCount} Elderly',
+              _C.warning,
+            ),
             if (m.medicalCount > 0)
-              _metricChip(Icons.medical_services_rounded,
-                  '${m.medicalCount} Medical', _C.critical),
+              _metricChip(
+                Icons.medical_services_rounded,
+                '${m.medicalCount} Medical',
+                _C.critical,
+              ),
           ],
         ),
       ],
@@ -1622,13 +1782,25 @@ class _FieldResponderViewState extends State<FieldResponderView>
         Row(
           children: [
             _buildMissionStat(
-                '👥 Trapped', '${m.trapped} People', const Color(0xFF0F172A)),
+              '👥 Trapped',
+              '${m.trapped} People',
+              const Color(0xFF0F172A),
+            ),
             _buildMissionStat(
-                '🆘 SOS Count', '6 Calls', const Color(0xFFDC2626)),
+              '🆘 SOS Count',
+              '6 Calls',
+              const Color(0xFFDC2626),
+            ),
             _buildMissionStat(
-                '🌊 Flood Depth', m.floodDepth, const Color(0xFF007AEB)),
+              '🌊 Flood Depth',
+              m.floodDepth,
+              const Color(0xFF007AEB),
+            ),
             _buildMissionStat(
-                '🛣️ Route', 'Boat Route 2', const Color(0xFF15945C)),
+              '🛣️ Route',
+              'Boat Route 2',
+              const Color(0xFF15945C),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -1680,12 +1852,17 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 14,
+                ),
                 minimumSize: const Size(0, 44),
               ),
-              icon: const Icon(Icons.map_rounded,
-                  color: Color(0xFF007AEB), size: 18),
+              icon: const Icon(
+                Icons.map_rounded,
+                color: Color(0xFF007AEB),
+                size: 18,
+              ),
               label: const Text(
                 'Live Map',
                 style: TextStyle(
@@ -1746,8 +1923,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       color: index == 0
                           ? Colors.transparent
                           : (index <= currentStep
-                              ? const Color(0xFF15945C)
-                              : const Color(0xFFE2E8F0)),
+                                ? const Color(0xFF15945C)
+                                : const Color(0xFFE2E8F0)),
                     ),
                   ),
                   Container(
@@ -1759,14 +1936,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           ? const Color(0xFF15945C)
                           : const Color(0xFFE2E8F0),
                       border: isCurrent
-                          ? Border.all(
-                              color: const Color(0xFF10B981), width: 3)
+                          ? Border.all(color: const Color(0xFF10B981), width: 3)
                           : null,
                     ),
                     child: isPassed
                         ? const Center(
-                            child: Icon(Icons.check,
-                                color: Colors.white, size: 11),
+                            child: Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 11,
+                            ),
                           )
                         : null,
                   ),
@@ -1776,8 +1955,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       color: index == steps.length - 1
                           ? Colors.transparent
                           : (index < currentStep
-                              ? const Color(0xFF15945C)
-                              : const Color(0xFFE2E8F0)),
+                                ? const Color(0xFF15945C)
+                                : const Color(0xFFE2E8F0)),
                     ),
                   ),
                 ],
@@ -1790,8 +1969,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   color: isCurrent
                       ? const Color(0xFF15945C)
                       : (isPassed
-                          ? const Color(0xFF013973)
-                          : const Color(0xFF94A3B8)),
+                            ? const Color(0xFF013973)
+                            : const Color(0xFF94A3B8)),
                   fontSize: 9.5,
                   fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w600,
                 ),
@@ -1833,7 +2012,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         'Accepted',
         'En Route',
         'Reached',
-        'Completed'
+        'Completed',
       ];
       final next5 = _to5Step(m.stepIndex);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1866,12 +2045,14 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
     final cleanId = m.id.replaceAll('#', '');
     IncidentCoordinator.instance.acceptMission(
-        cleanId.startsWith('RS') ? cleanId : 'RS-204');
+      cleanId.startsWith('RS') ? cleanId : 'RS-204',
+    );
 
     setState(() {
       m.stepIndex = 1; // Accepted
       m.stepTimestamps[1] = timeStr;
-      IncidentCoordinator.instance.missionAssignmentsFilter = 'Active'; // Switch to Active tab
+      IncidentCoordinator.instance.missionAssignmentsFilter =
+          'Active'; // Switch to Active tab
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1879,8 +2060,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
         duration: const Duration(seconds: 3),
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded,
-                color: Colors.white, size: 18),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1903,8 +2087,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     final cleanId = m.id.replaceAll('#', '');
-    final coordMissionId =
-        cleanId.startsWith('RS') ? cleanId : 'RS-204';
+    final coordMissionId = cleanId.startsWith('RS') ? cleanId : 'RS-204';
 
     if (cur5 == 1) {
       IncidentCoordinator.instance.startNavigation(coordMissionId);
@@ -1935,7 +2118,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
       // Switch to Completed tab after a short delay
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
-          setState(() => IncidentCoordinator.instance.missionAssignmentsFilter = 'Completed');
+          setState(
+            () => IncidentCoordinator.instance.missionAssignmentsFilter =
+                'Completed',
+          );
         }
       });
     }
@@ -1993,8 +2179,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
               color: Color(0xFFD97706),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.warning_amber_rounded,
-                color: Colors.white, size: 14),
+            child: const Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -2052,8 +2241,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   ),
                 ),
                 const SizedBox(width: 2),
-                const Icon(Icons.arrow_forward_rounded,
-                    size: 13, color: Color(0xFF0066D6)),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 13,
+                  color: Color(0xFF0066D6),
+                ),
               ],
             ),
           ),
@@ -2064,17 +2256,23 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
   // ── Tactical Emergency Map (Real Live Map API) ───────────────────────────
   Widget _buildTacticalMap() {
-    final showFlood = _selectedMapFilter == 'All' || _selectedMapFilter == 'Flood';
-    final showHazard = _selectedMapFilter == 'All' || _selectedMapFilter == 'Roads';
-    final showRoute = _selectedMapFilter == 'All' || _selectedMapFilter == 'Mission' || _selectedMapFilter == 'Roads';
+    final showFlood =
+        _selectedMapFilter == 'All' || _selectedMapFilter == 'Flood';
+    final showHazard =
+        _selectedMapFilter == 'All' || _selectedMapFilter == 'Roads';
+    final showRoute =
+        _selectedMapFilter == 'All' ||
+        _selectedMapFilter == 'Mission' ||
+        _selectedMapFilter == 'Roads';
     final showSOS = _selectedMapFilter == 'All' || _selectedMapFilter == 'SOS';
-    final showShelters = _selectedMapFilter == 'All' || _selectedMapFilter == 'Shelters';
+    final showShelters =
+        _selectedMapFilter == 'All' || _selectedMapFilter == 'Shelters';
 
     final tileUrl = _mapLayerIndex == 1
         ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
         : (_mapLayerIndex == 2
-            ? 'https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
-            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+              ? 'https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
+              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
 
     return FlutterMap(
       mapController: _mapController,
@@ -2084,7 +2282,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
         minZoom: 9.0,
         maxZoom: 18.0,
         interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all & ~InteractiveFlag.rotate & ~InteractiveFlag.scrollWheelZoom,
+          flags:
+              InteractiveFlag.all &
+              ~InteractiveFlag.rotate &
+              ~InteractiveFlag.scrollWheelZoom,
         ),
       ),
       children: [
@@ -2194,9 +2395,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF0066D6).withValues(
-                              alpha: (1.0 - _radarAnim.value) * 0.7,
-                            ),
+                            color: const Color(
+                              0xFF0066D6,
+                            ).withValues(alpha: (1.0 - _radarAnim.value) * 0.7),
                             width: 2.0,
                           ),
                         ),
@@ -2207,7 +2408,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         height: 28,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                          color: const Color(
+                            0xFF38BDF8,
+                          ).withValues(alpha: 0.35),
                         ),
                       ),
                       // Solid center white & blue dot
@@ -2342,11 +2545,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             ],
           ),
           child: const Center(
-            child: Icon(
-              Icons.sos_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(Icons.sos_rounded, color: Colors.white, size: 20),
           ),
         ),
         CustomPaint(
@@ -2375,9 +2574,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
         ],
       ),
-      child: Center(
-        child: Icon(icon, color: Colors.white, size: 18),
-      ),
+      child: Center(child: Icon(icon, color: Colors.white, size: 18)),
     );
   }
 
@@ -2409,8 +2606,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
               },
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6.5,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? const Color(0xFF0066D6) : Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -2465,8 +2664,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           IconButton(
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.layers_rounded,
-                color: Color(0xFF1E293B), size: 20),
+            icon: const Icon(
+              Icons.layers_rounded,
+              color: Color(0xFF1E293B),
+              size: 20,
+            ),
             tooltip: 'Toggle Map Layer',
             onPressed: () {
               setState(() {
@@ -2475,7 +2677,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
               final names = [
                 'Topographic Terrain',
                 'Satellite Imagery',
-                'Tactical Dark'
+                'Tactical Dark',
               ];
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -2489,8 +2691,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           IconButton(
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.my_location_rounded,
-                color: Color(0xFF1E293B), size: 20),
+            icon: const Icon(
+              Icons.my_location_rounded,
+              color: Color(0xFF1E293B),
+              size: 20,
+            ),
             tooltip: 'Center on Team',
             onPressed: () {
               try {
@@ -2506,16 +2711,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
             },
           ),
           const Divider(
-              height: 6,
-              thickness: 1,
-              indent: 6,
-              endIndent: 6,
-              color: Color(0xFFE2E8F0)),
+            height: 6,
+            thickness: 1,
+            indent: 6,
+            endIndent: 6,
+            color: Color(0xFFE2E8F0),
+          ),
           IconButton(
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.add_rounded,
-                color: Color(0xFF1E293B), size: 22),
+            icon: const Icon(
+              Icons.add_rounded,
+              color: Color(0xFF1E293B),
+              size: 22,
+            ),
             tooltip: 'Zoom In',
             onPressed: () {
               try {
@@ -2529,8 +2738,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           IconButton(
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.remove_rounded,
-                color: Color(0xFF1E293B), size: 22),
+            icon: const Icon(
+              Icons.remove_rounded,
+              color: Color(0xFF1E293B),
+              size: 22,
+            ),
             tooltip: 'Zoom Out',
             onPressed: () {
               try {
@@ -2585,8 +2797,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   backgroundColor: Color(0xFF0066D6),
-                  content:
-                      Text('Connecting to DEOC Control Room on VHF Tac-4...'),
+                  content: Text(
+                    'Connecting to DEOC Control Room on VHF Tac-4...',
+                  ),
                 ),
               );
             },
@@ -2600,7 +2813,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const SnackBar(
                   backgroundColor: Color(0xFF16A34A),
                   content: Text(
-                      'GPS coordinates 25.5672° N, 91.8831° E broadcasted'),
+                    'GPS coordinates 25.5672° N, 91.8831° E broadcasted',
+                  ),
                 ),
               );
             },
@@ -2660,19 +2874,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
   // TAB 1 — MISSIONS (Realistic Lifecycle)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildMissionsTab() {
-    final activeMissions =
-        IncidentCoordinator.instance.missionAssignments.whereType<_Mission>().where((m) => m.stepIndex >= 1 && m.stepIndex < 7).toList();
-    final pendingMissions =
-        IncidentCoordinator.instance.missionAssignments.whereType<_Mission>().where((m) => m.stepIndex == 0).toList();
-    final completedMissions =
-        IncidentCoordinator.instance.missionAssignments.whereType<_Mission>().where((m) => m.stepIndex == 7).toList();
+    final activeMissions = IncidentCoordinator.instance.missionAssignments
+        .whereType<_Mission>()
+        .where((m) => m.stepIndex >= 1 && m.stepIndex < 7)
+        .toList();
+    final pendingMissions = IncidentCoordinator.instance.missionAssignments
+        .whereType<_Mission>()
+        .where((m) => m.stepIndex == 0)
+        .toList();
+    final completedMissions = IncidentCoordinator.instance.missionAssignments
+        .whereType<_Mission>()
+        .where((m) => m.stepIndex == 7)
+        .toList();
 
     return Column(
       children: [
         _buildSectionHeader(
           title: 'Mission Assignments',
           icon: Icons.assignment_rounded,
-          subtitle: '${IncidentCoordinator.instance.missionAssignments.length} assigned operations',
+          subtitle:
+              '${IncidentCoordinator.instance.missionAssignments.length} assigned operations',
         ),
         // ── Filter Tab Bar ──────────────────────────────────────────────────
         Container(
@@ -2703,11 +2924,13 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
         const Divider(height: 1, color: Color(0xFFE2E8F0)),
         Expanded(
-          child: IncidentCoordinator.instance.missionAssignmentsFilter == 'Active'
+          child:
+              IncidentCoordinator.instance.missionAssignmentsFilter == 'Active'
               ? _buildActiveView(activeMissions)
-              : IncidentCoordinator.instance.missionAssignmentsFilter == 'Pending'
-                  ? _buildPendingView(pendingMissions)
-                  : _buildCompletedView(completedMissions),
+              : IncidentCoordinator.instance.missionAssignmentsFilter ==
+                    'Pending'
+              ? _buildPendingView(pendingMissions)
+              : _buildCompletedView(completedMissions),
         ),
       ],
     );
@@ -2720,7 +2943,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
     required Color badgeColor,
     int newCount = 0,
   }) {
-    final selected = IncidentCoordinator.instance.missionAssignmentsFilter == label;
+    final selected =
+        IncidentCoordinator.instance.missionAssignmentsFilter == label;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -2770,7 +2994,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   right: 4,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 2),
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: _C.critical,
                       borderRadius: BorderRadius.circular(10),
@@ -2829,18 +3055,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           // ── Header ──────────────────────────────────────────────────────
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFF013973).withValues(alpha: 0.04),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(13)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(13),
+              ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: _C.actionBlue,
                     borderRadius: BorderRadius.circular(5),
@@ -2866,8 +3094,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 ),
                 const Spacer(),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: m.priority == 'CRITICAL'
                         ? _C.critical.withValues(alpha: 0.1)
@@ -2905,14 +3135,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded,
-                        color: _C.textMuted, size: 13),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: _C.textMuted,
+                      size: 13,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         m.location,
                         style: const TextStyle(
-                            color: _C.textSecondary, fontSize: 12),
+                          color: _C.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -2922,15 +3157,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    _metricChip(Icons.people_rounded,
-                        '${m.trapped} Trapped', _C.navy),
-                    _metricChip(Icons.child_care_rounded,
-                        '${m.childrenCount} Children', _C.govBlue),
-                    _metricChip(Icons.elderly_rounded,
-                        '${m.elderlyCount} Elderly', _C.warning),
+                    _metricChip(
+                      Icons.people_rounded,
+                      '${m.trapped} Trapped',
+                      _C.navy,
+                    ),
+                    _metricChip(
+                      Icons.child_care_rounded,
+                      '${m.childrenCount} Children',
+                      _C.govBlue,
+                    ),
+                    _metricChip(
+                      Icons.elderly_rounded,
+                      '${m.elderlyCount} Elderly',
+                      _C.warning,
+                    ),
                     if (m.medicalCount > 0)
-                      _metricChip(Icons.medical_services_rounded,
-                          '${m.medicalCount} Medical', _C.critical),
+                      _metricChip(
+                        Icons.medical_services_rounded,
+                        '${m.medicalCount} Medical',
+                        _C.critical,
+                      ),
                   ],
                 ),
               ],
@@ -2975,10 +3222,12 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF15945C),
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              const Color(0xFF15945C).withValues(alpha: 0.5),
+                          disabledBackgroundColor: const Color(
+                            0xFF15945C,
+                          ).withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           minimumSize: const Size(0, 44),
                         ),
@@ -2991,7 +3240,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         label: Text(
                           _fiveStepButtonLabel(step5),
                           style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w800),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
@@ -3002,19 +3253,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         foregroundColor: _C.govBlue,
                         side: const BorderSide(color: _C.govBlue, width: 1.5),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 12),
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
                         minimumSize: const Size(0, 44),
                       ),
-                      icon: const Icon(Icons.info_outline_rounded,
-                          color: _C.govBlue, size: 16),
+                      icon: const Icon(
+                        Icons.info_outline_rounded,
+                        color: _C.govBlue,
+                        size: 16,
+                      ),
                       label: const Text(
                         'Details',
                         style: TextStyle(
-                            color: _C.govBlue,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12),
+                          color: _C.govBlue,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -3029,21 +3287,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF7C3AED),
                           side: const BorderSide(
-                              color: Color(0xFF7C3AED), width: 1.5),
+                            color: Color(0xFF7C3AED),
+                            width: 1.5,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           minimumSize: const Size(0, 44),
                         ),
-                        icon: const Icon(Icons.route_rounded,
-                            color: Color(0xFF7C3AED), size: 18),
+                        icon: const Icon(
+                          Icons.route_rounded,
+                          color: Color(0xFF7C3AED),
+                          size: 18,
+                        ),
                         label: const Text(
                           'Get Route',
                           style: TextStyle(
-                              color: Color(0xFF7C3AED),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13),
+                            color: Color(0xFF7C3AED),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
@@ -3055,16 +3319,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           backgroundColor: _C.actionBlue,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           minimumSize: const Size(0, 44),
                         ),
                         icon: const Icon(Icons.navigation_rounded, size: 18),
                         label: const Text(
                           'Navigate',
                           style: TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w800),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
@@ -3127,7 +3393,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
     }
     // Current responder position (slightly offset for demo)
     final myLatLng = LatLng(
-        destLatLng.latitude - 0.018, destLatLng.longitude - 0.022);
+      destLatLng.latitude - 0.018,
+      destLatLng.longitude - 0.022,
+    );
 
     showModalBottomSheet(
       context: context,
@@ -3165,7 +3433,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _C.warning.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: _C.warning.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: _C.warning.withValues(alpha: 0.08),
@@ -3179,18 +3450,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           // ── Header ──────────────────────────────────────────────────────
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _C.warning.withValues(alpha: 0.07),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(13)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(13),
+              ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: _C.warning,
                     borderRadius: BorderRadius.circular(5),
@@ -3217,15 +3490,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const Spacer(),
                 Row(
                   children: [
-                    const Icon(Icons.access_time_rounded,
-                        size: 13, color: _C.textMuted),
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 13,
+                      color: _C.textMuted,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       'Assigned $assignedAt',
                       style: const TextStyle(
-                          color: _C.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600),
+                        color: _C.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -3249,14 +3526,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded,
-                        color: _C.textMuted, size: 13),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: _C.textMuted,
+                      size: 13,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         '${m.location}  •  ${m.distance}  •  ETA ${m.eta}',
                         style: const TextStyle(
-                            color: _C.textSecondary, fontSize: 12),
+                          color: _C.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -3275,32 +3557,48 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    _metricChip(Icons.people_rounded,
-                        '${m.trapped} Trapped', _C.navy),
-                    _metricChip(Icons.child_care_rounded,
-                        '${m.childrenCount} Children', _C.govBlue),
-                    _metricChip(Icons.elderly_rounded,
-                        '${m.elderlyCount} Elderly', _C.warning),
+                    _metricChip(
+                      Icons.people_rounded,
+                      '${m.trapped} Trapped',
+                      _C.navy,
+                    ),
+                    _metricChip(
+                      Icons.child_care_rounded,
+                      '${m.childrenCount} Children',
+                      _C.govBlue,
+                    ),
+                    _metricChip(
+                      Icons.elderly_rounded,
+                      '${m.elderlyCount} Elderly',
+                      _C.warning,
+                    ),
                     if (m.medicalCount > 0)
-                      _metricChip(Icons.medical_services_rounded,
-                          '${m.medicalCount} Medical', _C.critical),
+                      _metricChip(
+                        Icons.medical_services_rounded,
+                        '${m.medicalCount} Medical',
+                        _C.critical,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 // Safe Route
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _C.safe.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                        color: _C.safe.withValues(alpha: 0.3)),
+                    border: Border.all(color: _C.safe.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.shield_rounded,
-                          color: _C.safe, size: 14),
+                      const Icon(
+                        Icons.shield_rounded,
+                        color: _C.safe,
+                        size: 14,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -3320,8 +3618,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
           // ── Lifecycle Preview (collapsed / locked) ───────────────────────
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -3331,16 +3628,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_clock_rounded,
-                      color: _C.textMuted, size: 16),
+                  const Icon(
+                    Icons.lock_clock_rounded,
+                    color: _C.textMuted,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'Mission Lifecycle Tracker unlocks after you accept this assignment',
                       style: TextStyle(
-                          color: _C.textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600),
+                        color: _C.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -3362,13 +3663,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       backgroundColor: _C.safe,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     icon: const Icon(Icons.check_circle_rounded, size: 20),
                     label: const Text(
                       'Accept Mission',
                       style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w900),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -3383,18 +3687,23 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           foregroundColor: _C.govBlue,
                           side: const BorderSide(color: _C.govBlue, width: 1.5),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           minimumSize: const Size(0, 44),
                         ),
-                        icon: const Icon(Icons.info_outline_rounded,
-                            color: _C.govBlue, size: 16),
+                        icon: const Icon(
+                          Icons.info_outline_rounded,
+                          color: _C.govBlue,
+                          size: 16,
+                        ),
                         label: const Text(
                           'View Details',
                           style: TextStyle(
-                              color: _C.govBlue,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12),
+                            color: _C.govBlue,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -3406,7 +3715,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           backgroundColor: _C.actionBlue,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           minimumSize: const Size(0, 44),
                         ),
@@ -3414,7 +3724,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         label: const Text(
                           'Navigate',
                           style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w900),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -3472,9 +3784,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isNewlyCompleted
-              ? _C.safe
-              : const Color(0xFFE2E8F0),
+          color: isNewlyCompleted ? _C.safe : const Color(0xFFE2E8F0),
           width: isNewlyCompleted ? 2 : 1,
         ),
         boxShadow: [
@@ -3490,18 +3800,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           // ── Header ──────────────────────────────────────────────────────
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _C.safe.withValues(alpha: 0.07),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(13)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(13),
+              ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: _C.safe,
                     borderRadius: BorderRadius.circular(5),
@@ -3529,7 +3841,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 if (isNewlyCompleted)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 3),
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: _C.safe,
                       borderRadius: BorderRadius.circular(5),
@@ -3537,8 +3851,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.new_releases_rounded,
-                            color: Colors.white, size: 11),
+                        Icon(
+                          Icons.new_releases_rounded,
+                          color: Colors.white,
+                          size: 11,
+                        ),
                         SizedBox(width: 3),
                         Text(
                           'JUST COMPLETED',
@@ -3580,14 +3897,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded,
-                        color: _C.textMuted, size: 13),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: _C.textMuted,
+                      size: 13,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         m.location,
                         style: const TextStyle(
-                            color: _C.textSecondary, fontSize: 12),
+                          color: _C.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -3597,13 +3919,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    _metricChip(Icons.people_rounded,
-                        '${m.evacuated} Evacuated', _C.safe),
-                    _metricChip(Icons.people_outline_rounded,
-                        '${m.trapped} Rescued', _C.govBlue),
+                    _metricChip(
+                      Icons.people_rounded,
+                      '${m.evacuated} Evacuated',
+                      _C.safe,
+                    ),
+                    _metricChip(
+                      Icons.people_outline_rounded,
+                      '${m.trapped} Rescued',
+                      _C.govBlue,
+                    ),
                     if (m.medicalCount > 0)
-                      _metricChip(Icons.medical_services_rounded,
-                          '${m.medicalCount} Medical', _C.critical),
+                      _metricChip(
+                        Icons.medical_services_rounded,
+                        '${m.medicalCount} Medical',
+                        _C.critical,
+                      ),
                   ],
                 ),
               ],
@@ -3626,43 +3957,48 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 ),
                 const SizedBox(height: 10),
                 _buildTimelineRow(
-                    Icons.assignment_ind_rounded,
-                    'Assigned',
-                    assignedAt ?? '--:--',
-                    'Assigned by authority',
-                    _C.govBlue,
-                    true),
+                  Icons.assignment_ind_rounded,
+                  'Assigned',
+                  assignedAt ?? '--:--',
+                  'Assigned by authority',
+                  _C.govBlue,
+                  true,
+                ),
                 _buildTimelineRow(
-                    Icons.check_circle_rounded,
-                    'Accepted',
-                    acceptedAt ?? '--:--',
-                    'Mission accepted by responder',
-                    _C.safe,
-                    acceptedAt != null),
+                  Icons.check_circle_rounded,
+                  'Accepted',
+                  acceptedAt ?? '--:--',
+                  'Mission accepted by responder',
+                  _C.safe,
+                  acceptedAt != null,
+                ),
                 _buildTimelineRow(
-                    Icons.directions_car_rounded,
-                    'En Route',
-                    enRouteAt ?? '--:--',
-                    'Departed for rescue site',
-                    _C.actionBlue,
-                    enRouteAt != null),
+                  Icons.directions_car_rounded,
+                  'En Route',
+                  enRouteAt ?? '--:--',
+                  'Departed for rescue site',
+                  _C.actionBlue,
+                  enRouteAt != null,
+                ),
                 _buildTimelineRow(
-                    Icons.flag_rounded,
-                    'Reached Site',
-                    reachedAt ?? '--:--',
-                    'Arrived at incident location',
-                    const Color(0xFF7C3AED),
-                    reachedAt != null),
+                  Icons.flag_rounded,
+                  'Reached Site',
+                  reachedAt ?? '--:--',
+                  'Arrived at incident location',
+                  const Color(0xFF7C3AED),
+                  reachedAt != null,
+                ),
                 _buildTimelineRow(
-                    Icons.task_alt_rounded,
-                    'Completed',
-                    completedAt ?? '--:--',
-                    duration.isNotEmpty
-                        ? 'Total duration: $duration'
-                        : 'Mission completed',
-                    _C.safe,
-                    completedAt != null,
-                    isLast: true),
+                  Icons.task_alt_rounded,
+                  'Completed',
+                  completedAt ?? '--:--',
+                  duration.isNotEmpty
+                      ? 'Total duration: $duration'
+                      : 'Mission completed',
+                  _C.safe,
+                  completedAt != null,
+                  isLast: true,
+                ),
               ],
             ),
           ),
@@ -3753,9 +4089,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   Text(
                     subLabel,
                     style: const TextStyle(
-                        color: _C.textMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500),
+                      color: _C.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -3767,10 +4104,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   // ── Empty state helper ───────────────────────────────────────────────────
-  Widget _buildEmptyState(
-      {required IconData icon,
-      required String message,
-      required String sub}) {
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String message,
+    required String sub,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -3804,8 +4142,13 @@ class _FieldResponderViewState extends State<FieldResponderView>
   DateTime _parseTime(String t) {
     final parts = t.split(':');
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day,
-        int.parse(parts[0]), int.parse(parts[1]));
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
   }
 
   Widget _buildMissionCard(_Mission m) {
@@ -3813,7 +4156,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
     return GestureDetector(
       onTap: () {
         setState(() {
-          _activeMissionIdx = IncidentCoordinator.instance.missionAssignments.indexOf(m);
+          _activeMissionIdx = IncidentCoordinator.instance.missionAssignments
+              .indexOf(m);
         });
       },
       child: Container(
@@ -3833,161 +4177,196 @@ class _FieldResponderViewState extends State<FieldResponderView>
             ),
           ],
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? _C.actionBlue.withValues(alpha: 0.08)
-                  : const Color(0xFFF8FAFC),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(9)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: m.priority == 'CRITICAL' ? _C.critical : _C.warning,
-                    borderRadius: BorderRadius.circular(4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? _C.actionBlue.withValues(alpha: 0.08)
+                    : const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(9),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: m.priority == 'CRITICAL'
+                          ? _C.critical
+                          : _C.warning,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      m.priority,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    m.priority,
+                  const SizedBox(width: 8),
+                  Text(
+                    m.id,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
+                      color: _C.textSecondary,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  m.id,
-                  style: const TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                  const Spacer(),
+                  Text(
+                    _kMissionLifecycle[m.stepIndex],
+                    style: TextStyle(
+                      color: m.stepIndex == 7 ? _C.safe : _C.actionBlue,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  _kMissionLifecycle[m.stepIndex],
-                  style: TextStyle(
-                    color: m.stepIndex == 7 ? _C.safe : _C.actionBlue,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  m.title,
-                  style: const TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_rounded,
-                        color: _C.textMuted, size: 14),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        m.location,
-                        style: const TextStyle(
-                            color: _C.textSecondary, fontSize: 12),
-                      ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    m.title,
+                    style: const TextStyle(
+                      color: _C.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Population Demographics Chips
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    _metricChip(
-                        Icons.people_rounded, '${m.trapped} Trapped', _C.navy),
-                    _metricChip(Icons.child_care_rounded,
-                        '${m.childrenCount} Children', _C.govBlue),
-                    _metricChip(Icons.elderly_rounded,
-                        '${m.elderlyCount} Elderly', _C.warning),
-                    if (m.medicalCount > 0)
-                      _metricChip(Icons.medical_services_rounded,
-                          '${m.medicalCount} Medical', _C.critical),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Safe Route: ${m.safeRouteSummary}',
-                  style: const TextStyle(
-                    color: _C.safe,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _openMissionDetailSheet(m),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _C.govBlue,
-                          side: const BorderSide(color: _C.govBlue),
-                          minimumSize: const Size(0, 42),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6)),
-                        ),
-                        child: const Text('View Details',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: _C.textMuted,
+                        size: 14,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _activeMissionIdx = IncidentCoordinator.instance.missionAssignments.indexOf(m);
-                            _tab = 0; // go to map
-                          });
-                          _openSafeNavigationSheet(m);
-                        },
-                        icon: const Icon(Icons.navigation_rounded, size: 14),
-                        label: const Text('Navigate',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _C.actionBlue,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 42),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          m.location,
+                          style: const TextStyle(
+                            color: _C.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Population Demographics Chips
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _metricChip(
+                        Icons.people_rounded,
+                        '${m.trapped} Trapped',
+                        _C.navy,
+                      ),
+                      _metricChip(
+                        Icons.child_care_rounded,
+                        '${m.childrenCount} Children',
+                        _C.govBlue,
+                      ),
+                      _metricChip(
+                        Icons.elderly_rounded,
+                        '${m.elderlyCount} Elderly',
+                        _C.warning,
+                      ),
+                      if (m.medicalCount > 0)
+                        _metricChip(
+                          Icons.medical_services_rounded,
+                          '${m.medicalCount} Medical',
+                          _C.critical,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Safe Route: ${m.safeRouteSummary}',
+                    style: const TextStyle(
+                      color: _C.safe,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _openMissionDetailSheet(m),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _C.govBlue,
+                            side: const BorderSide(color: _C.govBlue),
+                            minimumSize: const Size(0, 42),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: const Text(
+                            'View Details',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _activeMissionIdx = IncidentCoordinator
+                                  .instance
+                                  .missionAssignments
+                                  .indexOf(m);
+                              _tab = 0; // go to map
+                            });
+                            _openSafeNavigationSheet(m);
+                          },
+                          icon: const Icon(Icons.navigation_rounded, size: 14),
+                          label: const Text(
+                            'Navigate',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _C.actionBlue,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 42),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _metricChip(IconData icon, String text, Color color) {
@@ -4019,7 +4398,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
   // TAB 2 — SOS DESK (OPERATIONAL INBOX)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildSOSDeskTab() {
-    final criticalCount = _sosList.where((s) => s.priority == 'CRITICAL').length;
+    final criticalCount = _sosList
+        .where((s) => s.priority == 'CRITICAL')
+        .length;
     final highCount = _sosList.where((s) => s.priority == 'HIGH').length;
     final normalCount = _sosList.where((s) => s.priority == 'NORMAL').length;
 
@@ -4060,26 +4441,29 @@ class _FieldResponderViewState extends State<FieldResponderView>
             child: Row(
               children: ['All', 'Critical', 'Nearby', 'Unassigned', 'Assigned']
                   .map((f) {
-                final active = _sosFilter == f;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: ChoiceChip(
-                    label: Text(f),
-                    selected: active,
-                    onSelected: (val) {
-                      if (val) setState(() => _sosFilter = f);
-                    },
-                    selectedColor: _C.navy,
-                    backgroundColor: _C.pageBg,
-                    labelStyle: TextStyle(
-                      color: active ? Colors.white : _C.textSecondary,
-                      fontSize: 11,
-                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                );
-              }).toList(),
+                    final active = _sosFilter == f;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(f),
+                        selected: active,
+                        onSelected: (val) {
+                          if (val) setState(() => _sosFilter = f);
+                        },
+                        selectedColor: _C.navy,
+                        backgroundColor: _C.pageBg,
+                        labelStyle: TextStyle(
+                          color: active ? Colors.white : _C.textSecondary,
+                          fontSize: 11,
+                          fontWeight: active
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ),
@@ -4161,8 +4545,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
               Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(4),
@@ -4188,8 +4574,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   const Spacer(),
                   Text(
                     s.receivedTime,
-                    style:
-                        const TextStyle(color: _C.textMuted, fontSize: 11),
+                    style: const TextStyle(color: _C.textMuted, fontSize: 11),
                   ),
                 ],
               ),
@@ -4213,14 +4598,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.location_on_rounded,
-                      color: _C.textMuted, size: 14),
+                  const Icon(
+                    Icons.location_on_rounded,
+                    color: _C.textMuted,
+                    size: 14,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       '${s.location} (${s.distance})',
                       style: const TextStyle(
-                          color: _C.textSecondary, fontSize: 11),
+                        color: _C.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ],
@@ -4229,16 +4619,25 @@ class _FieldResponderViewState extends State<FieldResponderView>
               Wrap(
                 spacing: 6,
                 children: [
-                  _metricChip(Icons.people_rounded, '${s.peopleCount} people',
-                      _C.navy),
+                  _metricChip(
+                    Icons.people_rounded,
+                    '${s.peopleCount} people',
+                    _C.navy,
+                  ),
                   if (s.hasElderly)
                     _metricChip(Icons.elderly_rounded, 'Elderly', _C.warning),
                   if (s.hasChildren)
                     _metricChip(
-                        Icons.child_care_rounded, 'Children', _C.govBlue),
+                      Icons.child_care_rounded,
+                      'Children',
+                      _C.govBlue,
+                    ),
                   if (s.hasMedical)
-                    _metricChip(Icons.medical_services_rounded, 'Medical Case',
-                        _C.critical),
+                    _metricChip(
+                      Icons.medical_services_rounded,
+                      'Medical Case',
+                      _C.critical,
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -4252,7 +4651,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           SnackBar(
                             backgroundColor: _C.safe,
                             content: Text(
-                                'SOS ${s.id} acknowledged by SDRF Bravo'),
+                              'SOS ${s.id} acknowledged by SDRF Bravo',
+                            ),
                           ),
                         );
                       },
@@ -4261,12 +4661,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         side: const BorderSide(color: _C.safe),
                         minimumSize: const Size(0, 40),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                       child: Text(
                         s.acknowledged ? 'Acknowledged' : 'Accept SOS',
                         style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.bold),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -4293,7 +4696,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         foregroundColor: Colors.white,
                         minimumSize: const Size(0, 40),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                   ),
@@ -4333,7 +4737,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 SnackBar(
                   backgroundColor: _C.govBlue,
                   content: Text(
-                      'SOS ${s.id} forwarded to nearest available unit SDRF Delta'),
+                    'SOS ${s.id} forwarded to nearest available unit SDRF Delta',
+                  ),
                 ),
               );
             },
@@ -4379,14 +4784,14 @@ class _FieldResponderViewState extends State<FieldResponderView>
   Widget _buildAssetsTab() {
     // ── Counts by status ──────────────────────────────────────────────────────
     final total = _assetsList.length;
-    final readyCount =
-        _assetsList.where((a) => a.status == 'Available').length;
+    final readyCount = _assetsList.where((a) => a.status == 'Available').length;
     final inUseCount = _assetsList
         .where((a) => a.status == 'In Use' || a.status == 'Assigned')
         .length;
     final lowCount = _assetsList.where((a) => a.status == 'Low Stock').length;
-    final maintCount =
-        _assetsList.where((a) => a.status == 'Maintenance').length;
+    final maintCount = _assetsList
+        .where((a) => a.status == 'Maintenance')
+        .length;
 
     // ── Filter + Search ───────────────────────────────────────────────────────
     final filtered = _assetsList.where((a) {
@@ -4405,7 +4810,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
         }
       }();
       final q = _assetSearch.toLowerCase();
-      final matchSearch = q.isEmpty ||
+      final matchSearch =
+          q.isEmpty ||
           a.name.toLowerCase().contains(q) ||
           a.code.toLowerCase().contains(q) ||
           a.tags.any((t) => t.toLowerCase().contains(q));
@@ -4418,22 +4824,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
       {
         'label': 'Ready ($readyCount)',
         'key': 'Ready',
-        'dot': const Color(0xFF16A34A)
+        'dot': const Color(0xFF16A34A),
       },
       {
         'label': 'In Use ($inUseCount)',
         'key': 'In Use',
-        'dot': const Color(0xFF2563EB)
+        'dot': const Color(0xFF2563EB),
       },
       {
         'label': 'Low ($lowCount)',
         'key': 'Low',
-        'dot': const Color(0xFFD97706)
+        'dot': const Color(0xFFD97706),
       },
       {
         'label': 'Maintenance ($maintCount)',
         'key': 'Maintenance',
-        'dot': const Color(0xFF64748B)
+        'dot': const Color(0xFF64748B),
       },
     ];
 
@@ -4442,8 +4848,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         // ── Dark blue header ────────────────────────────────────────────────
         Container(
           color: const Color(0xFF0B2341),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Container(
@@ -4453,8 +4858,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   color: Colors.white.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.inventory_2_rounded,
-                    color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.inventory_2_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -4471,10 +4879,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     ),
                     Text(
                       'Operational gear assigned to SDRF Bravo',
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                     ),
                   ],
                 ),
@@ -4486,7 +4891,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: _C.actionBlue,
                     borderRadius: BorderRadius.circular(8),
@@ -4496,18 +4903,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     children: [
                       Icon(Icons.add_rounded, color: Colors.white, size: 14),
                       SizedBox(width: 4),
-                      Text('Add Asset',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        'Add Asset',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.more_vert_rounded,
-                  color: Colors.white54, size: 20),
+              Icon(Icons.more_vert_rounded, color: Colors.white54, size: 20),
             ],
           ),
         ),
@@ -4530,7 +4939,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 7),
+                        horizontal: 14,
+                        vertical: 7,
+                      ),
                       decoration: BoxDecoration(
                         color: selected ? _C.actionBlue : Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -4551,15 +4962,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                 width: 7,
                                 height: 7,
                                 decoration: BoxDecoration(
-                                    color: dot, shape: BoxShape.circle),
+                                  color: dot,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
                           Text(
                             chip['label'] as String,
                             style: TextStyle(
-                              color: selected
-                                  ? Colors.white
-                                  : _C.textPrimary,
+                              color: selected ? Colors.white : _C.textPrimary,
                               fontSize: 12,
                               fontWeight: selected
                                   ? FontWeight.w700
@@ -4580,8 +4991,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         // ── Search + view toggle ────────────────────────────────────────────
         Container(
           color: Colors.white,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
               Expanded(
@@ -4595,13 +5005,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   child: TextField(
                     onChanged: (v) => setState(() => _assetSearch = v),
                     style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF172033)),
+                      fontSize: 13,
+                      color: Color(0xFF172033),
+                    ),
                     decoration: const InputDecoration(
                       hintText: 'Search equipment, code or type...',
                       hintStyle: TextStyle(
-                          color: Color(0xFF94A3B8), fontSize: 13),
-                      prefixIcon: Icon(Icons.search_rounded,
-                          color: Color(0xFF94A3B8), size: 18),
+                        color: Color(0xFF94A3B8),
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 18,
+                      ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 11),
                     ),
@@ -4637,12 +5054,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const CitizenSheltersView(isResponder: true),
+                    builder: (_) =>
+                        const CitizenSheltersView(isResponder: true),
                   ),
                 ),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 13,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF005EA8), Color(0xFF0B2341)],
@@ -4668,7 +5089,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
-                          child: Icon(Icons.night_shelter_rounded, color: Colors.white, size: 22),
+                          child: Icon(
+                            Icons.night_shelter_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -4696,7 +5121,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
                     ],
                   ),
                 ),
@@ -4740,11 +5169,13 @@ class _FieldResponderViewState extends State<FieldResponderView>
         decoration: BoxDecoration(
           color: active ? _C.navy : const Color(0xFFF4F7FA),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-              color: active ? _C.navy : const Color(0xFFE2E8F0)),
+          border: Border.all(color: active ? _C.navy : const Color(0xFFE2E8F0)),
         ),
-        child: Icon(icon,
-            color: active ? Colors.white : _C.textSecondary, size: 18),
+        child: Icon(
+          icon,
+          color: active ? Colors.white : _C.textSecondary,
+          size: 18,
+        ),
       ),
     );
   }
@@ -4821,22 +5252,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   spacing: 5,
                   runSpacing: 4,
                   children: a.tags
-                      .map((tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(20),
+                      .map(
+                        (tag) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            tag,
+                            style: const TextStyle(
+                              color: Color(0xFF2563EB),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
                             ),
-                            child: Text(
-                              tag,
-                              style: const TextStyle(
-                                color: Color(0xFF2563EB),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ))
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ],
@@ -4854,7 +5289,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 // Status badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 9, vertical: 4),
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isMaint
                         ? const Color(0xFFF1F5F9)
@@ -4868,7 +5305,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                            color: statusColor, shape: BoxShape.circle),
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                       const SizedBox(width: 5),
                       Flexible(
@@ -4934,7 +5373,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 onTap: () => _showAssetActionDialog(a),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 6),
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -4995,7 +5436,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 3),
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -5026,8 +5469,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
             const SizedBox(height: 2),
             Text(
               '${a.quantity} ${a.unit}  •  ${a.code}',
-              style: const TextStyle(
-                  color: Color(0xFF94A3B8), fontSize: 10),
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
             ),
             const Spacer(),
             Row(
@@ -5036,14 +5478,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   child: Text(
                     a.assignedTo,
                     style: const TextStyle(
-                        color: Color(0xFF475569),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600),
+                      color: Color(0xFF475569),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFF94A3B8), size: 16),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 16,
+                ),
               ],
             ),
           ],
@@ -5107,14 +5553,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       Text(
                         'Code: ${a.code}  •  ${a.quantity} ${a.unit}',
                         style: const TextStyle(
-                            color: Color(0xFF64748B), fontSize: 12),
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -5180,7 +5630,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   SnackBar(
                     backgroundColor: _C.critical,
                     content: Text(
-                        'Replacement requested for ${a.name} from Base Camp'),
+                      'Replacement requested for ${a.name} from Base Camp',
+                    ),
                   ),
                 );
               },
@@ -5223,14 +5674,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ),
             ),
             const Spacer(),
-            const Icon(Icons.chevron_right_rounded,
-                color: Color(0xFFCBD5E1), size: 20),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFFCBD5E1),
+              size: 20,
+            ),
           ],
         ),
       ),
     );
   }
-
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TAB 4 — PROFILE & TEAM IDENTITY
@@ -5264,8 +5717,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
             backgroundColor: _C.navy,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ),
       ],
@@ -5285,8 +5739,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           CircleAvatar(
             radius: 28,
             backgroundColor: _C.govBlue.withValues(alpha: 0.15),
-            child: const Icon(Icons.person_rounded,
-                color: _C.govBlue, size: 34),
+            child: const Icon(
+              Icons.person_rounded,
+              color: _C.govBlue,
+              size: 34,
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -5384,8 +5841,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           Row(
             children: [
-              const Icon(Icons.fact_check_rounded,
-                  color: _C.govBlue, size: 18),
+              const Icon(Icons.fact_check_rounded, color: _C.govBlue, size: 18),
               const SizedBox(width: 8),
               const Text(
                 'MISSION READINESS CHECKLIST',
@@ -5414,7 +5870,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
               value: completed / total,
               backgroundColor: const Color(0xFFE2E8F0),
               valueColor: AlwaysStoppedAnimation(
-                  completed == total ? _C.safe : _C.warning),
+                completed == total ? _C.safe : _C.warning,
+              ),
               minHeight: 6,
             ),
           ),
@@ -5442,8 +5899,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         style: TextStyle(
                           color: e.value ? _C.textPrimary : _C.textSecondary,
                           fontSize: 12,
-                          fontWeight:
-                              e.value ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: e.value
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -5459,10 +5917,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
 
   Widget _buildTeamRosterCard() {
     final roster = [
-      {'name': 'Vikram Singh', 'role': 'Medical Specialist / Paramedic', 'status': 'Ready'},
+      {
+        'name': 'Vikram Singh',
+        'role': 'Medical Specialist / Paramedic',
+        'status': 'Ready',
+      },
       {'name': 'Rahul Das', 'role': 'Boat Operator & Diver', 'status': 'Ready'},
-      {'name': 'Pranay Gogoi', 'role': 'Comms & Drone Operator', 'status': 'On Recon'},
-      {'name': 'Deepak Sharma', 'role': 'Rigging & Extraction Tech', 'status': 'Ready'},
+      {
+        'name': 'Pranay Gogoi',
+        'role': 'Comms & Drone Operator',
+        'status': 'On Recon',
+      },
+      {
+        'name': 'Deepak Sharma',
+        'role': 'Rigging & Extraction Tech',
+        'status': 'Ready',
+      },
     ];
 
     return Container(
@@ -5499,8 +5969,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: const Color(0xFFE2E8F0),
-                    child: const Icon(Icons.person,
-                        size: 16, color: _C.navy),
+                    child: const Icon(Icons.person, size: 16, color: _C.navy),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -5518,14 +5987,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         Text(
                           m['role']!,
                           style: const TextStyle(
-                              color: _C.textSecondary, fontSize: 10),
+                            color: _C.textSecondary,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: _C.safe.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -5576,13 +6049,25 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
           const SizedBox(height: 10),
           _detailRow(
-              'Radio Channel', 'VHF Tac-4 (156.800 MHz)', Icons.cell_tower_rounded),
-          _detailRow('Control Room Direct', '+91 364 222-DEOC (Priority #1)',
-              Icons.phone_in_talk_rounded),
-          _detailRow('Offline Map Pack',
-              'East Khasi Hills (42 MB) • Downloaded', Icons.download_done_rounded),
-          _detailRow('Live Tracking', 'Active via GPS + SAT Relay',
-              Icons.share_location_rounded),
+            'Radio Channel',
+            'VHF Tac-4 (156.800 MHz)',
+            Icons.cell_tower_rounded,
+          ),
+          _detailRow(
+            'Control Room Direct',
+            '+91 364 222-DEOC (Priority #1)',
+            Icons.phone_in_talk_rounded,
+          ),
+          _detailRow(
+            'Offline Map Pack',
+            'East Khasi Hills (42 MB) • Downloaded',
+            Icons.download_done_rounded,
+          ),
+          _detailRow(
+            'Live Tracking',
+            'Active via GPS + SAT Relay',
+            Icons.share_location_rounded,
+          ),
         ],
       ),
     );
@@ -5595,17 +6080,23 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           Icon(icon, size: 15, color: _C.actionBlue),
           const SizedBox(width: 8),
-          Text(title,
-              style: const TextStyle(
-                  color: _C.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: _C.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const Spacer(),
-          Text(val,
-              style: const TextStyle(
-                  color: _C.textPrimary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            val,
+            style: const TextStyle(
+              color: _C.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -5636,8 +6127,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                   decoration: const BoxDecoration(
                     color: _C.navy,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -5657,7 +6149,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: m.priority == 'CRITICAL'
                                       ? _C.critical
@@ -5678,15 +6172,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           Text(
                             m.incidentType,
                             style: const TextStyle(
-                                color: Color(0xFF94A3B8), fontSize: 12),
+                              color: Color(0xFF94A3B8),
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -5713,20 +6211,30 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(m.location,
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: _C.textPrimary)),
-                            Text('GPS: ${m.coordinates}',
-                                style: const TextStyle(
-                                    fontSize: 11,
-                                    color: _C.actionBlue,
-                                    fontWeight: FontWeight.w600)),
+                            Text(
+                              m.location,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: _C.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'GPS: ${m.coordinates}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: _C.actionBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Distance: ${m.distance} • Estimated ETA: ${m.eta}',
-                                style: const TextStyle(
-                                    fontSize: 11, color: _C.textSecondary)),
+                            Text(
+                              'Distance: ${m.distance} • Estimated ETA: ${m.eta}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: _C.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -5746,12 +6254,25 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           children: [
                             _statColumn('Trapped', '${m.trapped}', _C.critical),
                             _statColumn(
-                                'Children', '${m.childrenCount}', _C.govBlue),
+                              'Children',
+                              '${m.childrenCount}',
+                              _C.govBlue,
+                            ),
                             _statColumn(
-                                'Elderly', '${m.elderlyCount}', _C.warning),
-                            _statColumn('Injured', '${m.medicalCount}', _C.safe),
+                              'Elderly',
+                              '${m.elderlyCount}',
+                              _C.warning,
+                            ),
                             _statColumn(
-                                'Disabled', '${m.disabledCount}', _C.navy),
+                              'Injured',
+                              '${m.medicalCount}',
+                              _C.safe,
+                            ),
+                            _statColumn(
+                              'Disabled',
+                              '${m.disabledCount}',
+                              _C.navy,
+                            ),
                           ],
                         ),
                       ),
@@ -5768,14 +6289,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         ),
                         child: Column(
                           children: [
-                            _hazardRow('Flood Water Depth', m.floodDepth,
-                                Icons.water_rounded),
-                            _hazardRow('Water Current Velocity', m.waterFlow,
-                                Icons.waves_rounded),
-                            _hazardRow('Landslide Risk', m.landslideRisk,
-                                Icons.terrain_rounded),
-                            _hazardRow('Access Route Condition',
-                                m.roadBridgeCondition, Icons.alt_route_rounded),
+                            _hazardRow(
+                              'Flood Water Depth',
+                              m.floodDepth,
+                              Icons.water_rounded,
+                            ),
+                            _hazardRow(
+                              'Water Current Velocity',
+                              m.waterFlow,
+                              Icons.waves_rounded,
+                            ),
+                            _hazardRow(
+                              'Landslide Risk',
+                              m.landslideRisk,
+                              Icons.terrain_rounded,
+                            ),
+                            _hazardRow(
+                              'Access Route Condition',
+                              m.roadBridgeCondition,
+                              Icons.alt_route_rounded,
+                            ),
                           ],
                         ),
                       ),
@@ -5789,24 +6322,33 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         children: m.requiredEquipment.map((eq) {
                           return Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(6),
-                              border:
-                                  Border.all(color: const Color(0xFFBFDBFE)),
+                              border: Border.all(
+                                color: const Color(0xFFBFDBFE),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check_circle_rounded,
-                                    size: 14, color: _C.govBlue),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 14,
+                                  color: _C.govBlue,
+                                ),
                                 const SizedBox(width: 6),
-                                Text(eq,
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        color: _C.navy,
-                                        fontWeight: FontWeight.bold)),
+                                Text(
+                                  eq,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: _C.navy,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -5821,13 +6363,17 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         decoration: BoxDecoration(
                           color: _C.safe.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
-                          border:
-                              Border.all(color: _C.safe.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: _C.safe.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.domain_rounded,
-                                color: _C.safe, size: 24),
+                            const Icon(
+                              Icons.domain_rounded,
+                              color: _C.safe,
+                              size: 24,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -5836,15 +6382,17 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                   Text(
                                     m.recommendedShelter,
                                     style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: _C.safe),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: _C.safe,
+                                    ),
                                   ),
                                   const Text(
                                     'Medical Trauma Cases -> District Civil Hospital',
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: _C.textSecondary),
+                                      fontSize: 11,
+                                      color: _C.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -5870,8 +6418,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                 Navigator.pop(ctx);
                                 _openRequestBackupSheet();
                               },
-                              icon: const Icon(Icons.support_agent_rounded,
-                                  size: 14),
+                              icon: const Icon(
+                                Icons.support_agent_rounded,
+                                size: 14,
+                              ),
                               label: const Text('Request Backup'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _C.critical,
@@ -5887,8 +6437,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                 Navigator.pop(ctx);
                                 _openRescueStatusSheet(m);
                               },
-                              icon: const Icon(Icons.edit_note_rounded,
-                                  size: 14),
+                              icon: const Icon(
+                                Icons.edit_note_rounded,
+                                size: 14,
+                              ),
                               label: const Text('Update Counts'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _C.govBlue,
@@ -5929,11 +6481,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
   Widget _statColumn(String label, String val, Color color) {
     return Column(
       children: [
-        Text(val,
-            style: TextStyle(
-                color: color, fontSize: 16, fontWeight: FontWeight.bold)),
-        Text(label,
-            style: const TextStyle(color: _C.textSecondary, fontSize: 10)),
+        Text(
+          val,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: _C.textSecondary, fontSize: 10),
+        ),
       ],
     );
   }
@@ -5945,14 +6504,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           Icon(icon, size: 14, color: _C.actionBlue),
           const SizedBox(width: 6),
-          Text(label,
-              style: const TextStyle(color: _C.textSecondary, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: _C.textSecondary, fontSize: 11),
+          ),
           const Spacer(),
-          Text(val,
-              style: const TextStyle(
-                  color: _C.textPrimary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            val,
+            style: const TextStyle(
+              color: _C.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -5970,11 +6534,14 @@ class _FieldResponderViewState extends State<FieldResponderView>
         children: [
           Row(
             children: [
-              const Text('CURRENT LIFECYCLE STAGE',
-                  style: TextStyle(
-                      color: _C.navy,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold)),
+              const Text(
+                'CURRENT LIFECYCLE STAGE',
+                style: TextStyle(
+                  color: _C.navy,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const Spacer(),
               Text(
                 'Stage ${m.stepIndex + 1} of 8',
@@ -6012,8 +6579,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           ),
                           child: Center(
                             child: isDone
-                                ? const Icon(Icons.check,
-                                    size: 13, color: Colors.white)
+                                ? const Icon(
+                                    Icons.check,
+                                    size: 13,
+                                    color: Colors.white,
+                                  )
                                 : Text(
                                     '${i + 1}',
                                     style: TextStyle(
@@ -6032,15 +6602,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           style: TextStyle(
                             color: isCurrent ? _C.navy : _C.textSecondary,
                             fontSize: 9,
-                            fontWeight:
-                                isCurrent ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                         if (time != null)
                           Text(
                             time,
-                            style: const TextStyle(
-                                color: _C.safe, fontSize: 8),
+                            style: const TextStyle(color: _C.safe, fontSize: 8),
                           ),
                       ],
                     ),
@@ -6111,8 +6681,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
     return ElevatedButton.icon(
       onPressed: m.stepIndex < 7 ? onAdvance : null,
       icon: Icon(icon, size: 18),
-      label: Text(label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: btnColor,
         foregroundColor: Colors.white,
@@ -6141,8 +6713,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
               color: _C.navy,
               child: Row(
                 children: [
-                  const Icon(Icons.navigation_rounded,
-                      color: _C.actionBlue, size: 22),
+                  const Icon(
+                    Icons.navigation_rounded,
+                    color: _C.actionBlue,
+                    size: 22,
+                  ),
                   const SizedBox(width: 8),
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -6150,22 +6725,24 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       Text(
                         'Safe Navigation Dispatch',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         'Optimized for Passable Roads & High Ground',
-                        style:
-                            TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(ctx),
-                    icon:
-                        const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),
                 ],
               ),
@@ -6177,16 +6754,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_rounded,
-                      color: _C.warning, size: 18),
+                  const Icon(
+                    Icons.warning_rounded,
+                    color: _C.warning,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'Route changed — Eastern bridge blocked. Recommended route via West Ridge Bypass.',
                       style: TextStyle(
-                          color: _C.warning,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold),
+                        color: _C.warning,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -6208,46 +6789,69 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       children: [
                         Column(
                           children: [
-                            Text(m.distance,
-                                style: const TextStyle(
-                                    color: _C.navy,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
-                            const Text('Distance',
-                                style: TextStyle(
-                                    color: _C.textSecondary, fontSize: 11)),
+                            Text(
+                              m.distance,
+                              style: const TextStyle(
+                                color: _C.navy,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Distance',
+                              style: TextStyle(
+                                color: _C.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
                           ],
                         ),
                         Container(
-                            width: 1,
-                            height: 36,
-                            color: const Color(0xFFCBD5E1)),
+                          width: 1,
+                          height: 36,
+                          color: const Color(0xFFCBD5E1),
+                        ),
                         Column(
                           children: [
-                            Text(m.eta,
-                                style: const TextStyle(
-                                    color: _C.actionBlue,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
-                            const Text('Estimated ETA',
-                                style: TextStyle(
-                                    color: _C.textSecondary, fontSize: 11)),
+                            Text(
+                              m.eta,
+                              style: const TextStyle(
+                                color: _C.actionBlue,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Estimated ETA',
+                              style: TextStyle(
+                                color: _C.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
                           ],
                         ),
                         Container(
-                            width: 1,
-                            height: 36,
-                            color: const Color(0xFFCBD5E1)),
+                          width: 1,
+                          height: 36,
+                          color: const Color(0xFFCBD5E1),
+                        ),
                         const Column(
                           children: [
-                            Text('SAFE',
-                                style: TextStyle(
-                                    color: _C.safe,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
-                            Text('Route Security',
-                                style: TextStyle(
-                                    color: _C.textSecondary, fontSize: 11)),
+                            Text(
+                              'SAFE',
+                              style: TextStyle(
+                                color: _C.safe,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Route Security',
+                              style: TextStyle(
+                                color: _C.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -6255,23 +6859,30 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   ),
                   const SizedBox(height: 16),
                   _buildSectionTitle('WAYPOINT DIRECTIONS (SAFETY FIRST)'),
-                  _waypointStep(1, 'Depart Base Camp Sector 4',
-                      'High clearance path clear', Icons.trip_origin_rounded),
                   _waypointStep(
-                      2,
-                      'Turn right at Mawphlang Ridge road',
-                      'Avoid lower canal embankment (submerged)',
-                      Icons.turn_right_rounded),
+                    1,
+                    'Depart Base Camp Sector 4',
+                    'High clearance path clear',
+                    Icons.trip_origin_rounded,
+                  ),
                   _waypointStep(
-                      3,
-                      'Cross West Culvert #2 (Safe • 10cm clearance)',
-                      'Bridge structural sensor verified: OK',
-                      Icons.alt_route_rounded),
+                    2,
+                    'Turn right at Mawphlang Ridge road',
+                    'Avoid lower canal embankment (submerged)',
+                    Icons.turn_right_rounded,
+                  ),
                   _waypointStep(
-                      4,
-                      'Arrive at Target Zone: Lower Catchment',
-                      'Coordinates: 25.4678° N, 91.7539° E',
-                      Icons.flag_rounded),
+                    3,
+                    'Cross West Culvert #2 (Safe • 10cm clearance)',
+                    'Bridge structural sensor verified: OK',
+                    Icons.alt_route_rounded,
+                  ),
+                  _waypointStep(
+                    4,
+                    'Arrive at Target Zone: Lower Catchment',
+                    'Coordinates: 25.4678° N, 91.7539° E',
+                    Icons.flag_rounded,
+                  ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () {
@@ -6279,15 +6890,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       Navigator.pop(ctx);
                     },
                     icon: const Icon(Icons.check_circle_rounded, size: 18),
-                    label: const Text('I Have Arrived (On Site)',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'I Have Arrived (On Site)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _C.safe,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ],
@@ -6299,8 +6915,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
     );
   }
 
-  Widget _waypointStep(
-      int num, String title, String sub, IconData icon) {
+  Widget _waypointStep(int num, String title, String sub, IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -6309,25 +6924,32 @@ class _FieldResponderViewState extends State<FieldResponderView>
           CircleAvatar(
             radius: 12,
             backgroundColor: _C.actionBlue.withValues(alpha: 0.15),
-            child: Text('$num',
-                style: const TextStyle(
-                    color: _C.actionBlue,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold)),
+            child: Text(
+              '$num',
+              style: const TextStyle(
+                color: _C.actionBlue,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _C.textPrimary)),
-                Text(sub,
-                    style: const TextStyle(
-                        fontSize: 11, color: _C.textSecondary)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: _C.textPrimary,
+                  ),
+                ),
+                Text(
+                  sub,
+                  style: const TextStyle(fontSize: 11, color: _C.textSecondary),
+                ),
               ],
             ),
           ),
@@ -6344,8 +6966,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setRescueState) {
-          final progress =
-              (m.evacuated / (m.trapped > 0 ? m.trapped : 1)).clamp(0.0, 1.0);
+          final progress = (m.evacuated / (m.trapped > 0 ? m.trapped : 1))
+              .clamp(0.0, 1.0);
 
           return Container(
             height: MediaQuery.of(context).size.height * 0.85,
@@ -6356,13 +6978,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
             child: Column(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   color: _C.navy,
                   child: Row(
                     children: [
-                      const Icon(Icons.people_alt_rounded,
-                          color: _C.safe, size: 22),
+                      const Icon(
+                        Icons.people_alt_rounded,
+                        color: _C.safe,
+                        size: 22,
+                      ),
                       const SizedBox(width: 8),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6370,22 +6997,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           Text(
                             'Operational Rescue Counts',
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Text(
                             'Field count synced live to Authority Dashboard',
                             style: TextStyle(
-                                color: Color(0xFF94A3B8), fontSize: 11),
+                              color: Color(0xFF94A3B8),
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -6408,17 +7040,21 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('EVACUATION PROGRESS',
-                                    style: TextStyle(
-                                        color: _C.navy,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold)),
+                                const Text(
+                                  'EVACUATION PROGRESS',
+                                  style: TextStyle(
+                                    color: _C.navy,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 Text(
                                   '${(progress * 100).toInt()}% Rescued (${m.evacuated}/${m.trapped})',
                                   style: const TextStyle(
-                                      color: _C.safe,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
+                                    color: _C.safe,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -6428,8 +7064,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                               child: LinearProgressIndicator(
                                 value: progress,
                                 backgroundColor: const Color(0xFFE2E8F0),
-                                valueColor:
-                                    const AlwaysStoppedAnimation(_C.safe),
+                                valueColor: const AlwaysStoppedAnimation(
+                                  _C.safe,
+                                ),
                                 minHeight: 8,
                               ),
                             ),
@@ -6439,33 +7076,52 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       const SizedBox(height: 16),
 
                       // Large Step Counters
-                      _countAdjuster('People Located & Secured', m.trapped,
-                          _C.navy, (delta) {
-                        setRescueState(() {
-                          m.trapped = (m.trapped + delta).clamp(0, 100);
-                        });
-                      }),
-                      _countAdjuster('Evacuated / Rescued', m.evacuated,
-                          _C.safe, (delta) {
-                        setRescueState(() {
-                          m.evacuated = (m.evacuated + delta).clamp(0, 100);
-                        });
-                      }),
                       _countAdjuster(
-                          'Need Immediate Medical', m.medicalCount, _C.critical,
-                          (delta) {
-                        setRescueState(() {
-                          m.medicalCount =
-                              (m.medicalCount + delta).clamp(0, 100);
-                        });
-                      }),
-                      _countAdjuster('Missing / Unaccounted', m.missingCount,
-                          _C.warning, (delta) {
-                        setRescueState(() {
-                          m.missingCount =
-                              (m.missingCount + delta).clamp(0, 100);
-                        });
-                      }),
+                        'People Located & Secured',
+                        m.trapped,
+                        _C.navy,
+                        (delta) {
+                          setRescueState(() {
+                            m.trapped = (m.trapped + delta).clamp(0, 100);
+                          });
+                        },
+                      ),
+                      _countAdjuster(
+                        'Evacuated / Rescued',
+                        m.evacuated,
+                        _C.safe,
+                        (delta) {
+                          setRescueState(() {
+                            m.evacuated = (m.evacuated + delta).clamp(0, 100);
+                          });
+                        },
+                      ),
+                      _countAdjuster(
+                        'Need Immediate Medical',
+                        m.medicalCount,
+                        _C.critical,
+                        (delta) {
+                          setRescueState(() {
+                            m.medicalCount = (m.medicalCount + delta).clamp(
+                              0,
+                              100,
+                            );
+                          });
+                        },
+                      ),
+                      _countAdjuster(
+                        'Missing / Unaccounted',
+                        m.missingCount,
+                        _C.warning,
+                        (delta) {
+                          setRescueState(() {
+                            m.missingCount = (m.missingCount + delta).clamp(
+                              0,
+                              100,
+                            );
+                          });
+                        },
+                      ),
                       const SizedBox(height: 16),
 
                       // Destination Recommendation Card
@@ -6489,9 +7145,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                               m.medicalCount > 0
                                   ? Icons.local_hospital_rounded
                                   : Icons.domain_rounded,
-                              color: m.medicalCount > 0
-                                  ? _C.critical
-                                  : _C.safe,
+                              color: m.medicalCount > 0 ? _C.critical : _C.safe,
                               size: 24,
                             ),
                             const SizedBox(width: 10),
@@ -6516,8 +7170,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                         ? '${m.medicalCount} patients need trauma care • 14 beds open • 2.4 km via safe road'
                                         : '38 spaces available • Food/Water ready • 1.6 km via West Bypass',
                                     style: const TextStyle(
-                                        fontSize: 11,
-                                        color: _C.textSecondary),
+                                      fontSize: 11,
+                                      color: _C.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -6538,8 +7193,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           );
                           if (m.evacuated > 0) {
                             IncidentCoordinator.instance.transportToShelter(
-                              missionId:
-                                  cleanId.startsWith('RS') ? cleanId : 'RS-204',
+                              missionId: cleanId.startsWith('RS')
+                                  ? cleanId
+                                  : 'RS-204',
                               shelterId: 'SH-01',
                               evacueeCount: m.evacuated,
                             );
@@ -6549,7 +7205,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             const SnackBar(
                               backgroundColor: _C.safe,
                               content: Text(
-                                  'Rescue count & shelter update transmitted to Authority Dashboard'),
+                                'Rescue count & shelter update transmitted to Authority Dashboard',
+                              ),
                             ),
                           );
                         },
@@ -6558,11 +7215,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        child: const Text('Update & Transmit Counts',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Update & Transmit Counts',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -6576,7 +7238,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   Widget _countAdjuster(
-      String label, int val, Color color, ValueChanged<int> onDelta) {
+    String label,
+    int val,
+    Color color,
+    ValueChanged<int> onDelta,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -6599,8 +7265,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
           IconButton(
             onPressed: () => onDelta(-1),
-            icon: const Icon(Icons.remove_circle_outline_rounded,
-                color: _C.textSecondary, size: 24),
+            icon: const Icon(
+              Icons.remove_circle_outline_rounded,
+              color: _C.textSecondary,
+              size: 24,
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -6619,8 +7288,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
           ),
           IconButton(
             onPressed: () => onDelta(1),
-            icon: const Icon(Icons.add_circle_outline_rounded,
-                color: _C.actionBlue, size: 24),
+            icon: const Icon(
+              Icons.add_circle_outline_rounded,
+              color: _C.actionBlue,
+              size: 24,
+            ),
           ),
         ],
       ),
@@ -6702,7 +7374,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                   // Header bar matching Screenshot 2: Dark blue with back arrow
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                     color: const Color(0xFF0C2340),
                     child: Row(
                       children: [
@@ -6711,8 +7385,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           borderRadius: BorderRadius.circular(20),
                           child: const Padding(
                             padding: EdgeInsets.all(2),
-                            child: Icon(Icons.arrow_back_rounded,
-                                color: Colors.white, size: 22),
+                            child: Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -6737,8 +7414,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         // 8 Hazard Category Cards (Grid matching screenshot 2)
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            final cardWidth =
-                                (constraints.maxWidth - 16) / 3;
+                            final cardWidth = (constraints.maxWidth - 16) / 3;
                             return Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -6769,7 +7445,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                       ),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 4),
+                                      horizontal: 4,
+                                      vertical: 4,
+                                    ),
                                     child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
@@ -6829,15 +7507,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                         height: 44,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFE0F2FE),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
-                                              color: const Color(0xFF93C5FD)),
+                                            color: const Color(0xFF93C5FD),
+                                          ),
                                         ),
                                         child: const Icon(
-                                            Icons.camera_alt_rounded,
-                                            color: Color(0xFF0066D6),
-                                            size: 20),
+                                          Icons.camera_alt_rounded,
+                                          color: Color(0xFF0066D6),
+                                          size: 20,
+                                        ),
                                       ),
                                       const SizedBox(width: 6),
                                       // Photo Thumbnail
@@ -6850,14 +7531,15 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
                                               Container(
-                                            width: 44,
-                                            height: 44,
-                                            color: const Color(0xFFCBD5E1),
-                                            child: const Icon(
-                                                Icons.image_rounded,
-                                                color: Color(0xFF64748B),
-                                                size: 18),
-                                          ),
+                                                width: 44,
+                                                height: 44,
+                                                color: const Color(0xFFCBD5E1),
+                                                child: const Icon(
+                                                  Icons.image_rounded,
+                                                  color: Color(0xFF64748B),
+                                                  size: 18,
+                                                ),
+                                              ),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
@@ -6867,13 +7549,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                         height: 44,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
-                                              color: const Color(0xFFE2E8F0)),
+                                            color: const Color(0xFFE2E8F0),
+                                          ),
                                         ),
-                                        child: const Icon(Icons.add_rounded,
-                                            color: Color(0xFF64748B), size: 20),
+                                        child: const Icon(
+                                          Icons.add_rounded,
+                                          color: Color(0xFF64748B),
+                                          size: 20,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -6887,20 +7574,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
                               flex: 5,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 8),
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                      color: const Color(0xFFE2E8F0)),
+                                    color: const Color(0xFFE2E8F0),
+                                  ),
                                 ),
                                 child: const Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.person_outline_rounded,
-                                            color: Color(0xFF64748B), size: 12),
+                                        Icon(
+                                          Icons.person_outline_rounded,
+                                          color: Color(0xFF64748B),
+                                          size: 12,
+                                        ),
                                         SizedBox(width: 4),
                                         Text(
                                           'Location (Auto)',
@@ -6915,8 +7608,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                     SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        Icon(Icons.location_on_outlined,
-                                            color: Color(0xFF0066D6), size: 13),
+                                        Icon(
+                                          Icons.location_on_outlined,
+                                          color: Color(0xFF0066D6),
+                                          size: 13,
+                                        ),
                                         SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
@@ -6928,8 +7624,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                             ),
                                           ),
                                         ),
-                                        Icon(Icons.my_location_rounded,
-                                            color: Color(0xFF0066D6), size: 13),
+                                        Icon(
+                                          Icons.my_location_rounded,
+                                          color: Color(0xFF0066D6),
+                                          size: 13,
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -6959,19 +7658,22 @@ class _FieldResponderViewState extends State<FieldResponderView>
                               );
                               setState(() {
                                 _recentHazards.insert(0, report);
-                                _offlineQueue.add(_OfflineQueueItem(
-                                  id: 'Q-${DateTime.now().millisecond}',
-                                  title: 'Hazard: $selectedType',
-                                  category: 'Hazard Report',
-                                  timestamp:
-                                      '${TimeOfDay.now().hour}:${TimeOfDay.now().minute}',
-                                ));
+                                _offlineQueue.add(
+                                  _OfflineQueueItem(
+                                    id: 'Q-${DateTime.now().millisecond}',
+                                    title: 'Hazard: $selectedType',
+                                    category: 'Hazard Report',
+                                    timestamp:
+                                        '${TimeOfDay.now().hour}:${TimeOfDay.now().minute}',
+                                  ),
+                                );
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: const Color(0xFF0066D6),
                                   content: Text(
-                                      'Hazard report submitted: $selectedType'),
+                                    'Hazard report submitted: $selectedType',
+                                  ),
                                 ),
                               );
                             },
@@ -7034,13 +7736,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
             child: Column(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   color: _C.critical,
                   child: Row(
                     children: [
-                      const Icon(Icons.support_agent_rounded,
-                          color: Colors.white, size: 22),
+                      const Icon(
+                        Icons.support_agent_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                       const SizedBox(width: 8),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -7048,22 +7755,27 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           Text(
                             'Request Backup Dispatch',
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Text(
                             'Alerts DEOC and Nearest Field Units',
                             style: TextStyle(
-                                color: Color(0xFFFFD1D1), fontSize: 11),
+                              color: Color(0xFFFFD1D1),
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -7095,7 +7807,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             borderRadius: BorderRadius.circular(8),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               child: Row(
                                 children: [
                                   Icon(
@@ -7131,45 +7845,51 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       const SizedBox(height: 12),
                       _buildSectionTitle('DISPATCH URGENCY'),
                       Row(
-                        children: [
-                          'Immediate (Life Threat)',
-                          'Priority (Within 30m)'
-                        ].map((u) {
-                          final sel = urgency == u;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () => setBackupState(() => urgency = u),
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 4),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: sel
-                                      ? _C.critical.withValues(alpha: 0.15)
-                                      : const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: sel
-                                        ? _C.critical
-                                        : const Color(0xFFCBD5E1),
+                        children:
+                            [
+                              'Immediate (Life Threat)',
+                              'Priority (Within 30m)',
+                            ].map((u) {
+                              final sel = urgency == u;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setBackupState(() => urgency = u),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: sel
+                                          ? _C.critical.withValues(alpha: 0.15)
+                                          : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: sel
+                                            ? _C.critical
+                                            : const Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      u,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: sel
+                                            ? _C.critical
+                                            : _C.textSecondary,
+                                        fontSize: 10,
+                                        fontWeight: sel
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  u,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: sel ? _C.critical : _C.textSecondary,
-                                    fontSize: 10,
-                                    fontWeight: sel
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton.icon(
@@ -7179,20 +7899,26 @@ class _FieldResponderViewState extends State<FieldResponderView>
                             SnackBar(
                               backgroundColor: _C.critical,
                               content: Text(
-                                  'BACKUP SIGNAL SENT: Reason "$selectedReason" broadcasted with GPS to DEOC'),
+                                'BACKUP SIGNAL SENT: Reason "$selectedReason" broadcasted with GPS to DEOC',
+                              ),
                             ),
                           );
                         },
                         icon: const Icon(Icons.send_rounded, size: 16),
-                        label: const Text('Send Backup Request to Control Room',
-                            style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.bold)),
+                        label: const Text(
+                          'Send Backup Request to Control Room',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _C.critical,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ],
@@ -7225,26 +7951,34 @@ class _FieldResponderViewState extends State<FieldResponderView>
             child: Column(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   color: _C.navy,
                   child: Row(
                     children: [
-                      const Icon(Icons.sync_rounded,
-                          color: _C.actionBlue, size: 22),
+                      const Icon(
+                        Icons.sync_rounded,
+                        color: _C.actionBlue,
+                        size: 22,
+                      ),
                       const SizedBox(width: 8),
                       const Text(
                         'Offline Sync Manager',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -7279,8 +8013,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                         ? 'Local Mode (Offline)'
                                         : 'Online • Connected to DEOC',
                                     style: TextStyle(
-                                      color:
-                                          _isOffline ? _C.warning : _C.safe,
+                                      color: _isOffline ? _C.warning : _C.safe,
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -7288,7 +8021,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                   Text(
                                     'Last sync: $diff min ago • Zero data loss guaranteed',
                                     style: const TextStyle(
-                                        color: _C.textSecondary, fontSize: 11),
+                                      color: _C.textSecondary,
+                                      fontSize: 11,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -7305,9 +8040,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           Text(
                             '${_offlineQueue.where((q) => q.status != 'Synced').length} pending',
                             style: const TextStyle(
-                                color: _C.warning,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold),
+                              color: _C.warning,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -7347,8 +8083,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                     Text(
                                       '${item.category} • Recorded: ${item.timestamp}',
                                       style: const TextStyle(
-                                          fontSize: 10,
-                                          color: _C.textSecondary),
+                                        fontSize: 10,
+                                        color: _C.textSecondary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -7377,12 +8114,16 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                 setState(() => _isOffline = !_isOffline);
                                 setSyncState(() {});
                               },
-                              icon: Icon(_isOffline
-                                  ? Icons.wifi_rounded
-                                  : Icons.wifi_off_rounded),
-                              label: Text(_isOffline
-                                  ? 'Simulate Online'
-                                  : 'Simulate Offline'),
+                              icon: Icon(
+                                _isOffline
+                                    ? Icons.wifi_rounded
+                                    : Icons.wifi_off_rounded,
+                              ),
+                              label: Text(
+                                _isOffline
+                                    ? 'Simulate Online'
+                                    : 'Simulate Offline',
+                              ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _C.govBlue,
                                 side: const BorderSide(color: _C.govBlue),
@@ -7404,7 +8145,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                       width: 14,
                                       height: 14,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2, color: Colors.white),
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
                                   : const Icon(Icons.sync_rounded, size: 16),
                               label: Text(_syncing ? 'Syncing...' : 'Sync Now'),
@@ -7556,36 +8299,51 @@ class _TacticalMapPainter extends CustomPainter {
 
     // Mountain hill shading (Elevation clusters)
     final hillPaint1 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF86A875).withValues(alpha: 0.8),
-          const Color(0xFFA2C492).withValues(alpha: 0.5),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-          center: Offset(w * 0.15, h * 0.25), radius: w * 0.45));
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xFF86A875).withValues(alpha: 0.8),
+              const Color(0xFFA2C492).withValues(alpha: 0.5),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(w * 0.15, h * 0.25),
+              radius: w * 0.45,
+            ),
+          );
     canvas.drawCircle(Offset(w * 0.15, h * 0.25), w * 0.45, hillPaint1);
 
     final hillPaint2 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF759765).withValues(alpha: 0.75),
-          const Color(0xFF9EBF8E).withValues(alpha: 0.45),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-          center: Offset(w * 0.82, h * 0.22), radius: w * 0.5));
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xFF759765).withValues(alpha: 0.75),
+              const Color(0xFF9EBF8E).withValues(alpha: 0.45),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(w * 0.82, h * 0.22),
+              radius: w * 0.5,
+            ),
+          );
     canvas.drawCircle(Offset(w * 0.82, h * 0.22), w * 0.5, hillPaint2);
 
     final hillPaint3 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF8BAF79).withValues(alpha: 0.7),
-          const Color(0xFFB5D1A6).withValues(alpha: 0.4),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-          center: Offset(w * 0.35, h * 0.82), radius: w * 0.45));
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xFF8BAF79).withValues(alpha: 0.7),
+              const Color(0xFFB5D1A6).withValues(alpha: 0.4),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(w * 0.35, h * 0.82),
+              radius: w * 0.45,
+            ),
+          );
     canvas.drawCircle(Offset(w * 0.35, h * 0.82), w * 0.45, hillPaint3);
 
     // Topographic Elevation Contour Lines
@@ -7597,15 +8355,27 @@ class _TacticalMapPainter extends CustomPainter {
     for (int i = 0; i < 6; i++) {
       final cp = Path()
         ..moveTo(0, h * (0.15 + i * 0.08))
-        ..cubicTo(w * 0.22, h * (0.12 + i * 0.07), w * 0.48,
-            h * (0.28 + i * 0.08), w, h * (0.18 + i * 0.09));
+        ..cubicTo(
+          w * 0.22,
+          h * (0.12 + i * 0.07),
+          w * 0.48,
+          h * (0.28 + i * 0.08),
+          w,
+          h * (0.18 + i * 0.09),
+        );
       canvas.drawPath(cp, contourPaint);
     }
     for (int i = 0; i < 5; i++) {
       final cp = Path()
         ..moveTo(0, h * (0.65 + i * 0.08))
-        ..cubicTo(w * 0.30, h * (0.68 + i * 0.07), w * 0.65,
-            h * (0.78 + i * 0.06), w, h * (0.72 + i * 0.08));
+        ..cubicTo(
+          w * 0.30,
+          h * (0.68 + i * 0.07),
+          w * 0.65,
+          h * (0.78 + i * 0.06),
+          w,
+          h * (0.72 + i * 0.08),
+        );
       canvas.drawPath(cp, contourPaint);
     }
   }
@@ -7621,7 +8391,10 @@ class _TacticalMapPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawOval(
       Rect.fromCenter(
-          center: Offset(w * 0.3, h * 0.3), width: w * 0.7, height: h * 0.4),
+        center: Offset(w * 0.3, h * 0.3),
+        width: w * 0.7,
+        height: h * 0.4,
+      ),
       forestPaint,
     );
   }
@@ -7716,9 +8489,15 @@ class _TacticalMapPainter extends CustomPainter {
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawLine(
-        Offset(w * 0.34, h * 0.42), Offset(w * 0.44, h * 0.42), wavePaint);
+      Offset(w * 0.34, h * 0.42),
+      Offset(w * 0.44, h * 0.42),
+      wavePaint,
+    );
     canvas.drawLine(
-        Offset(w * 0.38, h * 0.46), Offset(w * 0.48, h * 0.46), wavePaint);
+      Offset(w * 0.38, h * 0.46),
+      Offset(w * 0.48, h * 0.46),
+      wavePaint,
+    );
   }
 
   // ── Road Network ──────────────────────────────────────────────────────────
@@ -7826,11 +8605,19 @@ class _TacticalMapPainter extends CustomPainter {
   void _drawSOSMarkers(Canvas canvas, double w, double h) {
     // 1. Red SOS Teardrop Pin in center of flooded zone
     _drawTeardropPin(
-        canvas, Offset(w * 0.39, h * 0.48), const Color(0xFFDC2626), 'SOS');
+      canvas,
+      Offset(w * 0.39, h * 0.48),
+      const Color(0xFFDC2626),
+      'SOS',
+    );
 
     // 2. Red SOS Teardrop Pin at west riverbank
     _drawTeardropPin(
-        canvas, Offset(w * 0.20, h * 0.54), const Color(0xFFDC2626), 'SOS');
+      canvas,
+      Offset(w * 0.20, h * 0.54),
+      const Color(0xFFDC2626),
+      'SOS',
+    );
   }
 
   // ── Teardrop Pin Shape (Exact Match to Screenshot 1) ──────────────────────
@@ -7839,8 +8626,11 @@ class _TacticalMapPainter extends CustomPainter {
     const radius = 11.0;
 
     final path = Path();
-    path.addArc(Rect.fromCircle(center: center, radius: radius), math.pi * 0.22,
-        math.pi * 1.56);
+    path.addArc(
+      Rect.fromCircle(center: center, radius: radius),
+      math.pi * 0.22,
+      math.pi * 1.56,
+    );
     path.lineTo(tip.dx, tip.dy);
     path.close();
 
@@ -7876,8 +8666,13 @@ class _TacticalMapPainter extends CustomPainter {
   }
 
   // ── Circular Icon Marker ───────────────────────────────────────────────────
-  void _drawCircleIconMarker(Canvas canvas, Offset center, Color color,
-      IconData icon, double radius) {
+  void _drawCircleIconMarker(
+    Canvas canvas,
+    Offset center,
+    Color color,
+    IconData icon,
+    double radius,
+  ) {
     // Drop shadow
     canvas.drawCircle(
       center + const Offset(0, 2),
@@ -7922,8 +8717,9 @@ class _TacticalMapPainter extends CustomPainter {
       center,
       12 + (radarPhase * 16),
       Paint()
-        ..color = const Color(0xFF0066D6)
-            .withValues(alpha: (1.0 - radarPhase) * 0.45)
+        ..color = const Color(
+          0xFF0066D6,
+        ).withValues(alpha: (1.0 - radarPhase) * 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0,
     );
@@ -7936,18 +8732,10 @@ class _TacticalMapPainter extends CustomPainter {
     );
 
     // Crisp white ring
-    canvas.drawCircle(
-      center,
-      9,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(center, 9, Paint()..color = Colors.white);
 
     // Solid blue center dot
-    canvas.drawCircle(
-      center,
-      6.5,
-      Paint()..color = const Color(0xFF0066D6),
-    );
+    canvas.drawCircle(center, 6.5, Paint()..color = const Color(0xFF0066D6));
   }
 
   // ── Town Label ─────────────────────────────────────────────────────────────
@@ -8098,8 +8886,10 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: _isNavigating
                         ? const Color(0xFF087BE7)
@@ -8143,8 +8933,11 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded,
-                      color: Colors.white54, size: 22),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white54,
+                    size: 22,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -8157,8 +8950,7 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(10),
@@ -8167,15 +8959,22 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
               child: Row(
                 children: [
                   _routeInfoChip(
-                      Icons.location_on_rounded,
-                      widget.mission.village,
-                      Colors.redAccent),
+                    Icons.location_on_rounded,
+                    widget.mission.village,
+                    Colors.redAccent,
+                  ),
                   const SizedBox(width: 12),
                   _routeInfoChip(
-                      Icons.straighten_rounded, dist, Colors.amberAccent),
+                    Icons.straighten_rounded,
+                    dist,
+                    Colors.amberAccent,
+                  ),
                   const SizedBox(width: 12),
                   _routeInfoChip(
-                      Icons.access_time_rounded, 'ETA $eta', Colors.greenAccent),
+                    Icons.access_time_rounded,
+                    'ETA $eta',
+                    Colors.greenAccent,
+                  ),
                 ],
               ),
             ),
@@ -8185,8 +8984,9 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
           // ── Map ───────────────────────────────────────────────────────────
           Expanded(
             child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
               child: Stack(
                 children: [
                   FlutterMap(
@@ -8195,7 +8995,9 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                       initialCenter: LatLng(midLat, midLng),
                       initialZoom: 13.5,
                       interactionOptions: const InteractionOptions(
-                        flags: InteractiveFlag.all & ~InteractiveFlag.scrollWheelZoom,
+                        flags:
+                            InteractiveFlag.all &
+                            ~InteractiveFlag.scrollWheelZoom,
                       ),
                     ),
                     children: [
@@ -8212,12 +9014,12 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                               widget.myLocation,
                               LatLng(
                                 (widget.myLocation.latitude +
-                                        widget.destination.latitude) /
-                                    2 +
+                                            widget.destination.latitude) /
+                                        2 +
                                     0.005,
                                 (widget.myLocation.longitude +
-                                        widget.destination.longitude) /
-                                    2 -
+                                            widget.destination.longitude) /
+                                        2 -
                                     0.003,
                               ),
                               widget.destination,
@@ -8244,17 +9046,23 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                                 color: const Color(0xFF087BE7),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: Colors.white, width: 2.5),
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF087BE7)
-                                        .withValues(alpha: 0.5),
+                                    color: const Color(
+                                      0xFF087BE7,
+                                    ).withValues(alpha: 0.5),
                                     blurRadius: 10,
-                                  )
+                                  ),
                                 ],
                               ),
-                              child: const Icon(Icons.my_location_rounded,
-                                  color: Colors.white, size: 22),
+                              child: const Icon(
+                                Icons.my_location_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
                             ),
                           ),
                           // Destination
@@ -8271,17 +9079,23 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                                     color: Colors.red.shade600,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white, width: 2.5),
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.red
-                                            .withValues(alpha: 0.5),
+                                        color: Colors.red.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         blurRadius: 12,
-                                      )
+                                      ),
                                     ],
                                   ),
-                                  child: const Icon(Icons.place_rounded,
-                                      color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.place_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                                 Container(
                                   width: 2,
@@ -8303,17 +9117,23 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                     right: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0B2341).withValues(alpha: 0.88),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: const Color(0xFF16A34A).withValues(alpha: 0.6)),
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.6),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.shield_rounded,
-                              color: Color(0xFF16A34A), size: 16),
+                          const Icon(
+                            Icons.shield_rounded,
+                            color: Color(0xFF16A34A),
+                            size: 16,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -8347,13 +9167,18 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                       foregroundColor: Colors.white70,
                       side: const BorderSide(color: Colors.white24),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Close',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700)),
+                    label: const Text(
+                      'Close',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -8369,7 +9194,8 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                           : const Color(0xFF087BE7),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     icon: Icon(
@@ -8381,7 +9207,9 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
                     label: Text(
                       _isNavigating ? 'Stop Navigation' : 'Start Navigation',
                       style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w900),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -8415,4 +9243,3 @@ class _RouteMapSheetState extends State<_RouteMapSheet>
     );
   }
 }
-
