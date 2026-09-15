@@ -32,7 +32,7 @@ class FloodApiService {
             uri,
             headers: {
               'Accept': 'application/json',
-              'User-Agent': 'ResQshield-JalGuard/1.0',
+              'User-Agent': 'ResQshield-ResQShield/1.0',
             },
           )
           .timeout(ApiConstants.connectTimeout);

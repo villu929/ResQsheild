@@ -1,10 +1,10 @@
-/// JalGuard Backend API configuration constants.
+/// ResQShield Backend API configuration constants.
 /// Base URL is configurable via `--dart-define=API_BASE_URL=...`
 /// Defaults to the deployed production backend.
 class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://jalguard-flood-api-production.up.railway.app',
+    defaultValue: 'https://resqshield-flood-api-production.up.railway.app',
   );
 
   // Core endpoints
