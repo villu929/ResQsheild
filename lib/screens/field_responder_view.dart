@@ -268,6 +268,19 @@ class _FieldResponderViewState extends State<FieldResponderView>
     });
 
     _sosList = [
+      ...IncidentCoordinator.instance.sosRequests.map((sos) => _SOSAlert(
+            id: sos.id,
+            callerName: sos.callerName,
+            location: sos.village,
+            distance: '1.2 km', // Estimated distance
+            emergencyType: sos.emergencyType,
+            peopleCount: sos.peopleCount,
+            hasElderly: sos.elderlyCount > 0,
+            hasChildren: sos.childrenCount > 0,
+            hasMedical: sos.hasMedical,
+            receivedTime: sos.timeAgoFormatted,
+            priority: 'CRITICAL',
+          )),
       _SOSAlert(
         id: 'SOS-912',
         callerName: 'Sunita Sangma',
@@ -580,9 +593,29 @@ class _FieldResponderViewState extends State<FieldResponderView>
     } else if (event.type == LiveEventType.evacOrderIssued) {
       final op = event.payload as EvacuationOperation;
 
-
       // The _showIncomingEvacAlert just shows the alert using the EvacuationOperation op
       _showIncomingEvacAlert(op);
+    } else if (event.type == LiveEventType.newSos) {
+      final sos = event.payload as SOSRequest;
+      setState(() {
+        _sosList.insert(
+          0,
+          _SOSAlert(
+            id: sos.id,
+            callerName: sos.callerName,
+            location: sos.village,
+            distance: '1.2 km', // Estimated distance
+            emergencyType: sos.emergencyType,
+            peopleCount: sos.peopleCount,
+            hasElderly: sos.elderlyCount > 0,
+            hasChildren: sos.childrenCount > 0,
+            hasMedical: sos.hasMedical,
+            receivedTime: 'Just now',
+            priority: 'CRITICAL',
+          ),
+        );
+      });
+      _showNewSosAlert(sos);
     } else if (event.type == LiveEventType.shelterUpdated) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -624,6 +657,75 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
       );
     }
+  }
+
+  void _showNewSosAlert(SOSRequest sos) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFEF4444), width: 1.8),
+        ),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.sos_rounded,
+              color: Color(0xFFEF4444),
+              size: 26,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '🚨 NEW SOS TRIGGERED ${sos.id}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Emergency Type: ${sos.emergencyType}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Caller: ${sos.callerName}',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+            Text(
+              'Location: ${sos.village}',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+            Text(
+              'Trapped: ${sos.peopleCount} people',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Dismiss',
+              style: TextStyle(color: Color(0xFF94A3B8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showIncomingMissionAlert(MissionAssignment mission) {

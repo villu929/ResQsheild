@@ -3223,7 +3223,7 @@ class _HomeScreenState extends State<HomeScreen>
   // ==========================================================================
   // ACTIVE CITIZEN SOS TRIAGE (Section 12)
   // ==========================================================================
-  Widget _buildSosManagementSection() {
+  Widget _buildSosManagementSection({bool isDashboard = false}) {
     final allActive = IncidentCoordinator.instance.sosRequests.where((s) => s.status != IncidentStatus.closed).toList();
     final criticalCount = allActive.where((s) => s.hasMedical).length;
 
@@ -3551,7 +3551,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         )
                       else
-                        ...filteredList.map((sos) => _buildSosTableRow(sos)),
+                        ...(isDashboard ? filteredList.take(4) : filteredList).map((sos) => _buildSosTableRow(sos)),
                     ],
                   ),
                 ),
@@ -3561,35 +3561,36 @@ class _HomeScreenState extends State<HomeScreen>
 
           const SizedBox(height: 10),
           // Bottom View All link
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _activeNavIndex = 2; // Jump to dedicated SOS tab
-                });
-              },
-              borderRadius: BorderRadius.circular(6),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'View All Incidents',
-                      style: TextStyle(
-                        color: Color(0xFF0284C7),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+          if (isDashboard)
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _activeNavIndex = 10; // Jump to dedicated SOS tab
+                  });
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View All Incidents',
+                        style: TextStyle(
+                          color: Color(0xFF0284C7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, size: 15, color: Color(0xFF0284C7)),
-                  ],
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded, size: 15, color: Color(0xFF0284C7)),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -3788,7 +3789,11 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  isUnassigned ? 'Unassigned' : sos.assignedTeamName ?? '',
+                  isUnassigned 
+                      ? 'Unassigned' 
+                      : (sos.status.index >= IncidentStatus.responderAccepted.index 
+                          ? 'Accepted by ${sos.assignedTeamName ?? ''}' 
+                          : sos.assignedTeamName ?? ''),
                   style: TextStyle(
                     color: isUnassigned ? const Color(0xFF475569) : const Color(0xFFD97706),
                     fontSize: 11,
@@ -6012,7 +6017,7 @@ class _HomeScreenState extends State<HomeScreen>
         return SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: _buildSosManagementSection(),
+            child: _buildSosManagementSection(isDashboard: false),
           ),
         );
       case 1:
@@ -6023,7 +6028,7 @@ class _HomeScreenState extends State<HomeScreen>
         return SingleChildScrollView(
           child: Column(
             children: [
-              _buildSosManagementSection(),
+              _buildSosManagementSection(isDashboard: false),
               _buildRescueTeamsSection(),
               _buildIncidentTimelineSection(),
             ],
@@ -6073,7 +6078,7 @@ class _HomeScreenState extends State<HomeScreen>
               _buildRescueTeamsSection(),
               _buildAiRiskAndPrioritySection(),
               _buildPopulationAtRiskSection(),
-              _buildSosManagementSection(),
+              _buildSosManagementSection(isDashboard: true),
               _buildEvacuationSection(),
               _buildShelterAndReliefSection(),
               _buildSitrepAndAuditSection(),
