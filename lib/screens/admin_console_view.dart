@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import '../widgets/admin/authority_brief_sheet.dart';
+import '../widgets/admin/data_sources_status_card.dart';
+import '../widgets/admin/data_quality_dashboard.dart';
+import '../widgets/admin/simulator_panel.dart';
+import '../widgets/admin/threshold_config_card.dart';
+import '../widgets/admin/model_registry_card.dart';
+import '../widgets/admin/gis_layer_manager.dart';
+import '../widgets/admin/users_roles_view.dart';
 
 class AdminConsoleView extends StatefulWidget {
   const AdminConsoleView({super.key});
@@ -236,6 +244,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
           _buildSensorHardwareTab(),
           _buildSatelliteAndAiTab(),
           _buildAlertsAndLogsTab(),
+          const UsersRolesView(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigation(),
@@ -261,7 +270,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
           Row(
             children: [
               const Text(
-                'JALGUARD SYSADMIN',
+                'ResQShield Admin Console',
                 style: TextStyle(
                   color: Color(0xFF0F172A),
                   fontSize: 15,
@@ -277,7 +286,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
-                  'ROOT CONSOLE',
+                  'Admin Console',
                   style: TextStyle(
                     color: Color(0xFF7351D8),
                     fontSize: 9.5,
@@ -434,7 +443,8 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
           ),
         ),
         const SizedBox(height: 16),
-
+        const DataSourcesStatusCard(),
+        const DataQualityDashboard(),
         // 2. Critical System Alerts Box
         Row(
           children: const [
@@ -528,6 +538,8 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        const SimulatorPanel(),
       ],
     );
   }
@@ -656,6 +668,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(14),
       children: [
+        const ThresholdConfigCard(),
         // Sensor Network Counts Header
         Container(
           padding: const EdgeInsets.all(14),
@@ -991,6 +1004,82 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(14),
       children: [
+        // Authority Brief CTA
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: () {
+                showGeneralDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  barrierLabel: 'Dismiss',
+                  barrierColor: Colors.black54,
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation1, animation2) {
+                    return const Align(
+                      alignment: Alignment.centerRight,
+                      child: Material(
+                        elevation: 16,
+                        child: AuthorityBriefSheet(),
+                      ),
+                    );
+                  },
+                  transitionBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                      child: child,
+                    );
+                  },
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.5), width: 2),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x0A6366F1), blurRadius: 10, offset: Offset(0, 4)),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.assignment_turned_in, color: Color(0xFF6366F1), size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Prepare Authority Brief', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                          SizedBox(height: 4),
+                          Text('Package verified satellite intelligence for Authority review.', style: TextStyle(color: Color(0xFF475569))),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF6366F1), size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const ModelRegistryCard(),
+        const GisLayerManager(),
+
         // 1. Satellite Ingest Telemetry Card
         Container(
           padding: const EdgeInsets.all(16),
@@ -1147,7 +1236,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
                           ),
                         ),
                         Text(
-                          'JalGuard-Flood-v2.1',
+                          'ResQShield Flood Engine v2.1',
                           style: TextStyle(
                             color: Color(0xFF0F172A),
                             fontSize: 15.5,
@@ -1447,6 +1536,7 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
             _buildNavTab(1, Icons.sensors_rounded, 'Sensors (248)'),
             _buildNavTab(2, Icons.satellite_alt_rounded, 'Satellite & AI'),
             _buildNavTab(3, Icons.list_alt_rounded, 'Alerts & Logs'),
+            _buildNavTab(4, Icons.people, 'Users & Roles'),
           ],
         ),
       ),
