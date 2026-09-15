@@ -17,11 +17,20 @@ class ApiConstants {
   static const String layers = '/api/layers';
 
   // Tile URL template for WMS raster flood inundation
+  // NOTE: The Railway backend currently returns `text/xml` (WMS GetCapabilities
+  // or error XML) instead of PNG tiles, causing ImageCodecException in Flutter.
+  // Set [floodTilesAvailable] to true only when the backend serves valid
+  // image/png tiles at this endpoint.
   static String floodTileUrl(int z, int x, int y) =>
       '$baseUrl/api/tiles/gfm/$z/$x/$y.png';
 
   static String floodTileTemplate =
       '$baseUrl/api/tiles/gfm/{z}/{x}/{y}.png';
+
+  /// Set to true when the flood tile endpoint returns valid PNG tiles.
+  /// Currently false because the server returns text/xml (WMS error XML),
+  /// which causes [ImageCodecException] in flutter_map's TileLayer.
+  static const bool floodTilesAvailable = false;
 
   // Network timeout configurations
   static const Duration connectTimeout = Duration(seconds: 12);

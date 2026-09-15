@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home_screen.dart';
+import '../widgets/animated_otp_card.dart';
 
 class AuthorityVerificationScreen extends StatefulWidget {
   const AuthorityVerificationScreen({super.key});
@@ -228,7 +229,7 @@ class _AuthorityVerificationScreenState
                   final simulated =
                       '${title.toLowerCase().replaceAll(' ', '_')}_camera.jpg';
                   onSelected(simulated);
-                  _showSnack('$title captured via camera ✓');
+                  _showSnack('$title captured via camera âœ“');
                 },
                 leading: Container(
                   width: 44,
@@ -267,7 +268,7 @@ class _AuthorityVerificationScreenState
                   final simulated =
                       '${title.toLowerCase().replaceAll(' ', '_')}_gallery.jpg';
                   onSelected(simulated);
-                  _showSnack('$title selected from gallery ✓');
+                  _showSnack('$title selected from gallery âœ“');
                 },
                 leading: Container(
                   width: 44,
@@ -340,17 +341,31 @@ class _AuthorityVerificationScreenState
     setState(() => _isFormSubmitting = true);
     await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
-    setState(() {
-      _isFormSubmitting = false;
-      _currentStep = 1;
-    });
-    _startTimer();
+    setState(() => _isFormSubmitting = false);
     _showSnack('Verification OTP sent to Official Government ID phone number');
-    Future.delayed(const Duration(milliseconds: 250), () {
-      if (mounted && _otpFocusNodes[0].canRequestFocus) {
-        _otpFocusNodes[0].requestFocus();
-      }
-    });
+    // Push AnimatedOtpCard as a full-screen route (it is its own Scaffold)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnimatedOtpCard(
+          phoneNumber: _phoneController.text.trim().isNotEmpty
+              ? _phoneController.text
+              : '+91 98765 43210',
+          verifyButtonText: 'Access Command Center',
+          successText: 'Access Granted \u2713',
+          roleLabel: 'Authority Officer',
+          accentColor: const Color(0xFF5B21B6),
+          headerIcon: Icons.admin_panel_settings_rounded,
+          onVerifySuccess: (otp) async {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -447,11 +462,8 @@ class _AuthorityVerificationScreenState
                               transitionBuilder: (child, animation) =>
                                   FadeTransition(
                                       opacity: animation, child: child),
-                              child: _currentStep == 0
-                                  ? _buildAuthorizationForm(
-                                      scaleW, scaleH, scaleMin, textScale)
-                                  : _buildAadhaarOtpSection(
-                                      scaleW, scaleH, scaleMin, textScale),
+                              child: _buildAuthorizationForm(
+                                  scaleW, scaleH, scaleMin, textScale),
                             ),
                           ),
                         ),
@@ -488,11 +500,7 @@ class _AuthorityVerificationScreenState
           // Back Button
           GestureDetector(
             onTap: () {
-              if (_currentStep == 1) {
-                setState(() => _currentStep = 0);
-              } else {
-                Navigator.pop(context);
-              }
+              Navigator.pop(context);
             },
             child: Container(
               width: (38.0 * scaleMin).clamp(32.0, 44.0),
@@ -533,7 +541,7 @@ class _AuthorityVerificationScreenState
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'GOVT OF INDIA • DISASTER AUTHORITY',
+                        'GOVT OF INDIA â€¢ DISASTER AUTHORITY',
                         style: TextStyle(
                           color: const Color(0xFF013973),
                           fontSize: (11.0 * textScale).clamp(10.0, 14.0),
@@ -809,150 +817,20 @@ class _AuthorityVerificationScreenState
     double scaleMin,
     double textScale,
   ) {
-    final phoneRaw = _phoneController.text.replaceAll(' ', '');
-    final last4 = phoneRaw.length >= 4
-        ? phoneRaw.substring(phoneRaw.length - 4)
-        : '3210';
-
-    return Container(
-      key: const ValueKey('otp_section'),
-      margin: EdgeInsets.only(top: (24.0 * scaleH).clamp(16.0, 32.0)),
-      padding: EdgeInsets.symmetric(
-        horizontal: (20.0 * scaleW).clamp(16.0, 26.0),
-        vertical: (24.0 * scaleH).clamp(18.0, 30.0),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
-        borderRadius:
-            BorderRadius.circular((20.0 * scaleMin).clamp(16.0, 24.0)),
-        border: Border.all(color: const Color(0xFFE0EEF8), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14013973),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Official Verification Shield Icon
-          Container(
-            width: (60.0 * scaleMin).clamp(50.0, 72.0),
-            height: (60.0 * scaleMin).clamp(50.0, 72.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFF013973).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF013973), width: 1.5),
-            ),
-            child: Icon(
-              Icons.verified_user_rounded,
-              size: (30.0 * scaleMin).clamp(24.0, 36.0),
-              color: const Color(0xFF013973),
-            ),
-          ),
-
-          SizedBox(height: (14.0 * scaleH).clamp(10.0, 18.0)),
-
-          Text(
-            'Official ID Phone Verification',
-            style: TextStyle(
-              color: const Color(0xFF013973),
-              fontSize: (21.5 * textScale).clamp(18.0, 26.0),
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'One-Time Password has been sent to the mobile number registered as per Official Government ID (+91 ••••• •$last4).',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: const Color(0xFF537392),
-              fontSize: (14.0 * textScale).clamp(12.5, 16.0),
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
-          ),
-
-          SizedBox(height: (20.0 * scaleH).clamp(16.0, 26.0)),
-
-          // 6 OTP Digit Boxes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_otpLength, (index) {
-              return _buildOtpDigitBox(index, scaleMin, textScale);
-            }),
-          ),
-
-          SizedBox(height: (18.0 * scaleH).clamp(14.0, 22.0)),
-
-          // Resend Timer Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _secondsRemaining > 0
-                    ? 'Resend OTP in '
-                    : "Didn't receive code? ",
-                style: TextStyle(
-                  color: const Color(0xFF64748B),
-                  fontSize: (12.0 * textScale).clamp(10.5, 13.5),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (_secondsRemaining > 0)
-                Text(
-                  '00:${_secondsRemaining.toString().padLeft(2, '0')}',
-                  style: TextStyle(
-                    color: const Color(0xFF013973),
-                    fontSize: (12.5 * textScale).clamp(11.0, 14.0),
-                    fontWeight: FontWeight.w800,
-                  ),
-                )
-              else
-                GestureDetector(
-                  onTap: () {
-                    for (final c in _otpControllers) {
-                      c.clear();
-                    }
-                    _startTimer();
-                    _showSnack('New OTP sent to registered official mobile number');
-                  },
-                  child: Text(
-                    'Resend Now',
-                    style: TextStyle(
-                      color: const Color(0xFF007AEB),
-                      fontSize: (12.5 * textScale).clamp(11.0, 14.0),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          SizedBox(height: (22.0 * scaleH).clamp(16.0, 28.0)),
-
-          // Verify Button
-          _buildVerifyButton(scaleW, scaleH, scaleMin, textScale),
-
-          SizedBox(height: (12.0 * scaleH).clamp(8.0, 16.0)),
-
-          // Change details button
-          TextButton(
-            onPressed: () => setState(() => _currentStep = 0),
-            child: Text(
-              'Edit Authorization Details',
-              style: TextStyle(
-                color: const Color(0xFF537392),
-                fontSize: (12.0 * textScale).clamp(10.5, 13.5),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AnimatedOtpCard(
+      phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text : '+91 98765 43210',
+      verifyButtonText: 'Access Command Center',
+      successText: 'Access Granted ✓',
+      roleLabel: 'Authority Officer',
+      accentColor: const Color(0xFF5B21B6),
+      headerIcon: Icons.admin_panel_settings_rounded,
+      onVerifySuccess: (otp) async {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      },
     );
   }
 
@@ -1452,7 +1330,7 @@ class _AuthorityVerificationScreenState
                           size: 20, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        'Verified - Access Granted ✓',
+                        'Verified - Access Granted âœ“',
                         style:
                             TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                       ),
@@ -1497,4 +1375,3 @@ class _AuthorityVerificationScreenState
     );
   }
 }
-

@@ -227,15 +227,53 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 ),
                 const SizedBox(height: 16),
 
-                // 3. KEY SATELLITE FINDING
+                // 3. KEY SATELLITE FINDINGS
                 _buildSectionCard(
-                  title: 'KEY SATELLITE FINDING',
+                  title: 'KEY SATELLITE FINDINGS (PAN-INDIA)',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Pan-India AI & Satellite Data
+                      _buildRiskContainer(
+                        title: 'High Flood Risk Areas',
+                        icon: Icons.water_drop_rounded,
+                        color: const Color(0xFF0284C7),
+                        items: [
+                          {'location': 'Patna, Bihar', 'score': 'Score: 94/100', 'status': 'High Flood Risk - Rapid river level rise'},
+                          {'location': 'Guwahati, Assam', 'score': 'Score: 91/100', 'status': 'High Flood Risk - Brahmaputra overflowing'},
+                          {'location': 'Balasore, Odisha', 'score': 'Score: 88/100', 'status': 'Severe Flood Risk - Coastal inundation'},
+                        ],
+                      ),
+                      _buildRiskContainer(
+                        title: 'Active Landslide Zones',
+                        icon: Icons.terrain_rounded,
+                        color: const Color(0xFFB45309),
+                        items: [
+                          {'location': 'Mandi, Himachal Pradesh', 'score': 'Score: 95/100', 'status': 'High Landslide Risk - Soil saturation'},
+                          {'location': 'Wayanad, Kerala', 'score': 'Score: 92/100', 'status': 'Critical Landslide Risk - Steep slope failure'},
+                          {'location': 'Gangtok, Sikkim', 'score': 'Score: 89/100', 'status': 'High Landslide Risk - Highway blocked'},
+                        ],
+                      ),
+                      _buildRiskContainer(
+                        title: 'Extreme Rainfall Alerts',
+                        icon: Icons.thunderstorm_rounded,
+                        color: const Color(0xFFDC2626),
+                        items: [
+                          {'location': 'Cherrapunji, Meghalaya', 'score': 'Score: 98/100', 'status': 'Extreme Rainfall - Cloudburst patterns'},
+                          {'location': 'Udupi, Coastal Karnataka', 'score': 'Score: 93/100', 'status': 'Very Heavy Rainfall - Continuous downpour'},
+                          {'location': 'Mumbai, Maharashtra', 'score': 'Score: 90/100', 'status': 'Heavy Rainfall - Urban waterlogging'},
+                        ],
+                      ),
+                      
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: Color(0xFFE2E8F0)),
+                      ),
+                      
+                      // Local Data
                       const Text(
-                        'Significant water-spread expansion detected',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        'Local Region: Significant water-spread expansion detected',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -330,19 +368,34 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
 
                 // 6. POTENTIAL OPERATIONAL IMPACT
                 _buildSectionCard(
-                  title: 'POTENTIAL OPERATIONAL IMPACT',
+                  title: 'CRITICAL INFRASTRUCTURE DAMAGE (HIMACHAL, BIHAR, JHARKHAND)',
                   child: Column(
                     children: [
-                      _buildMetricRow('Villages requiring attention', '3 (Rampur, Keshav, Madhupur)'),
-                      _buildMetricRow('Estimated population exposed', '~4,200'),
-                      _buildMetricRow('Road segments affected', 'SH-44 (Partial)'),
-                      _buildMetricRow('Bridges requiring review', 'Bridge B2'),
-                      _buildMetricRow('Accessible shelters', '2 (800 capacity)'),
+                      _buildRiskContainer(
+                        title: 'Blocked Routes & Highways',
+                        icon: Icons.add_road_rounded,
+                        color: const Color(0xFFDC2626),
+                        items: [
+                          {'location': 'NH-3, Mandi (Himachal)', 'score': 'BLOCKED', 'status': 'Massive landslide debris on route.'},
+                          {'location': 'NH-31, Patna (Bihar)', 'score': 'SUBMERGED', 'status': '4ft flood water over highway.'},
+                          {'location': 'SH-24, Ranchi (Jharkhand)', 'score': 'COLLAPSED', 'status': 'Bridge washed away in flash flood.'},
+                        ],
+                      ),
+                      _buildRiskContainer(
+                        title: 'Hospitals & Schools Affected',
+                        icon: Icons.local_hospital_rounded,
+                        color: const Color(0xFFB45309),
+                        items: [
+                          {'location': 'Darbhanga Medical (Bihar)', 'score': 'EVACUATING', 'status': 'Ground floor completely flooded.'},
+                          {'location': 'Govt High School, Kullu', 'score': 'DAMAGED', 'status': 'Roof damaged by landslide boulders.'},
+                          {'location': 'Sadar Hospital, Deoghar', 'score': 'INACCESSIBLE', 'status': 'Surrounding area severely waterlogged.'},
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.visibility, size: 18),
-                        label: const Text('View affected assets'),
+                        label: const Text('View full infrastructure damage report'),
                         style: TextButton.styleFrom(foregroundColor: const Color(0xFF6366F1)),
                       ),
                     ],
@@ -504,6 +557,95 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
         children: [
           Expanded(flex: 2, child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500))),
           Expanded(flex: 3, child: Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRiskContainer({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Map<String, String>> items,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...items.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              item['location']!,
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                item['score']!,
+                                style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item['status']!,
+                          style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ],
       ),
     );

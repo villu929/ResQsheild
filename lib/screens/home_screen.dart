@@ -2627,7 +2627,7 @@ class _HomeScreenState extends State<HomeScreen>
                 onView: () {
                   _mapController.move(const LatLng(25.4512, 91.7589), 13.5);
                 },
-                onOrderEvac: () => _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94),
+                onOrderEvac: op == null ? () => _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94) : null,
               ),
 
               const SizedBox(height: 8),
@@ -2690,6 +2690,31 @@ class _HomeScreenState extends State<HomeScreen>
     String? actionLabel,
   }) {
     bool isEvacActive = activeOp != null;
+
+    String statusText = '';
+    Color statusColor = const Color(0xFF0284C7);
+    Color statusBgColor = const Color(0xFF0284C7).withValues(alpha: 0.1);
+
+    if (isEvacActive) {
+      final teamStr = activeOp.missions.length == 1 ? activeOp.missions.first.assignedTeam.toUpperCase() : 'MULTIPLE TEAMS';
+      if (activeOp.stepIndex == 0) {
+        statusText = 'ASSIGNED TO $teamStr';
+      } else if (activeOp.stepIndex == 1) {
+        statusText = 'ACKNOWLEDGED BY $teamStr';
+      } else if (activeOp.stepIndex == 2) {
+        statusText = 'EN ROUTE ($teamStr)';
+      } else if (activeOp.stepIndex == 3) {
+        statusText = 'REACHED SITE ($teamStr)';
+      } else if (activeOp.stepIndex == 4) {
+        statusText = 'EVACUATING: ${activeOp.evacuatedCount} / ${activeOp.targetPopulation}';
+        statusColor = const Color(0xFF9333EA);
+        statusBgColor = const Color(0xFF9333EA).withValues(alpha: 0.1);
+      } else {
+        statusText = 'COMPLETED: ${activeOp.evacuatedCount} EVACUATED';
+        statusColor = const Color(0xFF16A34A);
+        statusBgColor = const Color(0xFF16A34A).withValues(alpha: 0.1);
+      }
+    }
 
     final String scoreStr = priorityScore.split(' ')[0]; // e.g. '94'
     final double scoreVal = double.tryParse(scoreStr) ?? 0;
@@ -2919,18 +2944,25 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         icon: Icon(actionLabel != null ? Icons.assignment_rounded : Icons.security_rounded, size: 16),
                         label: Text('${actionLabel ?? 'Order Evac'} →', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                        onPressed: onOrderEvac,
+                        onPressed: actionLabel == 'Prepare' 
+                            ? () {
+                                IncidentCoordinator.instance.issuePrepareAlert(villageName);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Prepare Alert sent to Citizens in $villageName!')),
+                                );
+                              }
+                            : onOrderEvac,
                       )
                     else if (isEvacActive)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          color: statusBgColor,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'EVACUATION ACTIVE',
-                          style: TextStyle(color: Color(0xFF0284C7), fontSize: 11, fontWeight: FontWeight.w900),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w900),
                         ),
                       ),
                   ],

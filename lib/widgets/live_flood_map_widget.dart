@@ -253,10 +253,14 @@ class _LiveFloodMapWidgetState extends State<LiveFloodMapWidget>
                       ),
 
                       // Live Flood Inundation WMS-T Raster Layer from Railway backend
-                      if (_showInundationLayer)
+                      // Only shown when the backend actually serves valid PNG tiles.
+                      if (_showInundationLayer && ApiConstants.floodTilesAvailable)
                         TileLayer(
                           urlTemplate: ApiConstants.floodTileTemplate,
                           userAgentPackageName: 'com.resqshield.app',
+                          // Silently ignore individual tile errors (avoids ImageCodecException
+                          // crashing the app when the server returns XML instead of PNG).
+                          errorTileCallback: (tile, error, stackTrace) {},
                         ),
 
                       // Markers Layer

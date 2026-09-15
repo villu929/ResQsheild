@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import '../services/api_constants.dart';
@@ -168,6 +169,8 @@ class FieldResponderView extends StatefulWidget {
 
 class _FieldResponderViewState extends State<FieldResponderView>
     with TickerProviderStateMixin {
+  static final Set<String> _acknowledgedEvacs = {};
+
   // ── Navigation ─────────────────────────────────────────────────────────────
   int _tab = 0; // 0=Live Map, 1=Missions, 2=SOS Desk, 3=Assets, 4=Profile
 
@@ -262,8 +265,11 @@ class _FieldResponderViewState extends State<FieldResponderView>
       if (!mounted) return;
       final activeOps = IncidentCoordinator.instance.activeEvacuations;
       if (activeOps.isNotEmpty) {
-        // Show alert for the most recently issued evacuation order
-        _showIncomingEvacAlert(activeOps.last);
+        final lastOp = activeOps.last;
+        if (!_acknowledgedEvacs.contains(lastOp.id)) {
+          // Show alert for the most recently issued evacuation order
+          _showIncomingEvacAlert(lastOp);
+        }
       }
     });
 
@@ -832,79 +838,230 @@ class _FieldResponderViewState extends State<FieldResponderView>
   void _showIncomingEvacAlert(EvacuationOperation op) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF38BDF8), width: 1.8),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.campaign_rounded, color: _C.critical, size: 26),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '🚨 EVACUATION: ${op.id}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.6,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1B29),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF00A2FF), width: 1.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF901B1B), // Dark Red
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(14),
+                    topRight: Radius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.campaign_rounded, color: Colors.white, size: 36),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'EVACUATION ORDER',
+                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                          ),
+                          Text(
+                            'Ref: ${op.id}',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'URGENT',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '⚠️ Fatafat Pohncho! Is area ke logo ko turant evacuate karwana hai!',
-              style: TextStyle(
-                color: Color(0xFFF87171),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+              
+              // Body
+              Stack(
+                children: [
+                  // Watermark icon
+                  Positioned(
+                    right: 10,
+                    top: 40,
+                    child: Icon(
+                      Icons.flood_rounded, 
+                      size: 100, 
+                      color: Colors.white.withOpacity(0.03),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.warning_rounded, color: Color(0xFFEF4444), size: 40),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Immediate evacuation required',
+                                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Due to a high risk of flash flooding, residents in the identified area must evacuate to a safer location immediately.',
+                                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, height: 1.4),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.location_on_rounded, color: Color(0xFF64748B), size: 28),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Area', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                                        Text(op.areaName, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              height: 30,
+                              width: 1,
+                              color: const Color(0xFF334155),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.group_rounded, color: Color(0xFF64748B), size: 28),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Estimated Population', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                                        Text('${op.targetPopulation} people', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        Row(
+                          children: [
+                            const Icon(Icons.home_work_rounded, color: Color(0xFF64748B), size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Designated Shelter', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                                  Text(op.primaryShelter, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 28),
+                        
+                        Row(
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => Navigator.pop(ctx),
+                              icon: const Icon(Icons.visibility_rounded, color: Colors.white, size: 18),
+                              label: const Text('View on Map', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF334155), width: 1.5),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  _acknowledgedEvacs.add(op.id);
+                                  Navigator.pop(ctx);
+                                  setState(() {
+                                    _tab = 1; // Go to Missions tab
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0098EA),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Text('ACKNOWLEDGE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward_rounded, size: 18),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text('Issued by: District Disaster Management Authority', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                            Text('15 Sep 2026, 14:32', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Location: ${op.areaName}',
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Target Population: ${op.targetPopulation} people',
-              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Shelter: ${op.primaryShelter}',
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'View',
-              style: TextStyle(color: Color(0xFF94A3B8)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(
-              'ACKNOWLEDGE',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -2299,10 +2456,12 @@ class _FieldResponderViewState extends State<FieldResponderView>
         ),
 
         // 2. Live CEMS GFM Flood Inundation WMS-T Raster Layer from Railway API
-        if (showFlood)
+        // Guard: only load when backend serves valid PNG tiles (not XML errors).
+        if (showFlood && ApiConstants.floodTilesAvailable)
           TileLayer(
             urlTemplate: ApiConstants.floodTileTemplate,
             userAgentPackageName: 'com.resqshield.app',
+            errorTileCallback: (tile, error, stackTrace) {},
           ),
 
         // 3. Flood Inundation Danger Polygon (Mawphlang Riverbank)
@@ -3026,7 +3185,48 @@ class _FieldResponderViewState extends State<FieldResponderView>
     );
   }
 
-  // ── EVACUATION VIEW — Active Evacuation Operations ──────────────────────
+  static const List<String> _kEvacLifecycle = [
+    'Assigned',
+    'Acknowledged',
+    'En Route',
+    'Reached',
+    'Evacuating',
+    'Completed',
+  ];
+
+  Widget _buildEvacTextField(String label, int initialValue, ValueChanged<String> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        const SizedBox(height: 4),
+        TextFormField(
+          initialValue: initialValue == 0 ? '' : initialValue.toString(),
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: Color(0xFF9333EA)),
+            ),
+          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
   Widget _buildEvacuationMissionsView(List<EvacuationOperation> evacuations) {
     if (evacuations.isEmpty) {
       return _buildEmptyState(
@@ -3040,6 +3240,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
       itemCount: evacuations.length,
       itemBuilder: (context, i) {
         final op = evacuations[i];
+        final stepName = _kEvacLifecycle[op.stepIndex.clamp(0, 5)];
+        
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -3055,57 +3257,240 @@ class _FieldResponderViewState extends State<FieldResponderView>
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.security_rounded, color: Color(0xFF9333EA)),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      op.areaName,
-                      style: const TextStyle(
-                        fontSize: 15,
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.security_rounded, color: Color(0xFF9333EA)),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          op.areaName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Target: ${op.targetPopulation} people',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: op.stepIndex == 5 ? const Color(0xFFF0FDF4) : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: op.stepIndex == 5 ? const Color(0xFFBBF7D0) : const Color(0xFFBFDBFE)),
+                    ),
+                    child: Text(
+                      stepName.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: op.stepIndex == 5 ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Target Population: ${op.targetPopulation} people',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                ),
-                child: Text(
-                  op.status.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF16A34A),
+              const SizedBox(height: 16),
+              
+              // Lifecycle Tracker
+              Row(
+                children: List.generate(6, (index) {
+                  final isActive = index <= op.stepIndex;
+                  return Expanded(
+                    child: Container(
+                      height: 4,
+                      margin: EdgeInsets.only(right: index < 5 ? 4 : 0),
+                      decoration: BoxDecoration(
+                        color: isActive ? const Color(0xFF9333EA) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+
+              // Action Area based on step
+              if (op.stepIndex < 4) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        op.stepIndex++;
+                      });
+                      IncidentCoordinator.instance.updateEvacuationOperation();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9333EA),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'MARK AS ${_kEvacLifecycle[op.stepIndex + 1].toUpperCase()}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
-              ),
+              ] else if (op.stepIndex == 4) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Update Evacuated People Details',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildEvacTextField(
+                              'Total Evacuated',
+                              op.evacuatedCount,
+                              (val) {
+                                int newVal = int.tryParse(val) ?? 0;
+                                if (newVal > op.targetPopulation) newVal = op.targetPopulation;
+                                op.evacuatedCount = newVal;
+                                IncidentCoordinator.instance.updateEvacuationOperation();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildEvacTextField(
+                              'Female',
+                              op.evacuatedFemale,
+                              (val) {
+                                int newVal = int.tryParse(val) ?? 0;
+                                if (newVal > op.evacuatedCount) newVal = op.evacuatedCount;
+                                op.evacuatedFemale = newVal;
+                                IncidentCoordinator.instance.updateEvacuationOperation();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildEvacTextField(
+                              'Old People',
+                              op.evacuatedOld,
+                              (val) {
+                                int newVal = int.tryParse(val) ?? 0;
+                                if (newVal + op.evacuatedFemale + op.evacuatedChildren > op.evacuatedCount) {
+                                  newVal = op.evacuatedCount - op.evacuatedFemale - op.evacuatedChildren;
+                                }
+                                if (newVal < 0) newVal = 0;
+                                op.evacuatedOld = newVal;
+                                IncidentCoordinator.instance.updateEvacuationOperation();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildEvacTextField(
+                              'Children',
+                              op.evacuatedChildren,
+                              (val) {
+                                int newVal = int.tryParse(val) ?? 0;
+                                if (newVal + op.evacuatedFemale + op.evacuatedOld > op.evacuatedCount) {
+                                  newVal = op.evacuatedCount - op.evacuatedFemale - op.evacuatedOld;
+                                }
+                                if (newVal < 0) newVal = 0;
+                                op.evacuatedChildren = newVal;
+                                IncidentCoordinator.instance.updateEvacuationOperation();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              op.stepIndex = 5;
+                              op.status = 'completed';
+                            });
+                            IncidentCoordinator.instance.updateEvacuationOperation();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text(
+                            'MARK AS COMPLETED',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Completed State
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SUCCESSFULLY EVACUATED ${op.evacuatedCount} PEOPLE',
+                        style: const TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ]
             ],
           ),
         );

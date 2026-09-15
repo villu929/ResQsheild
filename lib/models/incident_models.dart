@@ -436,6 +436,7 @@ enum LiveEventType {
   missionCompleted,
   incidentClosed,
   evacOrderIssued,
+  prepareAlertIssued,
 }
 
 class LiveEvent {

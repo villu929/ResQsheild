@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'admin_console_view.dart';
+import '../widgets/animated_otp_card.dart';
 
 class TechnicalAdminVerificationScreen extends StatefulWidget {
   const TechnicalAdminVerificationScreen({super.key});
@@ -448,10 +449,6 @@ class _TechnicalAdminVerificationScreenState
     double textScale,
     double cardWidth,
   ) {
-    final email = _emailController.text.trim().isNotEmpty
-        ? _emailController.text.trim()
-        : 'arvind.subramaniam@cwc.gov.in';
-
     return Column(
       key: const ValueKey('admin_otp_view'),
       children: [
@@ -459,167 +456,37 @@ class _TechnicalAdminVerificationScreenState
           child: SizedBox(
             width: cardWidth,
             child: _buildCustomAppBar(
-              title: 'Admin MFA Verification',
-              subtitle: 'High-Privilege Security Clearance',
-              badgeText: 'MFA STEP 2/2',
-              badgeColor: const Color(0xFF7351D8),
+              title: 'Admin 2FA Verification',
+              subtitle: 'System Level Authentication',
+              badgeText: 'SECURITY STEP 2/2',
+              badgeColor: const Color(0xFF5B21B6),
               onBack: () => setState(() => _currentStep = 0),
               textScale: textScale,
             ),
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.symmetric(
-              horizontal: (18 * scaleW).clamp(14.0, 24.0),
-              vertical: (14 * scaleH).clamp(10.0, 22.0),
-            ),
-            child: Center(
-              child: SizedBox(
-                width: cardWidth,
-                child: Column(
-                  children: [
-                SizedBox(height: 12 * scaleH),
-                // Cyber Key Shield Icon
-                Container(
-                  width: 74,
-                  height: 74,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF7351D8).withValues(alpha: 0.22),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.security_rounded,
-                      color: Color(0xFF7351D8),
-                      size: 36,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'Enter 6-Digit Admin Passkey',
-                  style: TextStyle(
-                    color: const Color(0xFF0F172A),
-                    fontSize: (18 * textScale).clamp(16.0, 20.0),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'MFA one-time verification passkey sent to\n$email',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xFF537392),
-                    fontSize: (12.5 * textScale).clamp(11.0, 14.0),
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                  ),
-                ),
-                SizedBox(height: 24 * scaleH),
-
-                // 6-Digit OTP Boxes
-                _buildOtpBoxes(scaleW, textScale),
-                SizedBox(height: 20 * scaleH),
-
-                // Resend Timer Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      size: 16,
-                      color: _secondsRemaining > 0
-                          ? const Color(0xFF537392)
-                          : const Color(0xFF7351D8),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _secondsRemaining > 0
-                          ? 'Resend Passkey in ${_secondsRemaining}s'
-                          : 'Didn\'t receive code?',
-                      style: TextStyle(
-                        color: _secondsRemaining > 0
-                            ? const Color(0xFF537392)
-                            : const Color(0xFF0F172A),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (_secondsRemaining == 0) ...[
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          _startTimer();
-                          _showSnack('New Admin Passkey dispatched to $email');
-                        },
-                        child: const Text(
-                          'Resend Now',
-                          style: TextStyle(
-                            color: Color(0xFF7351D8),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                SizedBox(height: 28 * scaleH),
-
-                // Verify & Access Console Button
-                _buildSubmitButton(
-                  title: 'Verify & Access Admin Console',
-                  icon: Icons.login_rounded,
-                  isLoading: _isOtpVerifying,
-                  isSuccess: _isOtpSuccess,
-                  onTap: _handleVerifyOtp,
-                  accentColor: const Color(0xFF7351D8),
-                  textScale: textScale,
-                ),
-                const SizedBox(height: 18),
-
-                // Hardware Key MFA Note
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.vpn_lock_rounded,
-                      size: 13,
-                      color: Color(0xFF64748B),
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Multi-Factor Authenticated TLS 1.3 Audit Session',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          child: Center(
+            child: AnimatedOtpCard(
+              phoneNumber: '+91 98765 43210',
+              verifyButtonText: 'Access Admin Console',
+              successText: 'Admin Access Granted ✓',
+              roleLabel: 'Technical Admin',
+              accentColor: const Color(0xFF0F172A),
+              headerIcon: Icons.terminal_rounded,
+              onVerifySuccess: (otp) async {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminConsoleView()),
+                  (route) => false,
+                );
+              },
             ),
           ),
         ),
-      ),
-    ),
-  ],
-);
-}
+      ],
+    );
+  }
 
   // ==========================================================================
   // WIDGET HELPERS: APPBAR, INPUTS, DROPDOWN, OTP BOXES, BUTTON

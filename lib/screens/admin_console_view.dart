@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'role_selection_screen.dart';
 import '../widgets/admin/authority_brief_sheet.dart';
 import '../widgets/admin/data_sources_status_card.dart';
 import '../widgets/admin/data_quality_dashboard.dart';
@@ -258,11 +259,16 @@ class _AdminConsoleViewState extends State<AdminConsoleView> {
     return AppBar(
       elevation: 0.5,
       backgroundColor: Colors.white,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            color: Color(0xFF0F172A), size: 18),
-        onPressed: () => Navigator.pop(context),
-        tooltip: 'Exit to Role Selection',
+      leadingWidth: 150,
+      leading: TextButton.icon(
+        onPressed: () => Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+          (route) => false,
+        ),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 16),
+        label: const Text('Back to Roles', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 13)),
+        style: TextButton.styleFrom(padding: const EdgeInsets.only(left: 8)),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

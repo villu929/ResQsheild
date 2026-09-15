@@ -674,6 +674,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         if (op.areaName.toLowerCase().contains('mawphlang')) {
           _showEvacuationAlertModal(op);
         }
+      } else if (event.type == LiveEventType.prepareAlertIssued) {
+        final areaName = event.payload as String;
+        _showPrepareAlertModal(areaName);
       }
     });
 
@@ -689,6 +692,97 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     _eventSub?.cancel();
     _dosAutoSlideTimer?.cancel();
     super.dispose();
+  }
+
+  void _showPrepareAlertModal(String areaName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFFFBEB),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFF59E0B), width: 3),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFF59E0B),
+                    size: 76,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'BE PREPARED\n$areaName',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFB45309),
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'FLOOD / DISASTER IS COMING SOON',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Please pack essentials, secure your property, and be ready to evacuate if ordered.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFD97706),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showEvacuationAlertModal(EvacuationOperation op) {

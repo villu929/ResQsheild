@@ -138,6 +138,15 @@ class IncidentCoordinator extends ChangeNotifier {
     }
   }
 
+  void issuePrepareAlert(String areaName) {
+    broadcastEvent(LiveEvent(
+      type: LiveEventType.prepareAlertIssued,
+      title: 'PREPARE ALERT',
+      message: areaName,
+      payload: areaName,
+    ));
+  }
+
   void issueEvacuationOrder(EvacuationOperation op) {
     _activeEvacuations.add(op);
     _eventController.add(LiveEvent(
