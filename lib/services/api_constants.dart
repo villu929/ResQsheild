@@ -1,13 +1,22 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 /// JalGuard Backend API configuration constants.
 /// Base URL is configurable via `--dart-define=API_BASE_URL=...`
-/// Defaults to the deployed production backend.
+/// Defaults to the local deployed backend.
 class ApiConstants {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://jalguard-flood-api-production.up.railway.app',
-  );
+  static String get baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+
+    if (kIsWeb) return 'http://localhost:3000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    return 'http://localhost:3000';
+  }
 
   // Core endpoints
+  static const String shelters = '/api/shelters';
+  static const String medical = '/api/medical';
   static const String floodsLive = '/api/floods/live';
   static const String floodsSources = '/api/floods/sources';
   static const String floodsAlerts = '/api/floods/alerts';
