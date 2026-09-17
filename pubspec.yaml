@@ -68,6 +68,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/shelter_images/
     - assets/images/screen_bg_1.png
     - assets/images/screen_bg_2.png
     - assets/images/alert_flood_risk_card.png

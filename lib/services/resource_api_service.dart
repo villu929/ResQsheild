@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:resqshield/models/incident_models.dart';
 import 'package:resqshield/services/incident_coordinator.dart';
+import 'package:resqshield/services/shelter_api_service.dart';
 
 class ResourceApiService extends ChangeNotifier {
   static final ResourceApiService instance = ResourceApiService._();
+
+  bool _isLoadingFromApi = false;
+  bool get isLoadingFromApi => _isLoadingFromApi;
 
   ResourceApiService._() {
     _initData();
@@ -15,7 +19,32 @@ class ResourceApiService extends ChangeNotifier {
   List<ShelterOccupancy> get shelters => _shelters;
   List<MedicalCenterModel> get medicalCenters => _medicalCenters;
 
-  void _initData() {
+  Future<void> _initData() async {
+    // Load static mock data first so the UI has something to show immediately
+    _loadMockShelters();
+    _initMedicalCenters();
+    // Then attempt to replace with live API data
+    await loadSheltersFromApi();
+  }
+
+  /// Public method — call this to manually refresh shelter data from the API.
+  Future<void> loadSheltersFromApi() async {
+    _isLoadingFromApi = true;
+    notifyListeners();
+    try {
+      final apiShelters = await ShelterApiService.instance.fetchShelters();
+      if (apiShelters.isNotEmpty) {
+        _shelters.clear();
+        _shelters.addAll(apiShelters);
+        notifyListeners();
+      }
+    } finally {
+      _isLoadingFromApi = false;
+      notifyListeners();
+    }
+  }
+
+  void _loadMockShelters() {
     _shelters.addAll([
       ShelterOccupancy(
         id: 'SH-01',
@@ -258,7 +287,9 @@ class ResourceApiService extends ChangeNotifier {
         status: 'Available',
       ),
     ]);
+  }
 
+  void _initMedicalCenters() {
     _medicalCenters.addAll([
       MedicalCenterModel(
         id: 'M-01',

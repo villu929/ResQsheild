@@ -116,6 +116,23 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
         ),
         centerTitle: false,
         actions: [
+          // Refresh button — fetches latest data from backend API
+          IconButton(
+            icon: ResourceApiService.instance.isLoadingFromApi
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF007AEB),
+                    ),
+                  )
+                : const Icon(Icons.refresh_rounded, color: Color(0xFF007AEB), size: 22),
+            tooltip: widget.isHindi ? 'डेटा अपडेट करें' : 'Refresh from API',
+            onPressed: ResourceApiService.instance.isLoadingFromApi
+                ? null
+                : () => ResourceApiService.instance.loadSheltersFromApi(),
+          ),
           if (widget.isAuthority)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -143,6 +160,36 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
       body: SafeArea(
         child: Column(
           children: [
+            // API loading indicator strip
+            if (ResourceApiService.instance.isLoadingFromApi)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                color: const Color(0xFFE0F2FE),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF0284C7),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.isHindi
+                          ? 'लाइव डेटा लोड हो रहा है...'
+                          : 'Loading live shelter data from server...',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF0369A1),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // 1. Search Bar & Filter Action (Matching Image 1)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
@@ -384,7 +431,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+                                  errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
                                       child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
@@ -396,7 +443,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+                                  errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
                                       child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
