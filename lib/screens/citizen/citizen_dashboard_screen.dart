@@ -4346,11 +4346,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           Image.network(
                             shelter.photoUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFF0F172A),
-                              child: const Center(
-                                child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                              ),
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/images/rural_shelter_camp.jpg',
+                              fit: BoxFit.cover,
                             ),
                           ),
                           Container(
@@ -5998,11 +5996,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                           Image.network(
                             center.photoUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFF0F172A),
-                              child: const Center(
-                                child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
-                              ),
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/images/rural_health_clinic.jpg',
+                              fit: BoxFit.cover,
                             ),
                           ),
                           Container(

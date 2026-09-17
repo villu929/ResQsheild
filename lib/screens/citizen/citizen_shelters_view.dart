@@ -384,11 +384,9 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFF0F172A),
-                                    child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                                    ),
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    'assets/images/rural_shelter_camp.jpg',
+                                    fit: BoxFit.cover,
                                   ),
                                 )
                               : Image.asset(
@@ -396,11 +394,9 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFF0F172A),
-                                    child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                                    ),
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    'assets/images/rural_shelter_camp.jpg',
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                           DecoratedBox(

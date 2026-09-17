@@ -1,0 +1,927 @@
+[
+  {
+    "id": "SH-IN-001",
+    "name": "Guwahati SDRF Relief Camp",
+    "type": "Relief Camp",
+    "address": "Panbazar Area, Near DC Office",
+    "city": "Guwahati",
+    "district": "Kamrup Metro",
+    "state": "Assam",
+    "pincode": "781001",
+    "latitude": 26.1445,
+    "longitude": 91.7362,
+    "capacity": 600,
+    "occupied": 380,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1800 packs — SDRF kitchen + community kitchen",
+    "foodPacks": 1800,
+    "waterAvailable": true,
+    "waterDetails": "2500 bottles + PHED tankers",
+    "waterBottles": 2500,
+    "medicalAvailable": true,
+    "medicalDetails": "3 SDRF medical teams",
+    "medicalTeams": 3,
+    "contact": "+91 0361 2540100",
+    "inchargeName": "Commandant SDRF Assam",
+    "inchargeDesignation": "Camp Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2012-06-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Assam + ASDMA",
+    "nearestHospital": "GMCH Guwahati (2.0 km)",
+    "elevation_m": 55,
+    "accessRoad": "GS Road — flood-prone during Brahmaputra rise",
+    "historicalEvents": [
+      {
+        "date": "2024-06-20",
+        "event": "Brahmaputra Flood 2024",
+        "peopleServed": 560,
+        "durationDays": 18
+      },
+      {
+        "date": "2023-06-15",
+        "event": "Assam Annual Floods 2023",
+        "peopleServed": 480,
+        "durationDays": 20
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-002",
+    "name": "Patna NDRF Flood Relief Camp",
+    "type": "Relief Camp",
+    "address": "Gandhi Maidan Area",
+    "city": "Patna",
+    "district": "Patna",
+    "state": "Bihar",
+    "pincode": "800001",
+    "latitude": 25.6093,
+    "longitude": 85.1376,
+    "capacity": 800,
+    "occupied": 500,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "2500 packs — NDRF + Bihar Govt community kitchen",
+    "foodPacks": 2500,
+    "waterAvailable": true,
+    "waterDetails": "3500 bottles + PHED tanker fleet",
+    "waterBottles": 3500,
+    "medicalAvailable": true,
+    "medicalDetails": "4 NDRF medical teams + PMCH outreach",
+    "medicalTeams": 4,
+    "contact": "+91 0612 2215100",
+    "inchargeName": "Commandant NDRF 9th Bn",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2008-08-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF 9th Battalion + BSDMA",
+    "nearestHospital": "PMCH Patna (1.5 km)",
+    "elevation_m": 53,
+    "accessRoad": "Bailey Road — flood-prone during Ganga rise",
+    "historicalEvents": [
+      {
+        "date": "2024-08-15",
+        "event": "Ganga Flood 2024",
+        "peopleServed": 750,
+        "durationDays": 22
+      },
+      {
+        "date": "2023-08-10",
+        "event": "Bihar Floods 2023",
+        "peopleServed": 680,
+        "durationDays": 18
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-003",
+    "name": "Ernakulam Flood Relief Centre",
+    "type": "Community Hall",
+    "address": "Town Hall, MG Road, Ernakulam",
+    "city": "Kochi",
+    "district": "Ernakulam",
+    "state": "Kerala",
+    "pincode": "682011",
+    "latitude": 9.9312,
+    "longitude": 76.2673,
+    "capacity": 500,
+    "occupied": 280,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1500 packs — community kitchen + temple annadhanam",
+    "foodPacks": 1500,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles + KWA supply",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — General Hospital Ernakulam",
+    "medicalTeams": 2,
+    "contact": "+91 0484 2361100",
+    "inchargeName": "District Collector Ernakulam",
+    "inchargeDesignation": "Camp Supervisor",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-08-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "KSDMA + District Administration",
+    "nearestHospital": "General Hospital Ernakulam (1.0 km)",
+    "elevation_m": 5,
+    "accessRoad": "MG Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-30",
+        "event": "Kerala Monsoon Floods 2024",
+        "peopleServed": 450,
+        "durationDays": 12
+      },
+      {
+        "date": "2018-08-08",
+        "event": "Kerala Great Flood 2018",
+        "peopleServed": 500,
+        "durationDays": 25
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-004",
+    "name": "Dehradun NDRF Forward Base",
+    "type": "Relief Camp",
+    "address": "Survey Chowk, Near ISBT",
+    "city": "Dehradun",
+    "district": "Dehradun",
+    "state": "Uttarakhand",
+    "pincode": "248001",
+    "latitude": 30.3165,
+    "longitude": 78.0322,
+    "capacity": 450,
+    "occupied": 200,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs — NDRF rations + state supply",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1600 bottles + NDRF water purifier",
+    "waterBottles": 1600,
+    "medicalAvailable": true,
+    "medicalDetails": "3 NDRF medical teams with mountain rescue kit",
+    "medicalTeams": 3,
+    "contact": "+91 0135 2715100",
+    "inchargeName": "Commandant NDRF 8th Bn",
+    "inchargeDesignation": "Battalion IC",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2013-06-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF 8th Battalion + USDMA",
+    "nearestHospital": "Doon Hospital (2.0 km)",
+    "elevation_m": 640,
+    "accessRoad": "NH-7 — landslide-prone in monsoon",
+    "historicalEvents": [
+      {
+        "date": "2024-07-25",
+        "event": "Dehradun Cloudburst Flash Flood",
+        "peopleServed": 350,
+        "durationDays": 10
+      },
+      {
+        "date": "2023-06-20",
+        "event": "Uttarakhand Flash Floods",
+        "peopleServed": 280,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-005",
+    "name": "Kolkata Salt Lake Stadium Shelter",
+    "type": "Stadium",
+    "address": "Salt Lake Stadium Complex, Sector V",
+    "city": "Kolkata",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "pincode": "700091",
+    "latitude": 22.5726,
+    "longitude": 88.411,
+    "capacity": 1000,
+    "occupied": 400,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "3000 packs — Kolkata Municipal kitchen + community",
+    "foodPacks": 3000,
+    "waterAvailable": true,
+    "waterDetails": "4000 bottles + KMC water plant",
+    "waterBottles": 4000,
+    "medicalAvailable": true,
+    "medicalDetails": "5 medical teams — SSKM Hospital + NRS",
+    "medicalTeams": 5,
+    "contact": "+91 033 2358 5100",
+    "inchargeName": "Commissioner KMC",
+    "inchargeDesignation": "Emergency Operations IC",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2009-09-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "KMC + WBSDMA",
+    "nearestHospital": "SSKM Hospital (5.0 km)",
+    "elevation_m": 9,
+    "accessRoad": "EM Bypass — all-weather, metro connected",
+    "historicalEvents": [
+      {
+        "date": "2024-09-10",
+        "event": "Kolkata Urban Flooding 2024",
+        "peopleServed": 800,
+        "durationDays": 5
+      },
+      {
+        "date": "2021-05-26",
+        "event": "Cyclone Yaas Aftermath",
+        "peopleServed": 600,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-006",
+    "name": "Cuttack SDRF Flood Relief Camp",
+    "type": "Relief Camp",
+    "address": "Barabati Stadium Area",
+    "city": "Cuttack",
+    "district": "Cuttack",
+    "state": "Odisha",
+    "pincode": "753001",
+    "latitude": 20.4625,
+    "longitude": 85.883,
+    "capacity": 700,
+    "occupied": 420,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "2000 packs — SDRF kitchen + Odisha Govt scheme",
+    "foodPacks": 2000,
+    "waterAvailable": true,
+    "waterDetails": "3000 bottles + PHED tankers",
+    "waterBottles": 3000,
+    "medicalAvailable": true,
+    "medicalDetails": "3 SDRF medical teams + SCB Medical College",
+    "medicalTeams": 3,
+    "contact": "+91 0671 2505100",
+    "inchargeName": "SDRF Odisha Commander",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2011-07-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Odisha + OSDMA",
+    "nearestHospital": "SCB Medical College (2.0 km)",
+    "elevation_m": 26,
+    "accessRoad": "NH-16 — flood-prone during Mahanadi rise",
+    "historicalEvents": [
+      {
+        "date": "2024-08-20",
+        "event": "Mahanadi Flood 2024",
+        "peopleServed": 650,
+        "durationDays": 15
+      },
+      {
+        "date": "2023-08-05",
+        "event": "Odisha Monsoon Floods 2023",
+        "peopleServed": 550,
+        "durationDays": 12
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-007",
+    "name": "Pune NDRF Training Centre Shelter",
+    "type": "Govt Building",
+    "address": "NDRF Academy, Talegaon",
+    "city": "Pune",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "pincode": "410507",
+    "latitude": 18.7357,
+    "longitude": 73.6785,
+    "capacity": 500,
+    "occupied": 150,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1500 packs NDRF emergency rations",
+    "foodPacks": 1500,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles + NDRF water plant",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "4 NDRF medical teams",
+    "medicalTeams": 4,
+    "contact": "+91 02114 282100",
+    "inchargeName": "Director General NDRF",
+    "inchargeDesignation": "Academy Head",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2006-01-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF Academy",
+    "nearestHospital": "Talegaon PHC (3.0 km)",
+    "elevation_m": 560,
+    "accessRoad": "NH-48 — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-25",
+        "event": "Pune Landslide Support Ops",
+        "peopleServed": 200,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-008",
+    "name": "Mangalore Nethravathi Flood Shelter",
+    "type": "School",
+    "address": "Govt PU College, Mangalore",
+    "city": "Mangalore",
+    "district": "Dakshina Kannada",
+    "state": "Karnataka",
+    "pincode": "575001",
+    "latitude": 12.8698,
+    "longitude": 74.843,
+    "capacity": 350,
+    "occupied": 180,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "900 packs — temple prasad + community kitchen",
+    "foodPacks": 900,
+    "waterAvailable": true,
+    "waterDetails": "1200 bottles + municipal supply",
+    "waterBottles": 1200,
+    "medicalAvailable": true,
+    "medicalDetails": "1 medical team — Govt Wenlock Hospital",
+    "medicalTeams": 1,
+    "contact": "+91 0824 2220100",
+    "inchargeName": "DC Dakshina Kannada",
+    "inchargeDesignation": "Camp Supervisor",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-08-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "KSDMA + District Administration",
+    "nearestHospital": "Wenlock Hospital (1.5 km)",
+    "elevation_m": 22,
+    "accessRoad": "NH-66 — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-08-05",
+        "event": "Dakshina Kannada Floods",
+        "peopleServed": 300,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-009",
+    "name": "Shillong Mawphlang Relief Centre",
+    "type": "Community Hall",
+    "address": "Sector 4 High Ground, Mawphlang",
+    "city": "Shillong",
+    "district": "East Khasi Hills",
+    "state": "Meghalaya",
+    "pincode": "793121",
+    "latitude": 25.452,
+    "longitude": 91.761,
+    "capacity": 200,
+    "occupied": 150,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "900 packs — cooked meals + dry rations",
+    "foodPacks": 900,
+    "waterAvailable": true,
+    "waterDetails": "1200 bottles + RO unit",
+    "waterBottles": 1200,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — SDRF triage unit",
+    "medicalTeams": 2,
+    "contact": "+91 0364 2224100",
+    "inchargeName": "P. Lyngdoh",
+    "inchargeDesignation": "DRO",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-06-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "Meghalaya SDMA + District Administration",
+    "nearestHospital": "Shillong Civil Hospital (8.0 km)",
+    "elevation_m": 1460,
+    "accessRoad": "NH-6 — landslide-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-06-15",
+        "event": "Meghalaya Monsoon Flooding",
+        "peopleServed": 180,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-010",
+    "name": "Wayanad Landslide Relief Camp",
+    "type": "School",
+    "address": "Govt HSS Meppadi",
+    "city": "Meppadi",
+    "district": "Wayanad",
+    "state": "Kerala",
+    "pincode": "673577",
+    "latitude": 11.5565,
+    "longitude": 76.132,
+    "capacity": 300,
+    "occupied": 250,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs — community kitchen + govt supply",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1100 bottles + KWA tanker",
+    "waterBottles": 1100,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — District Hospital Wayanad",
+    "medicalTeams": 2,
+    "contact": "+91 04936 202100",
+    "inchargeName": "DC Wayanad",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-08-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "landslide",
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "KSDMA + District Administration",
+    "nearestHospital": "DH Wayanad (5.0 km)",
+    "elevation_m": 780,
+    "accessRoad": "SH-29 — highly landslide-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-30",
+        "event": "Wayanad Landslide 2024 (Mundakkai)",
+        "peopleServed": 280,
+        "durationDays": 20
+      },
+      {
+        "date": "2019-08-08",
+        "event": "Wayanad Floods & Landslides",
+        "peopleServed": 250,
+        "durationDays": 14
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-011",
+    "name": "Silchar Barak Valley Relief Camp",
+    "type": "Relief Camp",
+    "address": "Silchar Town, Near Railway Station",
+    "city": "Silchar",
+    "district": "Cachar",
+    "state": "Assam",
+    "pincode": "788001",
+    "latitude": 24.8333,
+    "longitude": 92.7789,
+    "capacity": 400,
+    "occupied": 320,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1100 packs — SDRF kitchen + community",
+    "foodPacks": 1100,
+    "waterAvailable": true,
+    "waterDetails": "1500 bottles + PHED tanker",
+    "waterBottles": 1500,
+    "medicalAvailable": true,
+    "medicalDetails": "2 SDRF medical teams",
+    "medicalTeams": 2,
+    "contact": "+91 03842 222100",
+    "inchargeName": "DC Cachar",
+    "inchargeDesignation": "Camp Supervisor",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2016-06-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "ASDMA + District Administration",
+    "nearestHospital": "Silchar Medical College (2.5 km)",
+    "elevation_m": 35,
+    "accessRoad": "NH-6 — frequently submerged during Barak floods",
+    "historicalEvents": [
+      {
+        "date": "2024-06-18",
+        "event": "Barak Valley Flood 2024",
+        "peopleServed": 380,
+        "durationDays": 22
+      },
+      {
+        "date": "2022-06-20",
+        "event": "Silchar Flood 2022 — city submerged",
+        "peopleServed": 400,
+        "durationDays": 18
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-012",
+    "name": "Shimla Ridge SDRF Camp",
+    "type": "Relief Camp",
+    "address": "Ridge Road, Near Scandal Point",
+    "city": "Shimla",
+    "district": "Shimla",
+    "state": "Himachal Pradesh",
+    "pincode": "171001",
+    "latitude": 31.1048,
+    "longitude": 77.1734,
+    "capacity": 250,
+    "occupied": 100,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "700 packs — SDRF rations",
+    "foodPacks": 700,
+    "waterAvailable": true,
+    "waterDetails": "900 bottles + IPH supply",
+    "waterBottles": 900,
+    "medicalAvailable": true,
+    "medicalDetails": "2 SDRF medical teams with mountain rescue",
+    "medicalTeams": 2,
+    "contact": "+91 0177 2621100",
+    "inchargeName": "SDRF HP Commander",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2017-06-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "landslide",
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF HP + HP SDMA",
+    "nearestHospital": "IGMC Shimla (1.5 km)",
+    "elevation_m": 2205,
+    "accessRoad": "NH-5 — highly landslide-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-15",
+        "event": "Shimla Cloudburst",
+        "peopleServed": 180,
+        "durationDays": 5
+      },
+      {
+        "date": "2023-08-14",
+        "event": "HP Multiple Landslides",
+        "peopleServed": 220,
+        "durationDays": 12
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-013",
+    "name": "Imphal NDRF Relief Centre",
+    "type": "Govt Building",
+    "address": "DM Office Complex, Imphal",
+    "city": "Imphal",
+    "district": "Imphal West",
+    "state": "Manipur",
+    "pincode": "795001",
+    "latitude": 24.817,
+    "longitude": 93.9368,
+    "capacity": 300,
+    "occupied": 140,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs — NDRF + state supply",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1000 bottles + PHED",
+    "waterBottles": 1000,
+    "medicalAvailable": true,
+    "medicalDetails": "2 NDRF medical teams",
+    "medicalTeams": 2,
+    "contact": "+91 0385 2451100",
+    "inchargeName": "NDRF Manipur Detachment IC",
+    "inchargeDesignation": "Team Leader",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-06-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "NDRF + MSDMA",
+    "nearestHospital": "RIMS Imphal (3.0 km)",
+    "elevation_m": 786,
+    "accessRoad": "NH-2 — landslide-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-06-10",
+        "event": "Imphal Valley Flash Flood",
+        "peopleServed": 250,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-014",
+    "name": "Kolhapur Panchganga Flood Shelter",
+    "type": "Stadium",
+    "address": "Shivaji Stadium, Kolhapur",
+    "city": "Kolhapur",
+    "district": "Kolhapur",
+    "state": "Maharashtra",
+    "pincode": "416001",
+    "latitude": 16.705,
+    "longitude": 74.2433,
+    "capacity": 500,
+    "occupied": 300,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1400 packs — NDRF kitchen + temple annadhanam",
+    "foodPacks": 1400,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles + municipal supply",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "3 medical teams — CPR Hospital",
+    "medicalTeams": 3,
+    "contact": "+91 0231 2650100",
+    "inchargeName": "DC Kolhapur",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-08-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF + District Administration",
+    "nearestHospital": "CPR Hospital (1.5 km)",
+    "elevation_m": 569,
+    "accessRoad": "NH-4 — flood-prone during Panchganga rise",
+    "historicalEvents": [
+      {
+        "date": "2024-08-01",
+        "event": "Panchganga Flood 2024",
+        "peopleServed": 450,
+        "durationDays": 10
+      },
+      {
+        "date": "2019-08-07",
+        "event": "Kolhapur Great Flood 2019",
+        "peopleServed": 500,
+        "durationDays": 15
+      }
+    ]
+  },
+  {
+    "id": "SH-IN-015",
+    "name": "Dibrugarh NDRF Relief Base",
+    "type": "Relief Camp",
+    "address": "Dibrugarh Town, Near Brahmaputra Bund",
+    "city": "Dibrugarh",
+    "district": "Dibrugarh",
+    "state": "Assam",
+    "pincode": "786001",
+    "latitude": 27.4728,
+    "longitude": 94.912,
+    "capacity": 450,
+    "occupied": 280,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs — NDRF + tea garden community kitchen",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1600 bottles + PHED supply",
+    "waterBottles": 1600,
+    "medicalAvailable": true,
+    "medicalDetails": "2 NDRF medical teams + AMCH link",
+    "medicalTeams": 2,
+    "contact": "+91 0373 2320100",
+    "inchargeName": "NDRF Assam Detachment",
+    "inchargeDesignation": "Team Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2014-06-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF + ASDMA",
+    "nearestHospital": "AMCH Dibrugarh (2.0 km)",
+    "elevation_m": 108,
+    "accessRoad": "NH-37 — flood-prone during Brahmaputra rise",
+    "historicalEvents": [
+      {
+        "date": "2024-06-22",
+        "event": "Upper Assam Flood 2024",
+        "peopleServed": 400,
+        "durationDays": 20
+      }
+    ]
+  }
+]

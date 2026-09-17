@@ -166,21 +166,17 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
                       ? Image.network(
                           s.photoUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFF0A2540),
-                            child: const Center(
-                              child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 54),
-                            ),
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/images/rural_shelter_camp.jpg',
+                            fit: BoxFit.cover,
                           ),
                         )
                       : Image.asset(
                           s.photoUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFF0A2540),
-                            child: const Center(
-                              child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 54),
-                            ),
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/images/rural_shelter_camp.jpg',
+                            fit: BoxFit.cover,
                           ),
                         ),
                 ),

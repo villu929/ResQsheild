@@ -519,11 +519,9 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFF0F172A),
-                                    child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                                    ),
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    'assets/images/rural_shelter_camp.jpg',
+                                    fit: BoxFit.cover,
                                   ),
                                 )
                               : Image.asset(
@@ -531,11 +529,9 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
                                   width: imageWidth,
                                   height: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFF0F172A),
-                                    child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
-                                    ),
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    'assets/images/rural_shelter_camp.jpg',
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                           DecoratedBox(
@@ -1108,21 +1104,17 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
                                               ? Image.network(
                                                   p['url']!,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) => Container(
-                                                    color: const Color(0xFF0F172A),
-                                                    child: const Center(
-                                                      child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
-                                                    ),
+                                                  errorBuilder: (_, __, ___) => Image.asset(
+                                                    'assets/images/rural_shelter_camp.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
                                                 )
                                               : Image.asset(
                                                   p['url']!,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) => Container(
-                                                    color: const Color(0xFF0F172A),
-                                                    child: const Center(
-                                                      child: Icon(Icons.broken_image_rounded, color: Colors.white70, size: 24),
-                                                    ),
+                                                  errorBuilder: (_, __, ___) => Image.asset(
+                                                    'assets/images/rural_shelter_camp.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
                                                 ),
                                           Container(color: Colors.black.withValues(alpha: isSel ? 0.2 : 0.45)),

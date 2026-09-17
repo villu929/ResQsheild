@@ -144,21 +144,17 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                           ? Image.network(
                               center.photoUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFF0F172A),
-                                child: const Center(
-                                  child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
-                                ),
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/rural_health_clinic.jpg',
+                                fit: BoxFit.cover,
                               ),
                             )
                           : Image.asset(
                               center.photoUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFF0F172A),
-                                child: const Center(
-                                  child: Icon(Icons.local_hospital_rounded, color: Colors.white70, size: 32),
-                                ),
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/rural_health_clinic.jpg',
+                                fit: BoxFit.cover,
                               ),
                             ),
                       Container(

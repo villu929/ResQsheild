@@ -1,0 +1,1829 @@
+[
+  {
+    "id": "SH-JH-001",
+    "name": "Govt. Higher Secondary School Relief Camp",
+    "type": "School",
+    "address": "Sector 4, Bokaro Steel City",
+    "city": "Bokaro",
+    "district": "Bokaro",
+    "state": "Jharkhand",
+    "pincode": "827004",
+    "latitude": 23.6693,
+    "longitude": 86.1511,
+    "capacity": 500,
+    "occupied": 180,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs hot meals & nutrient rations via SDRF supply chain",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1800 sealed bottles + 2 RO purification units",
+    "waterBottles": 1800,
+    "medicalAvailable": true,
+    "medicalDetails": "2 triage teams on active duty (SDRF + Red Cross)",
+    "medicalTeams": 2,
+    "contact": "+91 06542 230100",
+    "inchargeName": "R. K. Verma",
+    "inchargeDesignation": "Principal & Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-07-15",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "District Administration, Bokaro",
+    "nearestHospital": "Bokaro General Hospital (2.1 km)",
+    "elevation_m": 210,
+    "accessRoad": "NH-32 via Sector 4 bypass — all-weather road",
+    "historicalEvents": [
+      {
+        "date": "2024-08-12",
+        "event": "Damodar Flash Flood",
+        "peopleServed": 320,
+        "durationDays": 8
+      },
+      {
+        "date": "2023-09-04",
+        "event": "Heavy Monsoon Flooding",
+        "peopleServed": 210,
+        "durationDays": 5
+      },
+      {
+        "date": "2021-07-28",
+        "event": "Bokaro Urban Waterlogging",
+        "peopleServed": 145,
+        "durationDays": 3
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-002",
+    "name": "Community Hall Kurma Relief Centre",
+    "type": "Community Hall",
+    "address": "Kurma Block, Near Bus Stand",
+    "city": "Giridih",
+    "district": "Giridih",
+    "state": "Jharkhand",
+    "pincode": "815301",
+    "latitude": 24.186,
+    "longitude": 86.309,
+    "capacity": 300,
+    "occupied": 180,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs community food rations from District Supply Office",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1100 bottles potable water + municipal tanker supply",
+    "waterBottles": 1100,
+    "medicalAvailable": true,
+    "medicalDetails": "1 doctor team on standby — PHC Kurma attached",
+    "medicalTeams": 1,
+    "contact": "+91 06532 241200",
+    "inchargeName": "Sunil Soren",
+    "inchargeDesignation": "Block Relief Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-08-01",
+    "lastUpdated": "2025-09-14T09:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Block Development Office, Giridih",
+    "nearestHospital": "Giridih Sadar Hospital (3.6 km)",
+    "elevation_m": 280,
+    "accessRoad": "SH-6 via Giridih town — partially flood-prone during heavy monsoon",
+    "historicalEvents": [
+      {
+        "date": "2024-07-20",
+        "event": "Barakar River Overflow",
+        "peopleServed": 180,
+        "durationDays": 6
+      },
+      {
+        "date": "2022-08-15",
+        "event": "Flash Floods Giridih Block",
+        "peopleServed": 95,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-003",
+    "name": "Ranchi Sadar Hospital Emergency Shelter",
+    "type": "Govt Building",
+    "address": "Kutchery Chowk, Ranchi Sadar",
+    "city": "Ranchi",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "pincode": "834001",
+    "latitude": 23.3441,
+    "longitude": 85.3096,
+    "capacity": 450,
+    "occupied": 240,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1000 packs medical diet rations via RIMS Supply",
+    "foodPacks": 1000,
+    "waterAvailable": true,
+    "waterDetails": "1500 bottles purified water + hospital bore-well supply",
+    "waterBottles": 1500,
+    "medicalAvailable": true,
+    "medicalDetails": "4 doctor & trauma teams on-site (RIMS Emergency Wing)",
+    "medicalTeams": 4,
+    "contact": "+91 0651 2300199",
+    "inchargeName": "Dr. Amit Sinha",
+    "inchargeDesignation": "Chief Medical Officer",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-06-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "Jharkhand Health Department",
+    "nearestHospital": "RIMS Ranchi (0.5 km)",
+    "elevation_m": 651,
+    "accessRoad": "NH-33 Main Road — all-weather tarmac road",
+    "historicalEvents": [
+      {
+        "date": "2024-09-01",
+        "event": "Ranchi Urban Flooding",
+        "peopleServed": 440,
+        "durationDays": 7
+      },
+      {
+        "date": "2023-08-10",
+        "event": "Subarnarekha Overflow",
+        "peopleServed": 310,
+        "durationDays": 10
+      },
+      {
+        "date": "2020-07-18",
+        "event": "Heavy Monsoon Flooding",
+        "peopleServed": 200,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-004",
+    "name": "SDRF Relief Camp Dhansar",
+    "type": "Relief Camp",
+    "address": "Dhansar Ground, NH-33 Highway",
+    "city": "Hazaribagh",
+    "district": "Hazaribagh",
+    "state": "Jharkhand",
+    "pincode": "825301",
+    "latitude": 23.9925,
+    "longitude": 85.3637,
+    "capacity": 800,
+    "occupied": 240,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "2200 packs cooked food & baby nutrition from ICDS",
+    "foodPacks": 2200,
+    "waterAvailable": true,
+    "waterDetails": "3100 bottles & 2 PHED water tankers deployed",
+    "waterBottles": 3100,
+    "medicalAvailable": true,
+    "medicalDetails": "3 emergency response medical teams (NDRF + SDRF)",
+    "medicalTeams": 3,
+    "contact": "+91 06546 262200",
+    "inchargeName": "Maj. V. K. Singh (Retd.)",
+    "inchargeDesignation": "Camp Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Jharkhand, 7th Battalion",
+    "nearestHospital": "Hazaribagh Medical College (4.5 km)",
+    "elevation_m": 615,
+    "accessRoad": "NH-33 four-lane highway — all-weather access",
+    "historicalEvents": [
+      {
+        "date": "2024-08-25",
+        "event": "Hazaribagh Landslide & Flash Flood",
+        "peopleServed": 620,
+        "durationDays": 12
+      },
+      {
+        "date": "2023-07-30",
+        "event": "Koel River Overflow",
+        "peopleServed": 380,
+        "durationDays": 9
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-005",
+    "name": "Bokaro Steel City Indoor Stadium Shelter",
+    "type": "Stadium",
+    "address": "Sector 12, Near DPS School",
+    "city": "Bokaro",
+    "district": "Bokaro",
+    "state": "Jharkhand",
+    "pincode": "827012",
+    "latitude": 23.665,
+    "longitude": 86.155,
+    "capacity": 600,
+    "occupied": 195,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1500 packs food & energy supplements — SAIL CSR initiative",
+    "foodPacks": 1500,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles drinking water + SAIL water tanker",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams 24/7 active — BGH Emergency Outpost",
+    "medicalTeams": 2,
+    "contact": "+91 06542 231400",
+    "inchargeName": "S. K. Pandey",
+    "inchargeDesignation": "District Relief Officer",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2017-06-15",
+    "lastUpdated": "2025-09-14T10:20:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SAIL Bokaro + District Administration",
+    "nearestHospital": "Bokaro General Hospital (2.8 km)",
+    "elevation_m": 195,
+    "accessRoad": "Sector 12 internal road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-08-12",
+        "event": "Damodar Flash Flood",
+        "peopleServed": 480,
+        "durationDays": 8
+      },
+      {
+        "date": "2023-09-04",
+        "event": "Monsoon Season Activation",
+        "peopleServed": 320,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-006",
+    "name": "Jamshedpur Jubilee Park Relief Centre",
+    "type": "Community Hall",
+    "address": "Jubilee Park, Bistupur",
+    "city": "Jamshedpur",
+    "district": "East Singhbhum",
+    "state": "Jharkhand",
+    "pincode": "831001",
+    "latitude": 22.7976,
+    "longitude": 86.1827,
+    "capacity": 700,
+    "occupied": 350,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "2000 packs cooked meals — Tata Steel community kitchen",
+    "foodPacks": 2000,
+    "waterAvailable": true,
+    "waterDetails": "3000 bottles sealed water + JUSCO supply",
+    "waterBottles": 3000,
+    "medicalAvailable": true,
+    "medicalDetails": "3 medical teams — TMH & Tata Main Hospital outpost",
+    "medicalTeams": 3,
+    "contact": "+91 0657 2431500",
+    "inchargeName": "Dr. Priya Mehta",
+    "inchargeDesignation": "SDM East Singhbhum",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2016-08-01",
+    "lastUpdated": "2025-09-14T09:50:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Tata Steel Foundation + District Administration",
+    "nearestHospital": "TMH Jamshedpur (1.5 km)",
+    "elevation_m": 135,
+    "accessRoad": "NH-33 Bistupur main road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-09-05",
+        "event": "Subarnarekha Flood 2024",
+        "peopleServed": 680,
+        "durationDays": 14
+      },
+      {
+        "date": "2023-08-20",
+        "event": "Kharkai Overflow",
+        "peopleServed": 420,
+        "durationDays": 7
+      },
+      {
+        "date": "2021-07-10",
+        "event": "Industrial Area Waterlogging",
+        "peopleServed": 190,
+        "durationDays": 3
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-007",
+    "name": "PMCH Dhanbad Emergency Shelter Wing",
+    "type": "Govt Building",
+    "address": "PMCH Campus, Dhanbad",
+    "city": "Dhanbad",
+    "district": "Dhanbad",
+    "state": "Jharkhand",
+    "pincode": "826001",
+    "latitude": 23.7957,
+    "longitude": 86.4304,
+    "capacity": 400,
+    "occupied": 220,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "900 packs hospital-grade meals & nutrient supplements",
+    "foodPacks": 900,
+    "waterAvailable": true,
+    "waterDetails": "1400 bottles + hospital water purification plant",
+    "waterBottles": 1400,
+    "medicalAvailable": true,
+    "medicalDetails": "5 emergency medical teams on 24/7 rotation",
+    "medicalTeams": 5,
+    "contact": "+91 0326 2300800",
+    "inchargeName": "Dr. R. N. Pandey",
+    "inchargeDesignation": "Superintendent, PMCH",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2015-07-01",
+    "lastUpdated": "2025-09-14T10:10:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "Jharkhand Health Department",
+    "nearestHospital": "PMCH Dhanbad (On-site)",
+    "elevation_m": 227,
+    "accessRoad": "Grand Trunk Road — NH-2 approach",
+    "historicalEvents": [
+      {
+        "date": "2024-08-18",
+        "event": "Dhanbad Urban Flooding",
+        "peopleServed": 390,
+        "durationDays": 9
+      },
+      {
+        "date": "2022-09-01",
+        "event": "Coal Belt Waterlogging",
+        "peopleServed": 260,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-008",
+    "name": "Deoghar Baidyanath Dham Community Shelter",
+    "type": "Religious",
+    "address": "Near Baidyanath Temple Complex",
+    "city": "Deoghar",
+    "district": "Deoghar",
+    "state": "Jharkhand",
+    "pincode": "814112",
+    "latitude": 24.4852,
+    "longitude": 86.6945,
+    "capacity": 350,
+    "occupied": 120,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "700 packs prasad meals & community kitchen",
+    "foodPacks": 700,
+    "waterAvailable": true,
+    "waterDetails": "900 bottles + temple bore-well supply",
+    "waterBottles": 900,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC medical team + Red Cross volunteers",
+    "medicalTeams": 1,
+    "contact": "+91 06432 232100",
+    "inchargeName": "Pandit Ram Prasad",
+    "inchargeDesignation": "Temple Trust & Relief Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-08-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Baidyanath Temple Trust + District Administration",
+    "nearestHospital": "Deoghar Sadar Hospital (1.8 km)",
+    "elevation_m": 252,
+    "accessRoad": "NH-114A — all-weather road",
+    "historicalEvents": [
+      {
+        "date": "2024-07-25",
+        "event": "Deoghar Flash Floods",
+        "peopleServed": 280,
+        "durationDays": 5
+      },
+      {
+        "date": "2022-08-20",
+        "event": "Monsoon Overflow",
+        "peopleServed": 150,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-009",
+    "name": "Dumka Collectorate Relief Camp",
+    "type": "Govt Building",
+    "address": "Collectorate Campus, Dumka",
+    "city": "Dumka",
+    "district": "Dumka",
+    "state": "Jharkhand",
+    "pincode": "814101",
+    "latitude": 24.2637,
+    "longitude": 87.2495,
+    "capacity": 250,
+    "occupied": 90,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "600 packs community kitchen meals",
+    "foodPacks": 600,
+    "waterAvailable": true,
+    "waterDetails": "800 bottles + PHED tanker",
+    "waterBottles": 800,
+    "medicalAvailable": true,
+    "medicalDetails": "1 mobile medical unit — District Health Department",
+    "medicalTeams": 1,
+    "contact": "+91 06434 222300",
+    "inchargeName": "A. K. Mishra",
+    "inchargeDesignation": "Deputy Commissioner, Dumka",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-15",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "District Administration, Dumka",
+    "nearestHospital": "Dumka Sadar Hospital (1.2 km)",
+    "elevation_m": 150,
+    "accessRoad": "NH-114 — partially flood-prone near Massanjore Dam spillway zone",
+    "historicalEvents": [
+      {
+        "date": "2024-08-10",
+        "event": "Massanjore Dam Release Flooding",
+        "peopleServed": 230,
+        "durationDays": 8
+      },
+      {
+        "date": "2023-07-15",
+        "event": "Mayurakshi Overflow",
+        "peopleServed": 140,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-010",
+    "name": "Sahebganj Ganges Flood Shelter",
+    "type": "School",
+    "address": "Sahebganj Municipal School, River Road",
+    "city": "Sahebganj",
+    "district": "Sahebganj",
+    "state": "Jharkhand",
+    "pincode": "816109",
+    "latitude": 25.2423,
+    "longitude": 87.6318,
+    "capacity": 400,
+    "occupied": 280,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1100 packs from ICDS & Anganwadi centers",
+    "foodPacks": 1100,
+    "waterAvailable": true,
+    "waterDetails": "1500 bottles + 3 PHED tankers (Ganges water crisis zone)",
+    "waterBottles": 1500,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — Sahebganj District Hospital + ASHA workers",
+    "medicalTeams": 2,
+    "contact": "+91 06436 222500",
+    "inchargeName": "M. K. Das",
+    "inchargeDesignation": "BDO Sahebganj",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2017-07-01",
+    "lastUpdated": "2025-09-14T10:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "District Administration, Sahebganj",
+    "nearestHospital": "Sahebganj District Hospital (2.0 km)",
+    "elevation_m": 35,
+    "accessRoad": "NH-80 — flood-prone during Ganges high-water season",
+    "historicalEvents": [
+      {
+        "date": "2024-08-30",
+        "event": "Ganges Annual Flood 2024",
+        "peopleServed": 380,
+        "durationDays": 18
+      },
+      {
+        "date": "2023-08-15",
+        "event": "Ganges High Water 2023",
+        "peopleServed": 310,
+        "durationDays": 15
+      },
+      {
+        "date": "2022-08-01",
+        "event": "Ganges Flood + Backwater",
+        "peopleServed": 290,
+        "durationDays": 12
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-011",
+    "name": "Pakur Zila School Relief Centre",
+    "type": "School",
+    "address": "Pakur Zila School Campus",
+    "city": "Pakur",
+    "district": "Pakur",
+    "state": "Jharkhand",
+    "pincode": "816107",
+    "latitude": 24.6333,
+    "longitude": 87.85,
+    "capacity": 200,
+    "occupied": 75,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "400 packs dry rations & cooked meals",
+    "foodPacks": 400,
+    "waterAvailable": true,
+    "waterDetails": "600 bottles potable water",
+    "waterBottles": 600,
+    "medicalAvailable": false,
+    "medicalDetails": "First aid kit only — nearest PHC 2 km",
+    "medicalTeams": 0,
+    "contact": "+91 06435 222100",
+    "inchargeName": "K. P. Sinha",
+    "inchargeDesignation": "Headmaster",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-08-01",
+    "lastUpdated": "2025-09-14T08:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Education Dept, Pakur",
+    "nearestHospital": "Pakur PHC (2.0 km)",
+    "elevation_m": 95,
+    "accessRoad": "NH-114 approach road",
+    "historicalEvents": [
+      {
+        "date": "2024-08-15",
+        "event": "Bansloi River Overflow",
+        "peopleServed": 160,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-012",
+    "name": "Godda Flood Relief Camp",
+    "type": "Relief Camp",
+    "address": "Godda Parade Ground",
+    "city": "Godda",
+    "district": "Godda",
+    "state": "Jharkhand",
+    "pincode": "814133",
+    "latitude": 24.8271,
+    "longitude": 87.2125,
+    "capacity": 300,
+    "occupied": 110,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "700 packs community kitchen + ICDS supply",
+    "foodPacks": 700,
+    "waterAvailable": true,
+    "waterDetails": "950 bottles + hand-pump backup",
+    "waterBottles": 950,
+    "medicalAvailable": true,
+    "medicalDetails": "1 district mobile medical unit",
+    "medicalTeams": 1,
+    "contact": "+91 06422 222400",
+    "inchargeName": "N. K. Thakur",
+    "inchargeDesignation": "SDO, Godda",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-01",
+    "lastUpdated": "2025-09-14T09:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Administration, Godda",
+    "nearestHospital": "Godda District Hospital (1.5 km)",
+    "elevation_m": 78,
+    "accessRoad": "SH-17 — flood-prone during monsoon",
+    "historicalEvents": [
+      {
+        "date": "2024-07-30",
+        "event": "Godda District Flooding",
+        "peopleServed": 250,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-013",
+    "name": "Palamu Tiger Reserve Community Shelter",
+    "type": "Community Hall",
+    "address": "Betla Road, Near Forest Office",
+    "city": "Daltonganj",
+    "district": "Palamu",
+    "state": "Jharkhand",
+    "pincode": "822101",
+    "latitude": 24.0303,
+    "longitude": 84.0686,
+    "capacity": 250,
+    "occupied": 80,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs dry rations & cooked meals from community kitchen",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles + stream water filtration unit",
+    "waterBottles": 700,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team + forest department first responders",
+    "medicalTeams": 1,
+    "contact": "+91 06562 222800",
+    "inchargeName": "R. S. Topno",
+    "inchargeDesignation": "Block Coordinator, Palamu",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-07-01",
+    "lastUpdated": "2025-09-14T08:45:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Forest Department + District Administration",
+    "nearestHospital": "Daltonganj Sadar Hospital (5.0 km)",
+    "elevation_m": 310,
+    "accessRoad": "NH-75 approach — landslide-prone during heavy rain",
+    "historicalEvents": [
+      {
+        "date": "2024-08-05",
+        "event": "Koel River Flash Flood",
+        "peopleServed": 190,
+        "durationDays": 6
+      },
+      {
+        "date": "2022-09-10",
+        "event": "Palamu Landslide & Flood",
+        "peopleServed": 120,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-014",
+    "name": "Garhwa High School Disaster Shelter",
+    "type": "School",
+    "address": "Garhwa Town, Main Road",
+    "city": "Garhwa",
+    "district": "Garhwa",
+    "state": "Jharkhand",
+    "pincode": "822114",
+    "latitude": 24.158,
+    "longitude": 83.8043,
+    "capacity": 180,
+    "occupied": 55,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "350 packs dry rations",
+    "foodPacks": 350,
+    "waterAvailable": true,
+    "waterDetails": "500 bottles potable water",
+    "waterBottles": 500,
+    "medicalAvailable": false,
+    "medicalDetails": "First aid kit — nearest PHC 3 km",
+    "medicalTeams": 0,
+    "contact": "+91 06561 222600",
+    "inchargeName": "S. P. Gupta",
+    "inchargeDesignation": "Headmaster",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-15",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Education Department",
+    "nearestHospital": "Garhwa PHC (3.0 km)",
+    "elevation_m": 180,
+    "accessRoad": "NH-75 — partially flood-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-18",
+        "event": "Son River Overflow",
+        "peopleServed": 140,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-015",
+    "name": "Latehar NDRF Forward Base Camp",
+    "type": "Relief Camp",
+    "address": "Latehar Parade Ground",
+    "city": "Latehar",
+    "district": "Latehar",
+    "state": "Jharkhand",
+    "pincode": "829206",
+    "latitude": 23.7413,
+    "longitude": 84.5031,
+    "capacity": 350,
+    "occupied": 100,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs NDRF emergency rations",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1100 bottles + NDRF portable water purifier",
+    "waterBottles": 1100,
+    "medicalAvailable": true,
+    "medicalDetails": "2 NDRF medical teams with field hospital kit",
+    "medicalTeams": 2,
+    "contact": "+91 06565 222900",
+    "inchargeName": "Commandant A. K. Roy",
+    "inchargeDesignation": "NDRF Battalion Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-06-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF 9th Battalion",
+    "nearestHospital": "Latehar District Hospital (2.5 km)",
+    "elevation_m": 380,
+    "accessRoad": "NH-75 approach — landslide risk zones marked",
+    "historicalEvents": [
+      {
+        "date": "2024-08-20",
+        "event": "Latehar Hill Landslide",
+        "peopleServed": 290,
+        "durationDays": 10
+      },
+      {
+        "date": "2023-07-25",
+        "event": "Auranga River Flash Flood",
+        "peopleServed": 180,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-016",
+    "name": "Simdega Tribal Community Relief Centre",
+    "type": "Community Hall",
+    "address": "Block HQ, Simdega Town",
+    "city": "Simdega",
+    "district": "Simdega",
+    "state": "Jharkhand",
+    "pincode": "835223",
+    "latitude": 22.6155,
+    "longitude": 84.51,
+    "capacity": 200,
+    "occupied": 65,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "450 packs cooked meals + tribal food supplements",
+    "foodPacks": 450,
+    "waterAvailable": true,
+    "waterDetails": "600 bottles + community well",
+    "waterBottles": 600,
+    "medicalAvailable": true,
+    "medicalDetails": "1 tribal health mission mobile unit",
+    "medicalTeams": 1,
+    "contact": "+91 06585 222700",
+    "inchargeName": "Birsa Hembrom",
+    "inchargeDesignation": "Block Relief Officer",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-07-01",
+    "lastUpdated": "2025-09-14T08:15:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Tribal Welfare Department + District Administration",
+    "nearestHospital": "Simdega CHC (1.0 km)",
+    "elevation_m": 420,
+    "accessRoad": "SH-75 — vulnerable in monsoon",
+    "historicalEvents": [
+      {
+        "date": "2024-08-08",
+        "event": "Simdega Hill Landslide",
+        "peopleServed": 150,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-017",
+    "name": "West Singhbhum Chaibasa Stadium Shelter",
+    "type": "Stadium",
+    "address": "Chaibasa Sports Complex",
+    "city": "Chaibasa",
+    "district": "West Singhbhum",
+    "state": "Jharkhand",
+    "pincode": "833201",
+    "latitude": 22.5512,
+    "longitude": 85.8028,
+    "capacity": 500,
+    "occupied": 200,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs hot meals via ICDS & community kitchen",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1600 bottles + 2 PHED tankers",
+    "waterBottles": 1600,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — District Hospital outreach",
+    "medicalTeams": 2,
+    "contact": "+91 06582 255100",
+    "inchargeName": "D. K. Mahato",
+    "inchargeDesignation": "District Relief Commissioner",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-07-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "District Administration, West Singhbhum",
+    "nearestHospital": "Chaibasa District Hospital (1.8 km)",
+    "elevation_m": 220,
+    "accessRoad": "NH-75 — all-weather main road",
+    "historicalEvents": [
+      {
+        "date": "2024-09-01",
+        "event": "Kharkai Overflow + Landslide",
+        "peopleServed": 450,
+        "durationDays": 11
+      },
+      {
+        "date": "2023-08-12",
+        "event": "West Singhbhum Flash Floods",
+        "peopleServed": 280,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-018",
+    "name": "Ramgarh ITI Building Relief Camp",
+    "type": "Govt Building",
+    "address": "ITI Campus, Ramgarh Cantt",
+    "city": "Ramgarh",
+    "district": "Ramgarh",
+    "state": "Jharkhand",
+    "pincode": "829122",
+    "latitude": 23.6298,
+    "longitude": 85.5109,
+    "capacity": 250,
+    "occupied": 85,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "550 packs community meals",
+    "foodPacks": 550,
+    "waterAvailable": true,
+    "waterDetails": "750 bottles + bore-well",
+    "waterBottles": 750,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC mobile unit",
+    "medicalTeams": 1,
+    "contact": "+91 06553 231200",
+    "inchargeName": "P. K. Srivastava",
+    "inchargeDesignation": "SDM Ramgarh",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Administration, Ramgarh",
+    "nearestHospital": "Ramgarh CHC (2.0 km)",
+    "elevation_m": 305,
+    "accessRoad": "NH-33 approach",
+    "historicalEvents": [
+      {
+        "date": "2024-08-14",
+        "event": "Damodar Tributary Overflow",
+        "peopleServed": 180,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-019",
+    "name": "Koderma Railway Colony Shelter",
+    "type": "Govt Building",
+    "address": "Railway Colony, Koderma Junction",
+    "city": "Koderma",
+    "district": "Koderma",
+    "state": "Jharkhand",
+    "pincode": "825409",
+    "latitude": 24.4685,
+    "longitude": 85.5936,
+    "capacity": 180,
+    "occupied": 40,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "300 packs emergency dry rations",
+    "foodPacks": 300,
+    "waterAvailable": true,
+    "waterDetails": "400 bottles + railway water supply",
+    "waterBottles": 400,
+    "medicalAvailable": false,
+    "medicalDetails": "First aid — Railway Hospital 1 km",
+    "medicalTeams": 0,
+    "contact": "+91 06534 222300",
+    "inchargeName": "Station Master R. K. Gupta",
+    "inchargeDesignation": "Station Master",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2023-06-01",
+    "lastUpdated": "2025-09-14T07:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Indian Railways + District Administration",
+    "nearestHospital": "Railway Hospital Koderma (1.0 km)",
+    "elevation_m": 345,
+    "accessRoad": "GT Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-22",
+        "event": "Koderma Waterlogging",
+        "peopleServed": 90,
+        "durationDays": 3
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-020",
+    "name": "Chatra Forest Rest House Relief Centre",
+    "type": "Govt Building",
+    "address": "Forest Rest House, Chatra Town",
+    "city": "Chatra",
+    "district": "Chatra",
+    "state": "Jharkhand",
+    "pincode": "825401",
+    "latitude": 24.206,
+    "longitude": 84.871,
+    "capacity": 150,
+    "occupied": 45,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "300 packs dry rations & biscuits",
+    "foodPacks": 300,
+    "waterAvailable": true,
+    "waterDetails": "400 bottles + forest stream filtration",
+    "waterBottles": 400,
+    "medicalAvailable": true,
+    "medicalDetails": "1 ASHA health worker team",
+    "medicalTeams": 1,
+    "contact": "+91 06541 222200",
+    "inchargeName": "Forest Ranger B. Oraon",
+    "inchargeDesignation": "Range Officer",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-08-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Forest Department + District Administration",
+    "nearestHospital": "Chatra District Hospital (3.0 km)",
+    "elevation_m": 440,
+    "accessRoad": "SH-6 — landslide-prone in monsoon",
+    "historicalEvents": [
+      {
+        "date": "2024-08-02",
+        "event": "Chatra Hill Landslide",
+        "peopleServed": 110,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-021",
+    "name": "RIMS Emergency Disaster Ward",
+    "type": "Govt Building",
+    "address": "RIMS Campus, Bariatu, Ranchi",
+    "city": "Ranchi",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "pincode": "834009",
+    "latitude": 23.3783,
+    "longitude": 85.3226,
+    "capacity": 300,
+    "occupied": 190,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs hospital nutrition + baby food via ICDS",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1200 bottles + hospital water plant",
+    "waterBottles": 1200,
+    "medicalAvailable": true,
+    "medicalDetails": "6 specialist trauma teams 24/7 — full ICU backup",
+    "medicalTeams": 6,
+    "contact": "+91 0651 2545100",
+    "inchargeName": "Dr. Kameshwar Prasad",
+    "inchargeDesignation": "Director, RIMS Ranchi",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2010-06-01",
+    "lastUpdated": "2025-09-14T10:45:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "RIMS Ranchi — Jharkhand Health Department",
+    "nearestHospital": "RIMS Ranchi (On-site)",
+    "elevation_m": 651,
+    "accessRoad": "Bariatu Road — all-weather approach",
+    "historicalEvents": [
+      {
+        "date": "2024-09-01",
+        "event": "Ranchi Urban Flooding 2024",
+        "peopleServed": 280,
+        "durationDays": 7
+      },
+      {
+        "date": "2023-08-10",
+        "event": "Multi-district Flood Casualty Intake",
+        "peopleServed": 350,
+        "durationDays": 12
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-022",
+    "name": "Khunti Block Community Shelter",
+    "type": "Community Hall",
+    "address": "Block HQ, Khunti Town",
+    "city": "Khunti",
+    "district": "Khunti",
+    "state": "Jharkhand",
+    "pincode": "835210",
+    "latitude": 23.074,
+    "longitude": 85.2785,
+    "capacity": 200,
+    "occupied": 60,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "400 packs ICDS community meals",
+    "foodPacks": 400,
+    "waterAvailable": true,
+    "waterDetails": "550 bottles + community hand-pump",
+    "waterBottles": 550,
+    "medicalAvailable": true,
+    "medicalDetails": "1 tribal health center team",
+    "medicalTeams": 1,
+    "contact": "+91 06528 222500",
+    "inchargeName": "Monica Lakra",
+    "inchargeDesignation": "BDO Khunti",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-07-15",
+    "lastUpdated": "2025-09-14T08:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Tribal Development Dept + District Administration",
+    "nearestHospital": "Khunti CHC (1.5 km)",
+    "elevation_m": 510,
+    "accessRoad": "NH-75 — hill approach road",
+    "historicalEvents": [
+      {
+        "date": "2024-08-06",
+        "event": "Koel River Flash Flood",
+        "peopleServed": 145,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-023",
+    "name": "Saraikela Indoor Stadium Relief Camp",
+    "type": "Stadium",
+    "address": "Sports Complex, Saraikela",
+    "city": "Saraikela",
+    "district": "Saraikela-Kharsawan",
+    "state": "Jharkhand",
+    "pincode": "833219",
+    "latitude": 22.7004,
+    "longitude": 85.9318,
+    "capacity": 350,
+    "occupied": 130,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "750 packs cooked meals — Chhau festival committee kitchen",
+    "foodPacks": 750,
+    "waterAvailable": true,
+    "waterDetails": "1000 bottles + municipal tanker",
+    "waterBottles": 1000,
+    "medicalAvailable": true,
+    "medicalDetails": "1 district medical team + 108 ambulance on standby",
+    "medicalTeams": 1,
+    "contact": "+91 06597 222800",
+    "inchargeName": "J. P. Nayak",
+    "inchargeDesignation": "SDM Saraikela",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Administration, Saraikela-Kharsawan",
+    "nearestHospital": "Saraikela District Hospital (2.0 km)",
+    "elevation_m": 195,
+    "accessRoad": "NH-33 — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-09-03",
+        "event": "Subarnarekha Tributary Flood",
+        "peopleServed": 280,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-024",
+    "name": "Jamtara Zila Parishad Hall Relief Camp",
+    "type": "Govt Building",
+    "address": "Zila Parishad Complex, Jamtara",
+    "city": "Jamtara",
+    "district": "Jamtara",
+    "state": "Jharkhand",
+    "pincode": "815351",
+    "latitude": 23.9567,
+    "longitude": 86.8098,
+    "capacity": 200,
+    "occupied": 70,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "400 packs community kitchen meals",
+    "foodPacks": 400,
+    "waterAvailable": true,
+    "waterDetails": "600 bottles potable water",
+    "waterBottles": 600,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team on rotation",
+    "medicalTeams": 1,
+    "contact": "+91 06345 222100",
+    "inchargeName": "R. C. Mandal",
+    "inchargeDesignation": "BDO Jamtara",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "District Administration, Jamtara",
+    "nearestHospital": "Jamtara PHC (1.5 km)",
+    "elevation_m": 135,
+    "accessRoad": "SH-5 — flood-prone lowland",
+    "historicalEvents": [
+      {
+        "date": "2024-08-11",
+        "event": "Ajay River Overflow",
+        "peopleServed": 160,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-025",
+    "name": "East Singhbhum SDRF Base Camp",
+    "type": "Relief Camp",
+    "address": "Golmuri Area, Near DVC Road",
+    "city": "Jamshedpur",
+    "district": "East Singhbhum",
+    "state": "Jharkhand",
+    "pincode": "831003",
+    "latitude": 22.8115,
+    "longitude": 86.2044,
+    "capacity": 600,
+    "occupied": 310,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1800 packs — SDRF kitchen + Tata Steel CSR meals",
+    "foodPacks": 1800,
+    "waterAvailable": true,
+    "waterDetails": "2500 bottles + JUSCO water tanker on standby",
+    "waterBottles": 2500,
+    "medicalAvailable": true,
+    "medicalDetails": "3 SDRF medical teams + TMH ambulance link",
+    "medicalTeams": 3,
+    "contact": "+91 0657 2431800",
+    "inchargeName": "Commandant S. K. Ravi",
+    "inchargeDesignation": "SDRF Company Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-06-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Jharkhand, 5th Battalion",
+    "nearestHospital": "TMH Jamshedpur (3.5 km)",
+    "elevation_m": 140,
+    "accessRoad": "NH-33 bypass — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-09-05",
+        "event": "Subarnarekha Major Flood 2024",
+        "peopleServed": 580,
+        "durationDays": 15
+      },
+      {
+        "date": "2023-08-20",
+        "event": "Kharkai + Subarnarekha Joint Overflow",
+        "peopleServed": 420,
+        "durationDays": 10
+      },
+      {
+        "date": "2022-07-15",
+        "event": "East Singhbhum Flash Floods",
+        "peopleServed": 290,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-026",
+    "name": "Giridih Municipal School Shelter",
+    "type": "School",
+    "address": "Municipal School Complex, Giridih",
+    "city": "Giridih",
+    "district": "Giridih",
+    "state": "Jharkhand",
+    "pincode": "815301",
+    "latitude": 24.19,
+    "longitude": 86.32,
+    "capacity": 220,
+    "occupied": 95,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs mid-day meal kitchen extended",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles from municipal supply",
+    "waterBottles": 700,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC health worker on call",
+    "medicalTeams": 1,
+    "contact": "+91 06532 242300",
+    "inchargeName": "V. K. Jha",
+    "inchargeDesignation": "Headmaster",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2023-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Municipal Corporation, Giridih",
+    "nearestHospital": "Giridih Sadar Hospital (2.5 km)",
+    "elevation_m": 290,
+    "accessRoad": "SH-6 town road",
+    "historicalEvents": [
+      {
+        "date": "2024-07-20",
+        "event": "Barakar Tributary Overflow",
+        "peopleServed": 170,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-027",
+    "name": "Doranda Ranchi Polytechnic Shelter",
+    "type": "School",
+    "address": "Ranchi Polytechnic Campus, Doranda",
+    "city": "Ranchi",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "pincode": "834002",
+    "latitude": 23.364,
+    "longitude": 85.319,
+    "capacity": 280,
+    "occupied": 100,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "650 packs canteen meals + NGO supply",
+    "foodPacks": 650,
+    "waterAvailable": true,
+    "waterDetails": "900 bottles + campus bore-well",
+    "waterBottles": 900,
+    "medicalAvailable": true,
+    "medicalDetails": "1 campus medical center + Red Cross volunteers",
+    "medicalTeams": 1,
+    "contact": "+91 0651 2480300",
+    "inchargeName": "Prof. A. N. Singh",
+    "inchargeDesignation": "Principal, Ranchi Polytechnic",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Education Department + District Administration",
+    "nearestHospital": "RIMS Ranchi (2.5 km)",
+    "elevation_m": 645,
+    "accessRoad": "Ranchi-Doranda main road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-09-01",
+        "event": "Ranchi Urban Flooding 2024",
+        "peopleServed": 220,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-028",
+    "name": "Dhanbad Town Hall Disaster Shelter",
+    "type": "Community Hall",
+    "address": "Town Hall Complex, Hirapur",
+    "city": "Dhanbad",
+    "district": "Dhanbad",
+    "state": "Jharkhand",
+    "pincode": "826001",
+    "latitude": 23.8,
+    "longitude": 86.44,
+    "capacity": 350,
+    "occupied": 165,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs community kitchen + coal company CSR",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1100 bottles + BCCL water tanker",
+    "waterBottles": 1100,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — PMCH outreach + BCCL hospital",
+    "medicalTeams": 2,
+    "contact": "+91 0326 2301200",
+    "inchargeName": "S. K. Mondal",
+    "inchargeDesignation": "SDM Dhanbad",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Municipal Corporation Dhanbad + BCCL",
+    "nearestHospital": "PMCH Dhanbad (1.0 km)",
+    "elevation_m": 230,
+    "accessRoad": "GT Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-08-18",
+        "event": "Dhanbad Monsoon Flooding",
+        "peopleServed": 310,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-029",
+    "name": "Hazaribagh Lake Area Evacuation Centre",
+    "type": "Community Hall",
+    "address": "Lake Road Community Hall",
+    "city": "Hazaribagh",
+    "district": "Hazaribagh",
+    "state": "Jharkhand",
+    "pincode": "825301",
+    "latitude": 23.9975,
+    "longitude": 85.355,
+    "capacity": 200,
+    "occupied": 75,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "450 packs community meals",
+    "foodPacks": 450,
+    "waterAvailable": true,
+    "waterDetails": "600 bottles + lake area bore-well",
+    "waterBottles": 600,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team on rotation",
+    "medicalTeams": 1,
+    "contact": "+91 06546 262500",
+    "inchargeName": "N. P. Sinha",
+    "inchargeDesignation": "Ward Councillor",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2023-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Municipal Corporation, Hazaribagh",
+    "nearestHospital": "Hazaribagh Medical College (3.0 km)",
+    "elevation_m": 610,
+    "accessRoad": "Lake Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-08-25",
+        "event": "Hazaribagh Lake Overflow",
+        "peopleServed": 160,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-JH-030",
+    "name": "Ranchi Jharkhand State Emergency Operations Centre",
+    "type": "Govt Building",
+    "address": "Project Bhawan, Dhurwa, Ranchi",
+    "city": "Ranchi",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "pincode": "834004",
+    "latitude": 23.3567,
+    "longitude": 85.334,
+    "capacity": 200,
+    "occupied": 50,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs emergency rations — state disaster supply",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles + government water supply",
+    "waterBottles": 700,
+    "medicalAvailable": true,
+    "medicalDetails": "1 state medical rapid response team",
+    "medicalTeams": 1,
+    "contact": "+91 0651 2400100",
+    "inchargeName": "IAS Officer S. K. Lal",
+    "inchargeDesignation": "Secretary, Disaster Management",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2015-01-01",
+    "lastUpdated": "2025-09-14T10:50:00.000Z",
+    "disasterType": [
+      "flash_flood",
+      "landslide"
+    ],
+    "dataSource": "official",
+    "managedBy": "Jharkhand State Disaster Management Authority (JSDMA)",
+    "nearestHospital": "RIMS Ranchi (3.0 km)",
+    "elevation_m": 660,
+    "accessRoad": "NH-33 Dhurwa bypass — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-09-01",
+        "event": "State-level Flood Coordination 2024",
+        "peopleServed": 150,
+        "durationDays": 20
+      },
+      {
+        "date": "2023-08-10",
+        "event": "Multi-district Flood Ops Centre",
+        "peopleServed": 100,
+        "durationDays": 15
+      }
+    ]
+  }
+]

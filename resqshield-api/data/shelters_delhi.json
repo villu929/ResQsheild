@@ -1,0 +1,1475 @@
+[
+  {
+    "id": "SH-DL-001",
+    "name": "Yamuna Pusta NDRF Relief Camp",
+    "type": "Relief Camp",
+    "address": "Yamuna Pusta, Near ISBT",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110006",
+    "latitude": 28.6742,
+    "longitude": 77.234,
+    "capacity": 800,
+    "occupied": 520,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "2500 packs — NDRF kitchen + Delhi Govt community kitchen (Amma Canteen model)",
+    "foodPacks": 2500,
+    "waterAvailable": true,
+    "waterDetails": "4000 bottles + DJB water tanker fleet (5 tankers)",
+    "waterBottles": 4000,
+    "medicalAvailable": true,
+    "medicalDetails": "4 NDRF medical teams + LNJP Hospital mobile unit",
+    "medicalTeams": 4,
+    "contact": "+91 011 23454500",
+    "inchargeName": "Commandant R. S. Rathore",
+    "inchargeDesignation": "NDRF 2nd Battalion Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2013-06-15",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF 2nd Battalion + DDMA",
+    "nearestHospital": "LNJP Hospital (2.5 km)",
+    "elevation_m": 213,
+    "accessRoad": "Ring Road / ISBT Flyover — all-weather but waterlogged during Yamuna rise above 207m",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Record Flood 2024 (208.66m)",
+        "peopleServed": 780,
+        "durationDays": 12
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Yamuna Flood 2023 (208.65m)",
+        "peopleServed": 720,
+        "durationDays": 10
+      },
+      {
+        "date": "2019-08-19",
+        "event": "Yamuna Flood 2019 (206.6m)",
+        "peopleServed": 450,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-002",
+    "name": "Kashmere Gate Govt School Relief Shelter",
+    "type": "School",
+    "address": "Kashmere Gate Govt Senior Secondary School",
+    "city": "New Delhi",
+    "district": "North Delhi",
+    "state": "Delhi",
+    "pincode": "110006",
+    "latitude": 28.6653,
+    "longitude": 77.2279,
+    "capacity": 400,
+    "occupied": 280,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1100 packs hot meals — Delhi Govt mid-day meal kitchen extended",
+    "foodPacks": 1100,
+    "waterAvailable": true,
+    "waterDetails": "1500 bottles + DJB RO unit installed",
+    "waterBottles": 1500,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — Hindu Rao Hospital outpost",
+    "medicalTeams": 2,
+    "contact": "+91 011 23862200",
+    "inchargeName": "A. K. Sharma",
+    "inchargeDesignation": "Principal & Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2010-07-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Delhi Education Department + DDMA",
+    "nearestHospital": "Hindu Rao Hospital (3.0 km)",
+    "elevation_m": 216,
+    "accessRoad": "Kashmere Gate Metro road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Record Flood 2024",
+        "peopleServed": 380,
+        "durationDays": 10
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Yamuna Flood 2023",
+        "peopleServed": 350,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-003",
+    "name": "ITO Flood Relief Camp — Millennium Park",
+    "type": "Relief Camp",
+    "address": "Millennium Park, ITO Ring Road",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110002",
+    "latitude": 28.6281,
+    "longitude": 77.246,
+    "capacity": 600,
+    "occupied": 380,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1800 packs — SDRF kitchen + gurdwara langar support",
+    "foodPacks": 1800,
+    "waterAvailable": true,
+    "waterDetails": "2500 bottles + 3 DJB tankers",
+    "waterBottles": 2500,
+    "medicalAvailable": true,
+    "medicalDetails": "3 medical teams — LNJP + Red Cross Delhi",
+    "medicalTeams": 3,
+    "contact": "+91 011 23455600",
+    "inchargeName": "SDM Central District",
+    "inchargeDesignation": "Camp Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2012-07-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "DDMA + Delhi Govt Revenue Department",
+    "nearestHospital": "LNJP Hospital (1.8 km)",
+    "elevation_m": 210,
+    "accessRoad": "Ring Road ITO — frequently waterlogged during floods",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Record Flood 2024",
+        "peopleServed": 560,
+        "durationDays": 12
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Yamuna Flood 2023",
+        "peopleServed": 490,
+        "durationDays": 10
+      },
+      {
+        "date": "2021-08-18",
+        "event": "Delhi Urban Flooding",
+        "peopleServed": 280,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-004",
+    "name": "Mayur Vihar Phase-1 Community Centre Shelter",
+    "type": "Community Hall",
+    "address": "DDA Community Centre, Pocket 2, Mayur Vihar Phase-1",
+    "city": "New Delhi",
+    "district": "East Delhi",
+    "state": "Delhi",
+    "pincode": "110091",
+    "latitude": 28.5931,
+    "longitude": 77.299,
+    "capacity": 350,
+    "occupied": 190,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "900 packs — community kitchen + NGO support (Akshaya Patra)",
+    "foodPacks": 900,
+    "waterAvailable": true,
+    "waterDetails": "1200 bottles + DJB supply",
+    "waterBottles": 1200,
+    "medicalAvailable": true,
+    "medicalDetails": "1 medical team — Lal Bahadur Shastri Hospital outpost",
+    "medicalTeams": 1,
+    "contact": "+91 011 22754400",
+    "inchargeName": "R. K. Meena",
+    "inchargeDesignation": "DDA Area Manager",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-07-01",
+    "lastUpdated": "2025-09-14T09:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "DDA + East Delhi District Administration",
+    "nearestHospital": "LBS Hospital (2.5 km)",
+    "elevation_m": 209,
+    "accessRoad": "Mayur Vihar main road — flood-prone near Yamuna link",
+    "historicalEvents": [
+      {
+        "date": "2024-07-14",
+        "event": "East Delhi Yamuna Backwater Flooding",
+        "peopleServed": 340,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-005",
+    "name": "Okhla Barrage Relief Camp",
+    "type": "Relief Camp",
+    "address": "Okhla Barrage Road, Near Kalindi Kunj",
+    "city": "New Delhi",
+    "district": "South East Delhi",
+    "state": "Delhi",
+    "pincode": "110025",
+    "latitude": 28.5433,
+    "longitude": 77.31,
+    "capacity": 500,
+    "occupied": 310,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1400 packs — SDRF + Sikh gurudwara langar seva",
+    "foodPacks": 1400,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles + 2 DJB tankers",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — AIIMS trauma outreach",
+    "medicalTeams": 2,
+    "contact": "+91 011 26310800",
+    "inchargeName": "Commandant V. K. Tyagi",
+    "inchargeDesignation": "SDRF Delhi Company Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2014-07-01",
+    "lastUpdated": "2025-09-14T10:20:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Delhi + DDMA",
+    "nearestHospital": "Holy Family Hospital (4.0 km)",
+    "elevation_m": 198,
+    "accessRoad": "Kalindi Kunj Road — flood-prone during Yamuna high water",
+    "historicalEvents": [
+      {
+        "date": "2024-07-13",
+        "event": "Okhla Barrage Overflow 2024",
+        "peopleServed": 480,
+        "durationDays": 11
+      },
+      {
+        "date": "2023-07-14",
+        "event": "Yamuna South Delhi Flooding 2023",
+        "peopleServed": 390,
+        "durationDays": 9
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-006",
+    "name": "Dwarka Sector 12 Sports Complex Shelter",
+    "type": "Stadium",
+    "address": "Dwarka Sports Complex, Sector 12",
+    "city": "New Delhi",
+    "district": "South West Delhi",
+    "state": "Delhi",
+    "pincode": "110075",
+    "latitude": 28.5921,
+    "longitude": 77.034,
+    "capacity": 400,
+    "occupied": 80,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1000 packs — DDA kitchen + NGO volunteers",
+    "foodPacks": 1000,
+    "waterAvailable": true,
+    "waterDetails": "1400 bottles + DJB connection",
+    "waterBottles": 1400,
+    "medicalAvailable": true,
+    "medicalDetails": "1 medical team — Deen Dayal Upadhyay Hospital",
+    "medicalTeams": 1,
+    "contact": "+91 011 25082200",
+    "inchargeName": "S. K. Yadav",
+    "inchargeDesignation": "Sports Complex Manager",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "DDA + South West Delhi District Administration",
+    "nearestHospital": "DDU Hospital Dwarka (3.5 km)",
+    "elevation_m": 220,
+    "accessRoad": "Dwarka Expressway — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-10",
+        "event": "Dwarka Waterlogging 2024",
+        "peopleServed": 150,
+        "durationDays": 3
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-007",
+    "name": "Rohini Sector 15 School Relief Centre",
+    "type": "School",
+    "address": "Govt. Co-ed Senior Sec School, Sector 15, Rohini",
+    "city": "New Delhi",
+    "district": "North West Delhi",
+    "state": "Delhi",
+    "pincode": "110089",
+    "latitude": 28.7344,
+    "longitude": 77.1148,
+    "capacity": 300,
+    "occupied": 110,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "750 packs — mid-day meal kitchen + community volunteers",
+    "foodPacks": 750,
+    "waterAvailable": true,
+    "waterDetails": "1000 bottles + school bore-well",
+    "waterBottles": 1000,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team + ASHA workers",
+    "medicalTeams": 1,
+    "contact": "+91 011 27055300",
+    "inchargeName": "Mrs. Sunita Jain",
+    "inchargeDesignation": "Principal",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-07-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Delhi Education Department",
+    "nearestHospital": "Rohini Sector 16 Hospital (1.5 km)",
+    "elevation_m": 225,
+    "accessRoad": "Rohini main road — waterlogging prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-09",
+        "event": "Rohini Urban Waterlogging",
+        "peopleServed": 200,
+        "durationDays": 3
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-008",
+    "name": "Narela Industrial Area SDRF Camp",
+    "type": "Relief Camp",
+    "address": "DSIIDC Industrial Area, Narela",
+    "city": "New Delhi",
+    "district": "North Delhi",
+    "state": "Delhi",
+    "pincode": "110040",
+    "latitude": 28.853,
+    "longitude": 77.094,
+    "capacity": 450,
+    "occupied": 200,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs — SDRF emergency kitchen",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1600 bottles + DJB tanker fleet",
+    "waterBottles": 1600,
+    "medicalAvailable": true,
+    "medicalDetails": "2 SDRF medical teams",
+    "medicalTeams": 2,
+    "contact": "+91 011 27295500",
+    "inchargeName": "Inspector K. L. Sharma",
+    "inchargeDesignation": "SDRF Detachment IC",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-07-01",
+    "lastUpdated": "2025-09-14T10:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SDRF Delhi + North Delhi District Administration",
+    "nearestHospital": "Bhagwan Mahavir Hospital (5.0 km)",
+    "elevation_m": 230,
+    "accessRoad": "GT Karnal Road NH-44 — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-15",
+        "event": "Narela-Bawana Waterlogging",
+        "peopleServed": 380,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-009",
+    "name": "Wazirabad Yamuna Bund Relief Centre",
+    "type": "Relief Camp",
+    "address": "Wazirabad Barrage Road",
+    "city": "New Delhi",
+    "district": "North East Delhi",
+    "state": "Delhi",
+    "pincode": "110084",
+    "latitude": 28.7149,
+    "longitude": 77.2318,
+    "capacity": 550,
+    "occupied": 400,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1600 packs — Delhi Govt + gurdwara langar + mosque iftar kitchen",
+    "foodPacks": 1600,
+    "waterAvailable": true,
+    "waterDetails": "2200 bottles + 4 DJB tankers (critical zone)",
+    "waterBottles": 2200,
+    "medicalAvailable": true,
+    "medicalDetails": "3 medical teams — GTB Hospital + NDRF medics",
+    "medicalTeams": 3,
+    "contact": "+91 011 22915400",
+    "inchargeName": "District Magistrate NE Delhi",
+    "inchargeDesignation": "Camp Supervisor",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2011-07-01",
+    "lastUpdated": "2025-09-14T10:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "DDMA + NE Delhi District Administration",
+    "nearestHospital": "GTB Hospital (3.5 km)",
+    "elevation_m": 208,
+    "accessRoad": "Wazirabad Road — frequently submerged during Yamuna floods",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Record Flood — Wazirabad 208.66m",
+        "peopleServed": 530,
+        "durationDays": 14
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Yamuna Flood — Wazirabad 208.65m",
+        "peopleServed": 500,
+        "durationDays": 11
+      },
+      {
+        "date": "2019-08-19",
+        "event": "Yamuna High Flood 206.6m",
+        "peopleServed": 310,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-010",
+    "name": "Sadar Bazaar Rai Mandi School Shelter",
+    "type": "School",
+    "address": "Rai Mandi Govt School, Sadar Bazaar",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110006",
+    "latitude": 28.6585,
+    "longitude": 77.2105,
+    "capacity": 250,
+    "occupied": 160,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "650 packs — community kitchen + temple prasad",
+    "foodPacks": 650,
+    "waterAvailable": true,
+    "waterDetails": "900 bottles + DJB supply",
+    "waterBottles": 900,
+    "medicalAvailable": true,
+    "medicalDetails": "1 medical team — RML Hospital outpost",
+    "medicalTeams": 1,
+    "contact": "+91 011 23614400",
+    "inchargeName": "P. K. Bansal",
+    "inchargeDesignation": "SDM Central",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2015-07-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Central Delhi District Administration",
+    "nearestHospital": "RML Hospital (2.0 km)",
+    "elevation_m": 218,
+    "accessRoad": "Sadar Bazaar main road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Central Delhi Evacuation",
+        "peopleServed": 240,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-011",
+    "name": "Geeta Colony Yamuna Basti Shelter",
+    "type": "Community Hall",
+    "address": "Geeta Colony Community Hall, Near Yamuna Basti",
+    "city": "New Delhi",
+    "district": "East Delhi",
+    "state": "Delhi",
+    "pincode": "110031",
+    "latitude": 28.6448,
+    "longitude": 77.2735,
+    "capacity": 300,
+    "occupied": 220,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "800 packs — NGO volunteers + gurudwara langar",
+    "foodPacks": 800,
+    "waterAvailable": true,
+    "waterDetails": "1100 bottles + DJB tanker",
+    "waterBottles": 1100,
+    "medicalAvailable": true,
+    "medicalDetails": "1 medical team — GTB Hospital outreach",
+    "medicalTeams": 1,
+    "contact": "+91 011 22756600",
+    "inchargeName": "Ward Councillor, Geeta Colony",
+    "inchargeDesignation": "Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2016-07-01",
+    "lastUpdated": "2025-09-14T10:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "East Delhi District Administration + MCD",
+    "nearestHospital": "GTB Hospital (2.0 km)",
+    "elevation_m": 207,
+    "accessRoad": "Geeta Colony road — flood-prone during Yamuna rise",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Flood — Geeta Colony Evacuation",
+        "peopleServed": 280,
+        "durationDays": 10
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-012",
+    "name": "Pragati Maidan Emergency Shelter",
+    "type": "Govt Building",
+    "address": "Pragati Maidan Hall 12-14, Mathura Road",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110001",
+    "latitude": 28.618,
+    "longitude": 77.245,
+    "capacity": 1000,
+    "occupied": 450,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "3000 packs — ITPO catering + Delhi Govt emergency kitchen",
+    "foodPacks": 3000,
+    "waterAvailable": true,
+    "waterDetails": "5000 bottles + ITPO water plant",
+    "waterBottles": 5000,
+    "medicalAvailable": true,
+    "medicalDetails": "5 medical teams — Safdarjung Hospital + AIIMS mobile unit",
+    "medicalTeams": 5,
+    "contact": "+91 011 23371100",
+    "inchargeName": "CMD ITPO",
+    "inchargeDesignation": "Emergency Operations In-Charge",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2013-07-01",
+    "lastUpdated": "2025-09-14T10:50:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "ITPO + DDMA + Delhi Govt",
+    "nearestHospital": "AIIMS Delhi (4.0 km)",
+    "elevation_m": 215,
+    "accessRoad": "Mathura Road — all-weather, metro connected",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Major Delhi Flood Shelter Activation",
+        "peopleServed": 900,
+        "durationDays": 12
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-013",
+    "name": "Burari Mukherjee Nagar School Shelter",
+    "type": "School",
+    "address": "Govt Boys Senior Sec School, Burari",
+    "city": "New Delhi",
+    "district": "North Delhi",
+    "state": "Delhi",
+    "pincode": "110084",
+    "latitude": 28.7398,
+    "longitude": 77.1989,
+    "capacity": 280,
+    "occupied": 150,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "700 packs — community kitchen",
+    "foodPacks": 700,
+    "waterAvailable": true,
+    "waterDetails": "950 bottles + school tanker supply",
+    "waterBottles": 950,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team + ASHA workers",
+    "medicalTeams": 1,
+    "contact": "+91 011 27602200",
+    "inchargeName": "SDM Burari Zone",
+    "inchargeDesignation": "Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-07-01",
+    "lastUpdated": "2025-09-14T09:15:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "North Delhi District Administration",
+    "nearestHospital": "Burari Hospital (2.0 km)",
+    "elevation_m": 222,
+    "accessRoad": "Burari main road",
+    "historicalEvents": [
+      {
+        "date": "2024-07-13",
+        "event": "North Delhi Flood Evacuation",
+        "peopleServed": 250,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-014",
+    "name": "Shahdara Yamuna Vihar Relief Centre",
+    "type": "Community Hall",
+    "address": "Yamuna Vihar Community Centre, Shahdara",
+    "city": "New Delhi",
+    "district": "Shahdara",
+    "state": "Delhi",
+    "pincode": "110053",
+    "latitude": 28.6897,
+    "longitude": 77.2707,
+    "capacity": 350,
+    "occupied": 240,
+    "status": "NEAR_FULL",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "900 packs — mosque iftar kitchen + community volunteers",
+    "foodPacks": 900,
+    "waterAvailable": true,
+    "waterDetails": "1200 bottles + bore-well",
+    "waterBottles": 1200,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — GTB Hospital",
+    "medicalTeams": 2,
+    "contact": "+91 011 22814400",
+    "inchargeName": "SDM Shahdara",
+    "inchargeDesignation": "Camp Commander",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2017-07-01",
+    "lastUpdated": "2025-09-14T10:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Shahdara District Administration",
+    "nearestHospital": "GTB Hospital (3.0 km)",
+    "elevation_m": 210,
+    "accessRoad": "Shahdara road — partially flood-prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Yamuna Flood — Shahdara Zone Evacuation",
+        "peopleServed": 330,
+        "durationDays": 9
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-015",
+    "name": "Indraprastha NDRF Forward Operating Base",
+    "type": "Relief Camp",
+    "address": "IP Estate Grounds, Near Supreme Court",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110002",
+    "latitude": 28.6265,
+    "longitude": 77.2455,
+    "capacity": 400,
+    "occupied": 180,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1100 packs — NDRF rations + Delhi Govt supply",
+    "foodPacks": 1100,
+    "waterAvailable": true,
+    "waterDetails": "1500 bottles + NDRF water purification unit",
+    "waterBottles": 1500,
+    "medicalAvailable": true,
+    "medicalDetails": "3 NDRF medical teams with field hospital capability",
+    "medicalTeams": 3,
+    "contact": "+91 011 23456789",
+    "inchargeName": "Commandant P. K. Singh",
+    "inchargeDesignation": "NDRF Battalion IC",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2010-01-01",
+    "lastUpdated": "2025-09-14T10:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "NDRF 2nd Battalion",
+    "nearestHospital": "LNJP Hospital (2.0 km)",
+    "elevation_m": 214,
+    "accessRoad": "IP Estate Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Delhi Flood Ops 2024",
+        "peopleServed": 380,
+        "durationDays": 14
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Delhi Flood Ops 2023",
+        "peopleServed": 350,
+        "durationDays": 11
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-016",
+    "name": "Sonia Vihar Yamuna Floodplain Shelter",
+    "type": "Community Hall",
+    "address": "Sonia Vihar Community Centre, Near Water Treatment Plant",
+    "city": "New Delhi",
+    "district": "North East Delhi",
+    "state": "Delhi",
+    "pincode": "110094",
+    "latitude": 28.724,
+    "longitude": 77.256,
+    "capacity": 300,
+    "occupied": 200,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "750 packs — community volunteers + NGO CRY support",
+    "foodPacks": 750,
+    "waterAvailable": true,
+    "waterDetails": "1000 bottles + WTP direct supply line",
+    "waterBottles": 1000,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC mobile team",
+    "medicalTeams": 1,
+    "contact": "+91 011 22735500",
+    "inchargeName": "Ward Councillor Sonia Vihar",
+    "inchargeDesignation": "Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2018-07-01",
+    "lastUpdated": "2025-09-14T09:45:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "NE Delhi District Administration + MCD",
+    "nearestHospital": "GTB Hospital (5.0 km)",
+    "elevation_m": 209,
+    "accessRoad": "Sonia Vihar road — flood-prone near Yamuna",
+    "historicalEvents": [
+      {
+        "date": "2024-07-14",
+        "event": "NE Delhi Yamuna Floodplain Evacuation",
+        "peopleServed": 290,
+        "durationDays": 8
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-017",
+    "name": "Tughlaqabad DDA Shelter",
+    "type": "Govt Building",
+    "address": "DDA Complex, Tughlaqabad Extension",
+    "city": "New Delhi",
+    "district": "South Delhi",
+    "state": "Delhi",
+    "pincode": "110019",
+    "latitude": 28.513,
+    "longitude": 77.258,
+    "capacity": 250,
+    "occupied": 60,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs emergency dry rations",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles stored",
+    "waterBottles": 700,
+    "medicalAvailable": false,
+    "medicalDetails": "First aid kit — AIIMS 6 km",
+    "medicalTeams": 0,
+    "contact": "+91 011 26379900",
+    "inchargeName": "DDA Area Officer",
+    "inchargeDesignation": "Shelter Manager",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2022-07-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "DDA",
+    "nearestHospital": "AIIMS Delhi (6.0 km)",
+    "elevation_m": 228,
+    "accessRoad": "MB Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-10",
+        "event": "South Delhi Waterlogging",
+        "peopleServed": 80,
+        "durationDays": 2
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-018",
+    "name": "Palam CRPF Campus Emergency Shelter",
+    "type": "Govt Building",
+    "address": "CRPF Camp Palam",
+    "city": "New Delhi",
+    "district": "South West Delhi",
+    "state": "Delhi",
+    "pincode": "110045",
+    "latitude": 28.583,
+    "longitude": 77.087,
+    "capacity": 500,
+    "occupied": 100,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1500 packs — CRPF mess kitchen ready",
+    "foodPacks": 1500,
+    "waterAvailable": true,
+    "waterDetails": "2000 bottles + campus water plant",
+    "waterBottles": 2000,
+    "medicalAvailable": true,
+    "medicalDetails": "2 CRPF medical teams with hospital facility",
+    "medicalTeams": 2,
+    "contact": "+91 011 25683300",
+    "inchargeName": "DIG CRPF Palam Sector",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2015-01-01",
+    "lastUpdated": "2025-09-14T08:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "CRPF + DDMA",
+    "nearestHospital": "CRPF Hospital Palam (On-site)",
+    "elevation_m": 222,
+    "accessRoad": "Palam Road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-10",
+        "event": "SW Delhi Flood Standby Activation",
+        "peopleServed": 150,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-019",
+    "name": "Loni Border Flood Evacuation Centre",
+    "type": "School",
+    "address": "Govt School, Loni Border Road",
+    "city": "New Delhi",
+    "district": "North East Delhi",
+    "state": "Delhi",
+    "pincode": "110093",
+    "latitude": 28.7503,
+    "longitude": 77.2825,
+    "capacity": 250,
+    "occupied": 180,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "600 packs — community volunteers",
+    "foodPacks": 600,
+    "waterAvailable": true,
+    "waterDetails": "800 bottles + hand-pump",
+    "waterBottles": 800,
+    "medicalAvailable": true,
+    "medicalDetails": "1 ASHA worker team",
+    "medicalTeams": 1,
+    "contact": "+91 011 22825500",
+    "inchargeName": "BDO Loni Zone",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2020-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "NE Delhi District Administration",
+    "nearestHospital": "GTB Hospital (6.0 km)",
+    "elevation_m": 212,
+    "accessRoad": "Loni Road — flood-prone near Yamuna-Hindon confluence",
+    "historicalEvents": [
+      {
+        "date": "2024-07-14",
+        "event": "Hindon-Yamuna Confluence Flooding",
+        "peopleServed": 240,
+        "durationDays": 7
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-020",
+    "name": "DDMA State Emergency Operations Centre",
+    "type": "Govt Building",
+    "address": "DDMA HQ, Delhi Secretariat Annexe, IP Estate",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110002",
+    "latitude": 28.627,
+    "longitude": 77.242,
+    "capacity": 150,
+    "occupied": 30,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "300 packs emergency staff rations",
+    "foodPacks": 300,
+    "waterAvailable": true,
+    "waterDetails": "500 bottles + secretariat supply",
+    "waterBottles": 500,
+    "medicalAvailable": true,
+    "medicalDetails": "1 rapid response medical team",
+    "medicalTeams": 1,
+    "contact": "+91 011 23890100",
+    "inchargeName": "CEO DDMA",
+    "inchargeDesignation": "Chief Executive Officer",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2005-01-01",
+    "lastUpdated": "2025-09-14T10:55:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "Delhi Disaster Management Authority (DDMA)",
+    "nearestHospital": "LNJP Hospital (1.5 km)",
+    "elevation_m": 216,
+    "accessRoad": "IP Estate main road — all-weather",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Delhi Flood Command Centre Ops 2024",
+        "peopleServed": 50,
+        "durationDays": 18
+      },
+      {
+        "date": "2023-07-13",
+        "event": "Delhi Flood Ops Centre 2023",
+        "peopleServed": 40,
+        "durationDays": 14
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-021",
+    "name": "Nehru Stadium Mega Shelter Complex",
+    "type": "Stadium",
+    "address": "Jawaharlal Nehru Stadium, Lodhi Road",
+    "city": "New Delhi",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "pincode": "110003",
+    "latitude": 28.5814,
+    "longitude": 77.2337,
+    "capacity": 1200,
+    "occupied": 300,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "Bedding",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "4000 packs — mega community kitchen + catering contracts",
+    "foodPacks": 4000,
+    "waterAvailable": true,
+    "waterDetails": "6000 bottles + stadium water infrastructure",
+    "waterBottles": 6000,
+    "medicalAvailable": true,
+    "medicalDetails": "6 medical teams — Safdarjung + AIIMS joint ops",
+    "medicalTeams": 6,
+    "contact": "+91 011 24363400",
+    "inchargeName": "Sports Authority of India",
+    "inchargeDesignation": "Emergency Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2010-01-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SAI + DDMA + MHA",
+    "nearestHospital": "Safdarjung Hospital (2.0 km)",
+    "elevation_m": 220,
+    "accessRoad": "Lodhi Road — all-weather, metro connected",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Mega Shelter Standby — Delhi Flood 2024",
+        "peopleServed": 500,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-022",
+    "name": "Najafgarh Drain Flood Shelter",
+    "type": "School",
+    "address": "Govt School, Najafgarh Town",
+    "city": "New Delhi",
+    "district": "South West Delhi",
+    "state": "Delhi",
+    "pincode": "110043",
+    "latitude": 28.6085,
+    "longitude": 76.9798,
+    "capacity": 280,
+    "occupied": 150,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation",
+      "Charging"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "700 packs community meals",
+    "foodPacks": 700,
+    "waterAvailable": true,
+    "waterDetails": "900 bottles + DJB tanker",
+    "waterBottles": 900,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team",
+    "medicalTeams": 1,
+    "contact": "+91 011 25321100",
+    "inchargeName": "SDM Najafgarh",
+    "inchargeDesignation": "Camp IC",
+    "photoUrl": "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1577896851231-70ef18b14a60?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2019-07-01",
+    "lastUpdated": "2025-09-14T09:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "SW Delhi District + MCD",
+    "nearestHospital": "Najafgarh PHC (1.5 km)",
+    "elevation_m": 215,
+    "accessRoad": "Najafgarh main road — waterlogging prone due to drain overflow",
+    "historicalEvents": [
+      {
+        "date": "2024-07-09",
+        "event": "Najafgarh Drain Overflow",
+        "peopleServed": 250,
+        "durationDays": 5
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-023",
+    "name": "Badarpur Border Relief Centre",
+    "type": "Community Hall",
+    "address": "Community Centre, Badarpur Border",
+    "city": "New Delhi",
+    "district": "South East Delhi",
+    "state": "Delhi",
+    "pincode": "110044",
+    "latitude": 28.507,
+    "longitude": 77.303,
+    "capacity": 200,
+    "occupied": 90,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs community kitchen",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles",
+    "waterBottles": 700,
+    "medicalAvailable": true,
+    "medicalDetails": "1 PHC team",
+    "medicalTeams": 1,
+    "contact": "+91 011 26943300",
+    "inchargeName": "Ward Councillor Badarpur",
+    "inchargeDesignation": "Camp Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2021-07-01",
+    "lastUpdated": "2025-09-14T08:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "SE Delhi District Administration",
+    "nearestHospital": "Badarpur PHC (2.0 km)",
+    "elevation_m": 200,
+    "accessRoad": "MB Road — waterlogging prone",
+    "historicalEvents": [
+      {
+        "date": "2024-07-11",
+        "event": "Badarpur Drain Overflow",
+        "peopleServed": 160,
+        "durationDays": 4
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-024",
+    "name": "Chandni Chowk Heritage Zone Shelter",
+    "type": "Religious",
+    "address": "Fatehpuri Masjid Relief Area, Chandni Chowk",
+    "city": "New Delhi",
+    "district": "Central Delhi",
+    "state": "Delhi",
+    "pincode": "110006",
+    "latitude": 28.6569,
+    "longitude": 77.2218,
+    "capacity": 200,
+    "occupied": 130,
+    "status": "OPEN",
+    "services": [
+      "Food",
+      "Water",
+      "Sanitation"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "500 packs — mosque kitchen + gurudwara langar",
+    "foodPacks": 500,
+    "waterAvailable": true,
+    "waterDetails": "700 bottles + mosque well",
+    "waterBottles": 700,
+    "medicalAvailable": true,
+    "medicalDetails": "1 Red Crescent medical volunteer team",
+    "medicalTeams": 1,
+    "contact": "+91 011 23861100",
+    "inchargeName": "Imam Fatehpuri Masjid",
+    "inchargeDesignation": "Relief Coordinator",
+    "photoUrl": "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1516975080665-27a4d5386762?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2013-07-01",
+    "lastUpdated": "2025-09-14T09:30:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "estimated",
+    "managedBy": "Mosque Trust + Central Delhi Administration",
+    "nearestHospital": "Hindu Rao Hospital (4.0 km)",
+    "elevation_m": 218,
+    "accessRoad": "Chandni Chowk main road — metro connected",
+    "historicalEvents": [
+      {
+        "date": "2024-07-12",
+        "event": "Old Delhi Flood Relief 2024",
+        "peopleServed": 180,
+        "durationDays": 6
+      }
+    ]
+  },
+  {
+    "id": "SH-DL-025",
+    "name": "Thyagraj Stadium Emergency Shelter",
+    "type": "Stadium",
+    "address": "Thyagraj Stadium, INA Colony",
+    "city": "New Delhi",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "pincode": "110003",
+    "latitude": 28.578,
+    "longitude": 77.218,
+    "capacity": 500,
+    "occupied": 120,
+    "status": "STANDBY",
+    "services": [
+      "Food",
+      "Water",
+      "Medical",
+      "Sanitation",
+      "Charging",
+      "Security",
+      "WiFi"
+    ],
+    "foodAvailable": true,
+    "foodDetails": "1200 packs — stadium catering facility",
+    "foodPacks": 1200,
+    "waterAvailable": true,
+    "waterDetails": "1800 bottles + stadium water supply",
+    "waterBottles": 1800,
+    "medicalAvailable": true,
+    "medicalDetails": "2 medical teams — Safdarjung Hospital",
+    "medicalTeams": 2,
+    "contact": "+91 011 24368800",
+    "inchargeName": "SAI Delhi Centre Director",
+    "inchargeDesignation": "Emergency Shelter IC",
+    "photoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "images": [
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "operatingSince": "2015-01-01",
+    "lastUpdated": "2025-09-14T08:00:00.000Z",
+    "disasterType": [
+      "flash_flood"
+    ],
+    "dataSource": "official",
+    "managedBy": "SAI + DDMA",
+    "nearestHospital": "Safdarjung Hospital (1.5 km)",
+    "elevation_m": 222,
+    "accessRoad": "INA Road — all-weather, metro connected",
+    "historicalEvents": [
+      {
+        "date": "2024-07-10",
+        "event": "Standby Activation — Delhi Floods 2024",
+        "peopleServed": 200,
+        "durationDays": 4
+      }
+    ]
+  }
+]

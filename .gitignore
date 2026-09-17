@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend API
+resqshield-api/node_modules/
+resqshield-api/.env
