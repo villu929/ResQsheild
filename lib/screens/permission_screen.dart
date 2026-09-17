@@ -57,6 +57,7 @@ class _PermissionScreenState extends State<PermissionScreen>
   bool _isCordHoveredOrDragged = false;
   bool _allowPressed = false;
   bool _notNowPressed = false;
+  bool _permissionsGranted = false;
 
   // Cord metrics
   static const double _kRestingCordLength = 140.0;
@@ -187,6 +188,15 @@ class _PermissionScreenState extends State<PermissionScreen>
   // --------------------------------------------------------------------------
   Future<void> _handleAllow() async {
     if (_isTransitioning) return;
+
+    // Trigger checkmarks animation first
+    setState(() => _permissionsGranted = true);
+    HapticFeedback.lightImpact();
+    
+    // Wait for the boxes to animate to checked state
+    await Future.delayed(const Duration(milliseconds: 650));
+    if (!mounted) return;
+
     setState(() => _isTransitioning = true);
     HapticFeedback.mediumImpact();
 
@@ -224,6 +234,8 @@ class _PermissionScreenState extends State<PermissionScreen>
         await [
           Permission.locationWhenInUse,
           Permission.notification,
+          Permission.camera,
+          Permission.photos,
         ].request().timeout(
           const Duration(seconds: 3),
           onTimeout: () => {},
@@ -361,8 +373,8 @@ class _PermissionScreenState extends State<PermissionScreen>
                     animation: _pullCurve,
                     builder: (context, child) {
                       final double pullT = _pullCurve.value.clamp(0.0, 1.0);
-                      // Popup height is approximately 430px
-                      final double hiddenY = 460.0;
+                      // Popup height is approximately 620px
+                      final double hiddenY = 620.0;
                       final double slideY = hiddenY * (1.0 - pullT);
 
                       return Positioned(
@@ -894,7 +906,7 @@ class _PermissionScreenState extends State<PermissionScreen>
 
           const SizedBox(height: 18),
 
-          // 3 Permission Feature Items
+          // 5 Permission Feature Items
           _buildPermissionItem(
             icon: Icons.location_on_rounded,
             iconBg: const Color(0xFFEAF5FF),
@@ -917,6 +929,22 @@ class _PermissionScreenState extends State<PermissionScreen>
             iconColor: const Color(0xFF16A34A),
             title: 'Tactical SOS Beacon Relay',
             desc: 'Direct priority beacon to NDRF & medical rescue teams.',
+          ),
+          const SizedBox(height: 10),
+          _buildPermissionItem(
+            icon: Icons.camera_alt_rounded,
+            iconBg: const Color(0xFFF3E8FF),
+            iconColor: const Color(0xFF9333EA),
+            title: 'Camera Access',
+            desc: 'Capture live footage and report ground zero conditions.',
+          ),
+          const SizedBox(height: 10),
+          _buildPermissionItem(
+            icon: Icons.photo_library_rounded,
+            iconBg: const Color(0xFFFFE4E6),
+            iconColor: const Color(0xFFE11D48),
+            title: 'Gallery & Media',
+            desc: 'Upload visual evidence and offline damage assessments.',
           ),
 
           const SizedBox(height: 22),
@@ -1073,6 +1101,25 @@ class _PermissionScreenState extends State<PermissionScreen>
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 8),
+          // Checkmark box animation
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutBack,
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: _permissionsGranted ? const Color(0xFF10B981) : Colors.white,
+              border: Border.all(
+                color: _permissionsGranted ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: _permissionsGranted
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                : const SizedBox.shrink(),
           ),
         ],
       ),
