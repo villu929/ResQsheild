@@ -11,6 +11,7 @@ class CitizenLoginScreen extends StatefulWidget {
 }
 
 class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _phoneFocusNode = FocusNode();
@@ -24,6 +25,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _phoneFocusNode.dispose();
@@ -59,6 +61,12 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
   }
 
   Future<void> _handleSendOtp() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      _showMessage('Please enter your name', isError: true);
+      return;
+    }
+
     final phone = _phoneController.text.trim();
     if (phone.length != 10) {
       _showMessage('Please enter a valid 10-digit mobile number', isError: true);
@@ -94,7 +102,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
     // Smooth transition to Mandatory GPS Permission Screen
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const CitizenPermissionScreen()),
+      MaterialPageRoute(builder: (context) => CitizenPermissionScreen(citizenName: _nameController.text.trim().isEmpty ? 'Citizen' : _nameController.text.trim())),
     );
   }
 
@@ -241,6 +249,46 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              // --- Name Input Field ---
+                              TextFormField(
+                                controller: _nameController,
+                                enabled: !_otpSent && !_isLoading,
+                                keyboardType: TextInputType.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Full Name',
+                                  labelStyle: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                  hintText: 'Enter your name',
+                                  hintStyle: TextStyle(color: const Color(0xFF94A3B8).withValues(alpha: 0.8)),
+                                  prefixIcon: const Icon(Icons.person_rounded, color: Color(0xFF007AEB), size: 22),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Color(0xFF007AEB), width: 1.5),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
                               // Phone Number Label
                               const Text(
                                 'MOBILE NUMBER',

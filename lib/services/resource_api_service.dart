@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:resqshield/models/incident_models.dart';
 import 'package:resqshield/services/incident_coordinator.dart';
 import 'package:resqshield/services/shelter_api_service.dart';
+import 'package:resqshield/services/medical_api_service.dart';
 
 class ResourceApiService extends ChangeNotifier {
   static final ResourceApiService instance = ResourceApiService._();
@@ -25,6 +26,7 @@ class ResourceApiService extends ChangeNotifier {
     _initMedicalCenters();
     // Then attempt to replace with live API data
     await loadSheltersFromApi();
+    await loadMedicalFacilitiesFromApi();
   }
 
   /// Public method — call this to manually refresh shelter data from the API.
@@ -44,16 +46,33 @@ class ResourceApiService extends ChangeNotifier {
     }
   }
 
+  /// Public method — call this to manually refresh medical data from the API.
+  Future<void> loadMedicalFacilitiesFromApi() async {
+    _isLoadingFromApi = true;
+    notifyListeners();
+    try {
+      final apiMedicalCenters = await MedicalApiService.instance.fetchMedicalFacilities();
+      if (apiMedicalCenters.isNotEmpty) {
+        _medicalCenters.clear();
+        _medicalCenters.addAll(apiMedicalCenters);
+        notifyListeners();
+      }
+    } finally {
+      _isLoadingFromApi = false;
+      notifyListeners();
+    }
+  }
+
   void _loadMockShelters() {
     _shelters.addAll([
       ShelterOccupancy(
         id: 'SH-01',
-        name: 'Govt. Higher Secondary School',
-        locationName: 'Bokaro, Jharkhand',
+        name: 'Govt. Higher Secondary School, Karala',
+        locationName: 'Karala, Delhi',
         capacity: 500,
         occupied: 180,
-        latitude: 23.6693,
-        longitude: 86.1511,
+        latitude: 28.7350,
+        longitude: 77.0500,
         distance: '2.8 km',
         foodAvailable: true,
         foodDetails: '1200 packs hot meals & nutrient rations',
@@ -72,12 +91,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-02',
-        name: 'Community Hall, Kurma',
-        locationName: 'Giridih, Jharkhand',
+        name: 'Community Hall, Narela',
+        locationName: 'Narela, Delhi',
         capacity: 300,
         occupied: 180,
-        latitude: 24.1860,
-        longitude: 86.3090,
+        latitude: 28.8500,
+        longitude: 77.1000,
         distance: '3.6 km',
         foodAvailable: true,
         foodDetails: '800 packs community food rations',
@@ -96,12 +115,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-03',
-        name: 'Ranchi Sadar Hospital',
-        locationName: 'Ranchi, Jharkhand',
+        name: 'Rohini Sector 5 Relief Camp',
+        locationName: 'Rohini, Delhi',
         capacity: 450,
         occupied: 240,
-        latitude: 23.3441,
-        longitude: 85.3096,
+        latitude: 28.7150,
+        longitude: 77.1050,
         distance: '4.2 km',
         foodAvailable: true,
         foodDetails: '1000 packs medical diet rations',
@@ -144,12 +163,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-05',
-        name: 'Bokaro Relief Camp',
-        locationName: 'Bokaro, Jharkhand',
+        name: 'Pitampura Relief Center',
+        locationName: 'Pitampura, Delhi',
         capacity: 500,
         occupied: 180,
-        latitude: 23.6650,
-        longitude: 86.1550,
+        latitude: 28.6980,
+        longitude: 77.1350,
         distance: '2.8 km',
         foodAvailable: true,
         foodDetails: '1200 packs food & energy supplements',
@@ -192,12 +211,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-07',
-        name: 'St. Anthony Relief Hall',
-        locationName: 'Sector B • 4.1 km',
+        name: 'Narela General Hospital',
+        locationName: 'Sector 1, Narela',
         capacity: 200,
         occupied: 184,
-        latitude: 25.5650,
-        longitude: 91.8820,
+        latitude: 28.8450,
+        longitude: 77.1020,
         distance: '4.1 km',
         foodAvailable: true,
         foodDetails: 'High-Calorie Biscuits & Packaged Meals',
@@ -216,12 +235,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-08',
-        name: 'Valley Convent High School',
-        locationName: 'Sector C • 6.8 km',
+        name: 'Rohini Emergency Care Unit',
+        locationName: 'Sector 5, Rohini',
         capacity: 200,
         occupied: 200,
-        latitude: 25.5180,
-        longitude: 91.2750,
+        latitude: 28.7180,
+        longitude: 77.1080,
         distance: '6.8 km',
         foodAvailable: true,
         foodDetails: 'Emergency Rations Only',
@@ -264,12 +283,12 @@ class ResourceApiService extends ChangeNotifier {
       ),
       ShelterOccupancy(
         id: 'SH-10',
-        name: 'Mawphlang Relief Centre',
-        locationName: 'Sector 4 High Ground, Mawphlang',
+        name: 'Karala Main Medical Center',
+        locationName: 'Sector 4, Karala',
         capacity: 200,
         occupied: 150,
-        latitude: 25.4520,
-        longitude: 91.7610,
+        latitude: 28.7360,
+        longitude: 77.0510,
         distance: '1.6 km',
         foodAvailable: true,
         foodDetails: '3 Fresh Cooked Meals Daily & Dry Rations',
@@ -332,29 +351,29 @@ class ResourceApiService extends ChangeNotifier {
       ),
       MedicalCenterModel(
         id: 'M-04',
-        name: 'Sunrise Medical Hub',
-        distance: '2.5 km away',
-        locationName: 'MG Road, East Zone',
+        name: 'Karala Main Hospital',
+        distance: '0.5 km away',
+        locationName: 'Karala Main Road, Delhi',
         photoUrl: 'https://images.unsplash.com/photo-1538108149393-cebb47cbdc17?auto=format&fit=crop&w=600&q=80',
         emergencyBeds: 25,
         ambulanceUnits: 4,
         bloodBankAvailable: true,
-        phone: '06542-230004',
-        latitude: 23.8055,
-        longitude: 86.4215,
+        phone: '011-23000004',
+        latitude: 28.7365,
+        longitude: 77.0525,
       ),
       MedicalCenterModel(
         id: 'M-05',
-        name: 'Green Valley Clinic',
+        name: 'Sanjeevani Clinic, Narela',
         distance: '5.1 km away',
-        locationName: 'West Park Avenue',
+        locationName: 'Narela, Delhi',
         photoUrl: 'https://images.unsplash.com/photo-1512678080530-7760d81faba6?auto=format&fit=crop&w=600&q=80',
         emergencyBeds: 8,
         ambulanceUnits: 1,
         bloodBankAvailable: false,
-        phone: '06542-230005',
-        latitude: 23.8150,
-        longitude: 86.4280,
+        phone: '011-23000005',
+        latitude: 28.8505,
+        longitude: 77.1010,
       ),
       MedicalCenterModel(
         id: 'M-06',
@@ -371,16 +390,16 @@ class ResourceApiService extends ChangeNotifier {
       ),
       MedicalCenterModel(
         id: 'M-07',
-        name: 'Central Health Center',
-        distance: '0.8 km away',
-        locationName: 'City Center Mall Road',
+        name: 'Rohini Sector 7 Hospital',
+        distance: '6.4 km away',
+        locationName: 'Sector 7, Rohini, Delhi',
         photoUrl: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=600&q=80',
         emergencyBeds: 30,
         ambulanceUnits: 5,
         bloodBankAvailable: true,
-        phone: '06542-230007',
-        latitude: 23.7950,
-        longitude: 86.4150,
+        phone: '011-23000007',
+        latitude: 28.7200,
+        longitude: 77.1100,
       ),
       MedicalCenterModel(
         id: 'M-08',

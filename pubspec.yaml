@@ -40,6 +40,7 @@ dependencies:
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
   fl_chart: ^1.2.0
+  geocoding: ^2.0.5
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/shelter_images/
+    - assets/images/medical_camp_images/
     - assets/images/screen_bg_1.png
     - assets/images/screen_bg_2.png
     - assets/images/alert_flood_risk_card.png

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:resqshield/models/incident_models.dart';
 import 'package:resqshield/services/resource_api_service.dart';
+import 'package:resqshield/services/location_service.dart';
+import 'package:resqshield/widgets/location_search_widget.dart';
 import 'citizen_safe_route_view.dart';
+import 'medical_center_detail_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CitizenMedicalCentersView extends StatefulWidget {
   final bool isHindi;
@@ -14,15 +18,28 @@ class CitizenMedicalCentersView extends StatefulWidget {
 }
 
 class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
+  String _selectedFilter = 'All';
+
+  final List<String> _filters = [
+    'All',
+    'Nearby',
+    'Beds Available',
+    'Free Treatment',
+    'Open 24x7',
+  ];
+
   @override
   void initState() {
     super.initState();
     ResourceApiService.instance.addListener(_onResourceUpdate);
+    LocationService.instance.addListener(_onResourceUpdate);
+    LocationService.instance.fetchGps();
   }
 
   @override
   void dispose() {
     ResourceApiService.instance.removeListener(_onResourceUpdate);
+    LocationService.instance.removeListener(_onResourceUpdate);
     super.dispose();
   }
 
@@ -30,15 +47,7 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
     if (mounted) setState(() {});
   }
 
-  void _showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +91,18 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
       ),
       body: Builder(
         builder: (context) {
-          final centers = ResourceApiService.instance.medicalCenters;
-          if (centers.isEmpty) {
+          final resourceApi = ResourceApiService.instance;
+          final allCenters = resourceApi.medicalCenters;
+
+          if (resourceApi.isLoadingFromApi && allCenters.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF007AEB),
+              ),
+            );
+          }
+
+          if (allCenters.isEmpty) {
             return Center(
               child: Text(
                 widget.isHindi
@@ -97,15 +116,176 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: centers.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _buildMedicalCenterCard(centers[index]);
-            },
+          // Apply filters
+          List<MedicalCenterModel> centers = List.from(allCenters);
+          if (_selectedFilter == 'Beds Available') {
+            centers = centers.where((c) => c.emergencyBeds > 0).toList();
+          } else if (_selectedFilter == 'Free Treatment') {
+            centers = centers.where((c) => c.freeTreatmentAvailable).toList();
+          } else if (_selectedFilter == 'Open 24x7') {
+            centers = centers.where((c) => c.isOpen).toList();
+          } else if (_selectedFilter == 'Nearby') {
+            final lat = LocationService.instance.activeLat;
+            final lng = LocationService.instance.activeLng;
+            if (lat != null && lng != null) {
+              centers = centers.where((c) {
+                if (c.latitude == 0.0 && c.longitude == 0.0) return false;
+                final dist = Geolocator.distanceBetween(lat, lng, c.latitude, c.longitude);
+                c.distance = '${(dist / 1000).toStringAsFixed(1)} km away';
+                return dist <= 150000;
+              }).toList();
+              
+              centers.sort((a, b) {
+                final distA = Geolocator.distanceBetween(lat, lng, a.latitude, a.longitude);
+                final distB = Geolocator.distanceBetween(lat, lng, b.latitude, b.longitude);
+                return distA.compareTo(distB);
+              });
+            } else {
+              centers = []; // no location available — UI handles this
+            }
+          }
+
+          return Column(
+            children: [
+              // Location search shown only in Nearby mode
+              if (_selectedFilter == 'Nearby') const LocationSearchWidget(),
+              _buildFilterStrip(),
+              Expanded(
+                child: _selectedFilter == 'Nearby' &&
+                        !LocationService.instance.hasLocation &&
+                        !LocationService.instance.isFetchingGps
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_off_rounded,
+                                  size: 52, color: Color(0xFF94A3B8)),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Location unavailable.\nSearch and select a location above,\nor allow browser location access.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 16),
+                              TextButton.icon(
+                                onPressed: LocationService.instance.fetchGps,
+                                icon: const Icon(Icons.my_location_rounded,
+                                    size: 16, color: Color(0xFF007AEB)),
+                                label: const Text(
+                                  'Use GPS Location',
+                                  style: TextStyle(
+                                      color: Color(0xFF007AEB),
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _selectedFilter == 'Nearby' &&
+                            LocationService.instance.isFetchingGps &&
+                            !LocationService.instance.hasLocation
+                        ? const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                    color: Color(0xFF007AEB)),
+                                SizedBox(height: 12),
+                                Text('Fetching your location...',
+                                    style: TextStyle(
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          )
+                        : centers.isEmpty
+                    ? Center(
+                        child: Text(
+                          widget.isHindi
+                              ? 'चयनित श्रेणी में कोई केंद्र नहीं'
+                              : 'No centers found in this category',
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemCount: centers.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          return _buildMedicalCenterCard(centers[index]);
+                        },
+                      ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildFilterStrip() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: _filters.map((filter) {
+            final isSelected = _selectedFilter == filter;
+            
+            String displayText = filter;
+            if (widget.isHindi) {
+              switch (filter) {
+                case 'All': displayText = 'सभी'; break;
+                case 'Nearby': displayText = 'नजदीकी'; break;
+                case 'Beds Available': displayText = 'बेड उपलब्ध'; break;
+                case 'Free Treatment': displayText = 'मुफ्त इलाज'; break;
+                case 'Open 24x7': displayText = 'खुला 24x7'; break;
+              }
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ActionChip(
+                label: Text(
+                  displayText,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                backgroundColor: isSelected ? const Color(0xFF007AEB) : Colors.white,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF007AEB) : const Color(0xFFCBD5E1),
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                onPressed: () {
+                  setState(() {
+                    _selectedFilter = filter;
+                  });
+                  if (filter == 'Nearby' && !LocationService.instance.hasLocation) {
+                    LocationService.instance.fetchGps();
+                  }
+                },
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -434,18 +614,22 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => _showMessage(
-                              widget.isHindi
-                                  ? 'सभी देखें'
-                                  : 'View All Details',
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MedicalCenterDetailScreen(
+                                  center: center,
+                                  isHindi: widget.isHindi,
+                                ),
+                              ),
                             ),
                             icon: const Icon(
-                              Icons.list_alt_rounded,
+                              Icons.info_outline_rounded,
                               size: 18,
                               color: Color(0xFF0284C7),
                             ),
                             label: Text(
-                              widget.isHindi ? 'सभी देखें' : 'View All',
+                              widget.isHindi ? 'विवरण देखें' : 'View Details',
                               style: const TextStyle(
                                 color: Color(0xFF0284C7),
                                 fontWeight: FontWeight.w800,

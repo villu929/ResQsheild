@@ -455,11 +455,11 @@ class LiveEvent {
   }) : timestamp = timestamp ?? DateTime.now();
 }
 
-/// Mock Model for Medical Centers / Hospitals
+/// Model for Medical Centers / Hospitals
 class MedicalCenterModel {
   final String id;
   final String name;
-  final String distance;
+  String distance;
   final String locationName;
   final String photoUrl;
   final int emergencyBeds;
@@ -469,6 +469,22 @@ class MedicalCenterModel {
   final double latitude;
   final double longitude;
   final bool isOpen;
+
+  // Rich API fields for detail screen
+  final String facilityType;       // e.g. "Hospital", "Government Clinic"
+  final String address;
+  final String emergencyHelpline;
+  final int bedsTotal;
+  final int doctorsOnDuty;
+  final List<String> specialties;
+  final bool freeTreatmentAvailable;
+  final bool freeMedicinesAvailable;
+  final String freeMedicinesNote;
+  final bool foodDistribution;
+  final List<String> disasterServices;
+  final List<String> waterborneDiseasesTreated;
+  final String waterborneDiseaseNote;
+  final String lastUpdated;
 
   MedicalCenterModel({
     required this.id,
@@ -483,6 +499,20 @@ class MedicalCenterModel {
     required this.latitude,
     required this.longitude,
     this.isOpen = true,
+    this.facilityType = '',
+    this.address = '',
+    this.emergencyHelpline = '108',
+    this.bedsTotal = 0,
+    this.doctorsOnDuty = 0,
+    this.specialties = const [],
+    this.freeTreatmentAvailable = false,
+    this.freeMedicinesAvailable = false,
+    this.freeMedicinesNote = '',
+    this.foodDistribution = false,
+    this.disasterServices = const [],
+    this.waterborneDiseasesTreated = const [],
+    this.waterborneDiseaseNote = '',
+    this.lastUpdated = '',
   });
 }
 

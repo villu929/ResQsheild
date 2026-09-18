@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
 
 import 'citizen_safe_route_view.dart';
 import 'citizen_shelters_view.dart';
@@ -13,7 +17,9 @@ import '../../models/incident_models.dart';
 import '../../models/evacuation_models.dart';
 import '../../services/incident_coordinator.dart';
 import '../../services/resource_api_service.dart';
+import '../../services/location_service.dart';
 import '../../widgets/role_quick_switcher.dart';
+import '../../widgets/location_cascade_modal.dart';
 
 enum CitizenThreatLevel { safe, watch, warning, evacuation }
 
@@ -453,7 +459,8 @@ final List<_DosDisasterInfo> _dosDisasterList = [
 ];
 
 class CitizenDashboardScreen extends StatefulWidget {
-  const CitizenDashboardScreen({super.key});
+  final String citizenName;
+  const CitizenDashboardScreen({super.key, this.citizenName = 'Citizen'});
 
   @override
   State<CitizenDashboardScreen> createState() => _CitizenDashboardScreenState();
@@ -463,7 +470,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // Navigation & Localization
   int _currentTab = 0;
   bool _isHindi = false;
-  String _currentLocation = 'Shillong, Meghalaya';
+  String _currentLocation = 'Fetching location...';
+  String? _locationAccuracyMsg;
 
   // Dynamic Safety State (Safe / Watch / Warning / Critical)
   CitizenThreatLevel _threatLevel = CitizenThreatLevel.safe;
@@ -656,6 +664,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchRealLocation();
     _mapController = MapController();
     _fullMapController = MapController();
     _rainMapController = MapController();
@@ -682,6 +691,161 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
     if (!_isTestEnvironment()) {
       _startDosTimer();
+    }
+  }
+
+  Future<void> _fetchRealLocation() async {
+    debugPrint('--- LOCATION FETCH INITIATED ---');
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('ERROR: Location Service Disabled');
+        if (mounted && !LocationService.instance.isManual) {
+          setState(() {
+            _currentLocation = 'Location unavailable (Service Disabled)';
+            _locationAccuracyMsg = null;
+          });
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('ERROR: Location Permission Denied');
+          if (mounted && !LocationService.instance.isManual) {
+            setState(() {
+              _currentLocation = 'Location unavailable (Permission Denied)';
+              _locationAccuracyMsg = null;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('ERROR: Location Permission Denied Forever');
+        if (mounted && !LocationService.instance.isManual) {
+          setState(() {
+            _currentLocation = 'Location unavailable (Permission Denied Forever)';
+            _locationAccuracyMsg = null;
+          });
+        }
+        return;
+      }
+
+      debugPrint('INFO: Awaiting Geolocator.getCurrentPosition...');
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        timeLimit: const Duration(seconds: 15),
+      );
+      
+      debugPrint('--- RAW LOCATION DATA RECEIVED ---');
+      debugPrint('Latitude: ${position.latitude}');
+      debugPrint('Longitude: ${position.longitude}');
+      debugPrint('Accuracy: ${position.accuracy} meters');
+      debugPrint('Timestamp: ${position.timestamp}');
+      debugPrint('Source: ${position.isMocked ? "Mocked" : "Native OS / Browser API"}');
+      
+      String? accuracyMsg;
+      if (position.accuracy > 100) {
+        accuracyMsg = 'Approximate (${(position.accuracy / 1000).toStringAsFixed(1)} km) - Precise GPS unavailable';
+        debugPrint('WARNING: Poor accuracy detected. This is typical of IP-based browser location on laptops.');
+      } else {
+        accuracyMsg = 'Accuracy: ${position.accuracy.toStringAsFixed(0)}m (GPS)';
+      }
+      
+      if (mounted) {
+        setState(() {
+           _locationAccuracyMsg = accuracyMsg;
+        });
+      }
+      
+      try {
+        debugPrint('INFO: Attempting Native Reverse Geocoding...');
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks[0];
+          
+          String area = '';
+          if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+            area = place.subLocality!;
+          } else if (place.name != null && place.name!.isNotEmpty && place.name != place.locality) {
+            area = place.name!;
+          } else if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
+            area = place.thoroughfare!;
+          } else {
+            area = place.locality ?? '';
+          }
+          
+          String city = place.administrativeArea ?? place.locality ?? 'Unknown City';
+          debugPrint('INFO: Native Geocoding Success - Area: $area, City: $city');
+          
+          // If native geocoding gives generic "Delhi" or same as city, it's not specific enough.
+          // Throw exception to trigger OSM fallback which provides better neighbourhood details.
+          if (area.isEmpty || area.toLowerCase() == city.toLowerCase() || area.toLowerCase() == 'delhi' || area.toLowerCase() == 'new delhi') {
+             debugPrint('WARNING: Native geocoding returned generic data. Forcing OSM fallback...');
+             throw Exception('Native geocoding not specific enough');
+          }
+
+          if (mounted && !LocationService.instance.isManual) {
+            setState(() {
+               _currentLocation = '$area, $city';
+            });
+          }
+        } else {
+          debugPrint('WARNING: Native geocoding returned 0 placemarks.');
+          throw Exception('No placemarks found');
+        }
+      } catch (e) {
+        // Fallback for Web/Windows where geocoding might fail
+        debugPrint('INFO: Falling back to OpenStreetMap (OSM) Reverse Geocoding...');
+        try {
+          final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=18&addressdetails=1');
+          final response = await http.get(url, headers: {'User-Agent': 'ResQshieldApp'});
+          if (response.statusCode == 200) {
+            final data = json.decode(response.body);
+            if (data != null && data['display_name'] != null) {
+              debugPrint('INFO: OSM Request Success. Full display_name: ${data['display_name']}');
+              List<String> parts = (data['display_name'] as String).split(', ');
+              
+              if (mounted && !LocationService.instance.isManual) {
+                setState(() {
+                  if (parts.length >= 2) {
+                     _currentLocation = '${parts[0]}, ${parts[1]}';
+                  } else {
+                     _currentLocation = parts[0];
+                  }
+                });
+              }
+            } else {
+              throw Exception('Invalid OSM data');
+            }
+          } else {
+            throw Exception('OSM request failed with status: ${response.statusCode}');
+          }
+        } catch (osmError) {
+          debugPrint('ERROR: OSM Fallback Failed: $osmError');
+          if (mounted && !LocationService.instance.isManual) {
+            setState(() {
+              _currentLocation = '${position.latitude.toStringAsFixed(2)}, ${position.longitude.toStringAsFixed(2)}';
+            });
+          }
+        }
+      }
+      debugPrint('--- LOCATION FETCH COMPLETE ---');
+    } catch (e) {
+      debugPrint('ERROR: Core Location Fetch Failed: $e');
+      if (mounted && !LocationService.instance.isManual) {
+        setState(() {
+          _currentLocation = 'Location unavailable ($e)';
+          _locationAccuracyMsg = null;
+        });
+      }
     }
   }
 
@@ -1047,27 +1211,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ResQShield Logo with Pulse
+          // Citizen Avatar Logo
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                colors: [Color(0xFF007AEB), Color(0xFF005BC5)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(10),
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                  color: const Color(0xFF005BC5).withValues(alpha: 0.25),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: const Icon(
-              Icons.shield_rounded,
+              Icons.person_rounded,
               color: Colors.white,
               size: 22,
             ),
@@ -1078,9 +1242,9 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'ResQShield',
-                  style: TextStyle(
+                Text(
+                  widget.citizenName,
+                  style: const TextStyle(
                     color: Color(0xFF0F172A),
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -1089,16 +1253,24 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  _isHindi
-                      ? 'सतर्क रहें • सुरक्षित रहें • तैयार रहें'
-                      : 'Be Aware • Be Safe • Be Prepared',
+                  _currentLocation,
                   style: const TextStyle(
                     color: Color(0xFF64748B),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (_locationAccuracyMsg != null)
+                  Text(
+                    _locationAccuracyMsg!,
+                    style: TextStyle(
+                      color: _locationAccuracyMsg!.contains('Precise') ? Colors.orange.shade700 : Colors.green.shade600,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
@@ -1127,15 +1299,31 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                 ),
                 const SizedBox(width: 3),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 95),
-                  child: Text(
-                    _currentLocation,
-                    style: const TextStyle(
-                      color: Color(0xFF1E293B),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  constraints: const BoxConstraints(maxWidth: 110),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _currentLocation,
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_locationAccuracyMsg != null)
+                        Text(
+                          _locationAccuracyMsg!,
+                          style: TextStyle(
+                            color: _locationAccuracyMsg!.contains('Precise') ? Colors.orange.shade700 : Colors.green.shade600,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
                 const Icon(
@@ -8407,68 +8595,29 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   }
 
   // 2. LOCATION PICKER MODAL
-  void _showLocationPickerModal() {
-    showModalBottomSheet(
+  void _showLocationPickerModal() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.my_location_rounded, color: Color(0xFF007AEB)),
-                const SizedBox(width: 8),
-                Text(
-                  _isHindi ? 'स्थान चुनें' : 'Select Location',
-                  style: const TextStyle(
-                    color: Color(0xFF013973),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            ...[
-              'Shillong, Meghalaya',
-              'Bokaro Basin, Jharkhand',
-              'Ranchi, Jharkhand',
-              'Guwahati, Assam',
-            ].map((loc) {
-              final isSel = _currentLocation == loc;
-              return ListTile(
-                leading: Icon(
-                  isSel ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isSel
-                      ? const Color(0xFF007AEB)
-                      : const Color(0xFF537392),
-                ),
-                title: Text(
-                  loc,
-                  style: TextStyle(
-                    fontWeight: isSel ? FontWeight.w900 : FontWeight.w600,
-                  ),
-                ),
-                onTap: () {
-                  setState(() => _currentLocation = loc);
-                  Navigator.pop(ctx);
-                  _showMessage(
-                    _isHindi
-                        ? 'स्थान बदला गया: $loc'
-                        : 'Location updated: $loc',
-                  );
-                },
-              );
-            }),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => LocationCascadeModal(
+        isHindi: _isHindi,
+        currentCity: _currentLocation.contains(',') ? _currentLocation.split(',').first.trim() : null,
       ),
     );
+
+    if (result != null) {
+      final String locName = result['name'];
+      final double lat = result['lat'];
+      final double lng = result['lng'];
+      
+      setState(() => _currentLocation = locName);
+      LocationService.instance.setManualLocation(lat, lng, locName);
+      
+      _showMessage(
+        _isHindi ? 'स्थान बदला गया: $locName' : 'Location updated: $locName',
+      );
+    }
   }
 
   // 3. NOTIFICATIONS SHEET

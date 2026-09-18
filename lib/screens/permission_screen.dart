@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 import 'role_selection_screen.dart';
 
 // ============================================================================
@@ -231,8 +232,8 @@ class _PermissionScreenState extends State<PermissionScreen>
   Future<void> _requestSystemPermissions() async {
     try {
       if (!kIsWeb) {
+        // Request standard permissions
         await [
-          Permission.locationWhenInUse,
           Permission.notification,
           Permission.camera,
           Permission.photos,
@@ -240,9 +241,22 @@ class _PermissionScreenState extends State<PermissionScreen>
           const Duration(seconds: 3),
           onTimeout: () => {},
         );
+
+        // Request REAL location and fetch GPS to ensure it's active
+        LocationPermission locPerm = await Geolocator.checkPermission();
+        if (locPerm == LocationPermission.denied) {
+          locPerm = await Geolocator.requestPermission();
+        }
+        
+        if (locPerm == LocationPermission.whileInUse || locPerm == LocationPermission.always) {
+          // Actually get the position so the OS registers the GPS usage
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          ).timeout(const Duration(seconds: 4), onTimeout: () => throw Exception('Timeout'));
+        }
       }
-    } catch (_) {
-      // Safe fallback on mock or simulator environments
+    } catch (e) {
+      debugPrint("Permission error: $e");
     }
   }
 

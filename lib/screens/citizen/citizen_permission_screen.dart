@@ -3,7 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'citizen_dashboard_screen.dart';
 
 class CitizenPermissionScreen extends StatefulWidget {
-  const CitizenPermissionScreen({super.key});
+  final String citizenName;
+  const CitizenPermissionScreen({super.key, this.citizenName = 'Citizen'});
 
   @override
   State<CitizenPermissionScreen> createState() => _CitizenPermissionScreenState();
@@ -31,7 +32,13 @@ class _CitizenPermissionScreenState extends State<CitizenPermissionScreen> {
         permission = await Geolocator.requestPermission();
       }
 
-      // If granted or if in testing/emulator environment, smoothly proceed
+      // If granted, actually fetch the location for real
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        ).timeout(const Duration(seconds: 4));
+      }
+
       await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
 
@@ -51,7 +58,7 @@ class _CitizenPermissionScreenState extends State<CitizenPermissionScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, _, _) => const CitizenDashboardScreen(),
+        pageBuilder: (_, _, _) => CitizenDashboardScreen(citizenName: widget.citizenName),
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },

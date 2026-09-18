@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/incident_models.dart';
 import '../../services/resource_api_service.dart';
+import '../../services/location_service.dart';
+import '../../widgets/location_search_widget.dart';
 import '../relief_camp_detail_screen.dart';
 import '../authority/resource_shelter_map_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CitizenSheltersView extends StatefulWidget {
   final bool isHindi;
@@ -29,12 +32,16 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
   void initState() {
     super.initState();
     ResourceApiService.instance.addListener(_onCoordUpdate);
+    LocationService.instance.addListener(_onCoordUpdate);
+    // Start GPS fetch immediately so it's ready when user taps Nearby
+    LocationService.instance.fetchGps();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     ResourceApiService.instance.removeListener(_onCoordUpdate);
+    LocationService.instance.removeListener(_onCoordUpdate);
     super.dispose();
   }
 
@@ -48,27 +55,52 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
 
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
-      list = list.where((s) =>
-          s.name.toLowerCase().contains(q) ||
-          s.locationName.toLowerCase().contains(q) ||
-          s.services.any((svc) => svc.toLowerCase().contains(q))).toList();
+      list = list
+          .where(
+            (s) =>
+                s.name.toLowerCase().contains(q) ||
+                s.locationName.toLowerCase().contains(q) ||
+                s.services.any((svc) => svc.toLowerCase().contains(q)),
+          )
+          .toList();
     }
 
     if (_activeFilter == 'Open') {
-      list = list.where((s) => s.status.toUpperCase() == 'OPEN' || s.available > 0).toList();
+      list = list
+          .where((s) => s.status.toUpperCase() == 'OPEN' || s.available > 0)
+          .toList();
     } else if (_activeFilter == 'Full') {
-      list = list.where((s) =>
-          s.status.toUpperCase() == 'FULL' ||
-          s.status.toUpperCase() == 'LIMITED' ||
-          s.status.toUpperCase() == 'NEAR FULL' ||
-          s.available == 0).toList();
+      list = list
+          .where(
+            (s) =>
+                s.status.toUpperCase() == 'FULL' ||
+                s.status.toUpperCase() == 'LIMITED' ||
+                s.status.toUpperCase() == 'NEAR FULL' ||
+                s.available == 0,
+          )
+          .toList();
     } else if (_activeFilter == 'Nearby') {
-      list = List.from(list);
-      list.sort((a, b) {
-        final distA = double.tryParse(a.distance.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 99.0;
-        final distB = double.tryParse(b.distance.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 99.0;
-        return distA.compareTo(distB);
-      });
+      final lat = LocationService.instance.activeLat;
+      final lng = LocationService.instance.activeLng;
+
+      if (lat != null && lng != null) {
+        // Calculate real distance, update distance field, filter > 150km
+        list = list
+            .where((s) {
+              if (s.latitude == 0.0 && s.longitude == 0.0) return false;
+              final dist = Geolocator.distanceBetween(lat, lng, s.latitude, s.longitude);
+              s.distance = '${(dist / 1000).toStringAsFixed(1)} km';
+              return dist <= 150000; // within 150 km
+            })
+            .toList();
+
+        list.sort((a, b) {
+          final distA = Geolocator.distanceBetween(lat, lng, a.latitude, a.longitude);
+          final distB = Geolocator.distanceBetween(lat, lng, b.latitude, b.longitude);
+          return distA.compareTo(distB);
+        });
+      }
+      // If no location yet, return empty — the UI will show a message
     }
 
     return list;
@@ -87,12 +119,18 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
   Widget build(BuildContext context) {
     final all = ResourceApiService.instance.shelters;
     final allCount = all.length;
-    final openCount = all.where((s) => s.status.toUpperCase() == 'OPEN' || s.available > 0).length;
-    final fullCount = all.where((s) =>
-        s.status.toUpperCase() == 'FULL' ||
-        s.status.toUpperCase() == 'LIMITED' ||
-        s.status.toUpperCase() == 'NEAR FULL' ||
-        s.available == 0).length;
+    final openCount = all
+        .where((s) => s.status.toUpperCase() == 'OPEN' || s.available > 0)
+        .length;
+    final fullCount = all
+        .where(
+          (s) =>
+              s.status.toUpperCase() == 'FULL' ||
+              s.status.toUpperCase() == 'LIMITED' ||
+              s.status.toUpperCase() == 'NEAR FULL' ||
+              s.available == 0,
+        )
+        .length;
 
     final shelters = _filteredShelters;
 
@@ -102,7 +140,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
         backgroundColor: const Color(0xFFEFF6FC),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF0F172A),
+            size: 22,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -127,7 +169,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                       color: Color(0xFF007AEB),
                     ),
                   )
-                : const Icon(Icons.refresh_rounded, color: Color(0xFF007AEB), size: 22),
+                : const Icon(
+                    Icons.refresh_rounded,
+                    color: Color(0xFF007AEB),
+                    size: 22,
+                  ),
             tooltip: widget.isHindi ? 'डेटा अपडेट करें' : 'Refresh from API',
             onPressed: ResourceApiService.instance.isLoadingFromApi
                 ? null
@@ -138,7 +184,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
               padding: const EdgeInsets.only(right: 8),
               child: TextButton.icon(
                 onPressed: () => _openAddShelterModal(context),
-                icon: const Icon(Icons.add_rounded, size: 16, color: Color(0xFF007AEB)),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 16,
+                  color: Color(0xFF007AEB),
+                ),
                 label: Text(
                   widget.isHindi ? '+ नया शिविर' : '+ Add Shelter',
                   style: const TextStyle(
@@ -149,8 +199,13 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFFE0F2FE),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                 ),
               ),
             ),
@@ -164,7 +219,10 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
             if (ResourceApiService.instance.isLoadingFromApi)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 16,
+                ),
                 color: const Color(0xFFE0F2FE),
                 child: Row(
                   children: [
@@ -198,7 +256,10 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFD6E4F0), width: 1.0),
+                  border: Border.all(
+                    color: const Color(0xFFD6E4F0),
+                    width: 1.0,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF0F172A).withValues(alpha: 0.04),
@@ -210,15 +271,24 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                 child: Row(
                   children: [
                     const SizedBox(width: 14),
-                    const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
+                    const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF0284C7),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
                         controller: _searchController,
                         onChanged: (val) => setState(() => _searchQuery = val),
-                        style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: Color(0xFF0F172A),
+                        ),
                         decoration: InputDecoration(
-                          hintText: widget.isHindi ? 'शिविर या क्षेत्र खोजें...' : 'Search shelter or area...',
+                          hintText: widget.isHindi
+                              ? 'शिविर या क्षेत्र खोजें...'
+                              : 'Search shelter or area...',
                           hintStyle: const TextStyle(
                             color: Color(0xFF94A3B8),
                             fontSize: 13.5,
@@ -232,19 +302,33 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                     ),
                     if (_searchQuery.isNotEmpty)
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: Color(0xFF94A3B8),
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
                         },
                       ),
                     IconButton(
-                      icon: const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 20),
+                      icon: const Icon(
+                        Icons.tune_rounded,
+                        color: Color(0xFF0284C7),
+                        size: 20,
+                      ),
                       tooltip: 'Filter options',
                       onPressed: () {
                         setState(() {
-                          _activeFilter = _activeFilter == 'Nearby' ? 'All' : 'Nearby';
+                          _activeFilter = _activeFilter == 'Nearby'
+                              ? 'All'
+                              : 'Nearby';
                         });
+                        if (_activeFilter == 'Nearby' &&
+                            !LocationService.instance.hasLocation) {
+                          LocationService.instance.fetchGps();
+                        }
                       },
                     ),
                     const SizedBox(width: 4),
@@ -252,6 +336,9 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                 ),
               ),
             ),
+
+            // Location Search (shown only in Nearby mode)
+            if (_activeFilter == 'Nearby') const LocationSearchWidget(),
 
             // 2. Filter Pills Row (Matching Image 1: All, Open, Full, Nearby)
             Container(
@@ -261,13 +348,29 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                 physics: const BouncingScrollPhysics(),
                 child: Row(
                   children: [
-                    _buildPillTab('All', widget.isHindi ? 'सभी ($allCount)' : 'All ($allCount)'),
+                    _buildPillTab(
+                      'All',
+                      widget.isHindi ? 'सभी ($allCount)' : 'All ($allCount)',
+                    ),
                     const SizedBox(width: 8),
-                    _buildPillTab('Open', widget.isHindi ? 'उपलब्ध ($openCount)' : 'Open ($openCount)'),
+                    _buildPillTab(
+                      'Open',
+                      widget.isHindi
+                          ? 'उपलब्ध ($openCount)'
+                          : 'Open ($openCount)',
+                    ),
                     const SizedBox(width: 8),
-                    _buildPillTab('Full', widget.isHindi ? 'सीमित/पूर्ण ($fullCount)' : 'Full ($fullCount)'),
+                    _buildPillTab(
+                      'Full',
+                      widget.isHindi
+                          ? 'सीमित/पूर्ण ($fullCount)'
+                          : 'Full ($fullCount)',
+                    ),
                     const SizedBox(width: 8),
-                    _buildPillTab('Nearby', widget.isHindi ? 'नजदीकी' : 'Nearby'),
+                    _buildPillTab(
+                      'Nearby',
+                      widget.isHindi ? 'नजदीकी' : 'Nearby',
+                    ),
                   ],
                 ),
               ),
@@ -277,33 +380,99 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
 
             // 3. Shelters List View
             Expanded(
-              child: shelters.isEmpty
+              child: _activeFilter == 'Nearby' && !LocationService.instance.hasLocation && !LocationService.instance.isFetchingGps
                   ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.night_shelter_outlined, size: 52, color: Color(0xFF94A3B8)),
-                          const SizedBox(height: 12),
-                          Text(
-                            widget.isHindi ? 'कोई शिविर इस फिल्टर से मेल नहीं खाता' : 'No relief shelters match current filter',
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0F172A), fontSize: 14),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            widget.isHindi ? 'कृपया दूसरा नाम या फिल्टर चुनें' : 'Try searching another area or clear filters',
-                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.location_off_rounded,
+                                size: 52, color: Color(0xFF94A3B8)),
+                            const SizedBox(height: 12),
+                            Text(
+                              widget.isHindi
+                                  ? 'स्थान उपलब्ध नहीं।\nऊपर खोज कर स्थान चुनें।'
+                                  : 'Location unavailable.\nSearch and select a location above,\nor allow browser location access.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 16),
+                            TextButton.icon(
+                              onPressed: LocationService.instance.fetchGps,
+                              icon: const Icon(Icons.my_location_rounded,
+                                  size: 16, color: Color(0xFF007AEB)),
+                              label: Text(
+                                widget.isHindi ? 'GPS उपयोग करें' : 'Use GPS Location',
+                                style: const TextStyle(
+                                    color: Color(0xFF007AEB),
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                      itemCount: shelters.length,
-                      itemBuilder: (context, index) {
-                        return _buildShelterCard(shelters[index]);
-                      },
-                    ),
+                  : _activeFilter == 'Nearby' && LocationService.instance.isFetchingGps && !LocationService.instance.hasLocation
+                      ? const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: Color(0xFF007AEB)),
+                              SizedBox(height: 12),
+                              Text('Fetching your location...',
+                                  style: TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        )
+                      : shelters.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.night_shelter_outlined,
+                                    size: 52,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    widget.isHindi
+                                        ? 'कोई शिविर इस फिल्टर से मेल नहीं खाता'
+                                        : 'No relief shelters match current filter',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0F172A),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    widget.isHindi
+                                        ? 'कृपया दूसरा नाम या फिल्टर चुनें'
+                                        : 'Try searching another area or clear filters',
+                                    style: const TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                              itemCount: shelters.length,
+                              itemBuilder: (context, index) {
+                                return _buildShelterCard(shelters[index]);
+                              },
+                            ),
             ),
           ],
         ),
@@ -316,7 +485,10 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
               icon: const Icon(Icons.add_business_rounded, size: 20),
               label: Text(
                 widget.isHindi ? 'नया शिविर जोड़ें' : 'Add New Shelter',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
               ),
             )
           : null,
@@ -326,7 +498,13 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
   Widget _buildPillTab(String key, String title) {
     final bool isSelected = _activeFilter == key;
     return InkWell(
-      onTap: () => setState(() => _activeFilter = key),
+      onTap: () {
+        setState(() => _activeFilter = key);
+        // When Nearby is tapped, ensure GPS is fetched if no location yet
+        if (key == 'Nearby' && !LocationService.instance.hasLocation) {
+          LocationService.instance.fetchGps();
+        }
+      },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -357,22 +535,24 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
 
   Widget _buildShelterCard(ShelterOccupancy s) {
     final isOpen = s.status.toUpperCase() == 'OPEN' || s.available > 0;
-    final isLimited = s.status.toUpperCase() == 'LIMITED' || s.status.toUpperCase() == 'NEAR FULL';
+    final isLimited =
+        s.status.toUpperCase() == 'LIMITED' ||
+        s.status.toUpperCase() == 'NEAR FULL';
     final statusBg = isOpen
         ? const Color(0xFFDCFCE7)
         : isLimited
-            ? const Color(0xFFFEF3C7)
-            : const Color(0xFFFEE2E2);
+        ? const Color(0xFFFEF3C7)
+        : const Color(0xFFFEE2E2);
     final statusColor = isOpen
         ? const Color(0xFF16A34A)
         : isLimited
-            ? const Color(0xFFD97706)
-            : const Color(0xFFDC2626);
+        ? const Color(0xFFD97706)
+        : const Color(0xFFDC2626);
     final statusText = isOpen
         ? (widget.isHindi ? 'खुला है' : 'Open')
         : isLimited
-            ? (widget.isHindi ? 'सीमित' : 'Limited')
-            : (widget.isHindi ? 'भरा हुआ' : 'Full');
+        ? (widget.isHindi ? 'सीमित' : 'Limited')
+        : (widget.isHindi ? 'भरा हुआ' : 'Full');
 
     final screenWidth = MediaQuery.of(context).size.width;
     final imageWidth = screenWidth * 0.25;
@@ -434,7 +614,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                      child: Icon(
+                                        Icons.night_shelter_rounded,
+                                        color: Colors.white70,
+                                        size: 32,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -446,7 +630,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
-                                      child: Icon(Icons.night_shelter_rounded, color: Colors.white70, size: 32),
+                                      child: Icon(
+                                        Icons.night_shelter_rounded,
+                                        color: Colors.white70,
+                                        size: 32,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -495,11 +683,16 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                             ),
                             const SizedBox(width: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusBg,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+                                border: Border.all(
+                                  color: statusColor.withValues(alpha: 0.25),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -530,7 +723,11 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                         // Row 2: Location with Blue Pin
                         Row(
                           children: [
-                            const Icon(Icons.location_on_rounded, size: 13.5, color: Color(0xFF0284C7)),
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 13.5,
+                              color: Color(0xFF0284C7),
+                            ),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
@@ -555,20 +752,36 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               text: TextSpan(
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                ),
                                 children: [
-                                  TextSpan(text: widget.isHindi ? 'क्षमता: ' : 'Capacity: '),
+                                  TextSpan(
+                                    text: widget.isHindi
+                                        ? 'क्षमता: '
+                                        : 'Capacity: ',
+                                  ),
                                   TextSpan(
                                     text: '${s.capacity}',
-                                    style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
                                   const TextSpan(text: ' • '),
-                                  TextSpan(text: widget.isHindi ? 'उपलब्ध: ' : 'Available: '),
+                                  TextSpan(
+                                    text: widget.isHindi
+                                        ? 'उपलब्ध: '
+                                        : 'Available: ',
+                                  ),
                                   TextSpan(
                                     text: '${s.available}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
-                                      color: isOpen ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                                      color: isOpen
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFFDC2626),
                                     ),
                                   ),
                                 ],
@@ -577,17 +790,27 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                             const SizedBox(height: 4),
                             LayoutBuilder(
                               builder: (context, constraints) {
-                                final double barWidth = (202.5).clamp(0.0, constraints.maxWidth);
+                                final double barWidth = (202.5).clamp(
+                                  0.0,
+                                  constraints.maxWidth,
+                                );
                                 return SizedBox(
                                   width: barWidth,
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
-                                      value: s.capacity > 0 ? (s.occupied / s.capacity).clamp(0.0, 1.0) : 0.0,
+                                      value: s.capacity > 0
+                                          ? (s.occupied / s.capacity).clamp(
+                                              0.0,
+                                              1.0,
+                                            )
+                                          : 0.0,
                                       minHeight: 7.0,
                                       backgroundColor: const Color(0xFFE2E8F0),
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        isOpen ? const Color(0xFF0284C7) : const Color(0xFFEF4444),
+                                        isOpen
+                                            ? const Color(0xFF0284C7)
+                                            : const Color(0xFFEF4444),
                                       ),
                                     ),
                                   ),
@@ -603,18 +826,31 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                           runSpacing: 4,
                           children: [
                             if (s.foodAvailable)
-                              _buildTag(Icons.restaurant_rounded, widget.isHindi ? 'भोजन' : 'Food'),
+                              _buildTag(
+                                Icons.restaurant_rounded,
+                                widget.isHindi ? 'भोजन' : 'Food',
+                              ),
                             if (s.waterAvailable)
-                              _buildTag(Icons.water_drop_rounded, widget.isHindi ? 'पानी' : 'Water'),
+                              _buildTag(
+                                Icons.water_drop_rounded,
+                                widget.isHindi ? 'पानी' : 'Water',
+                              ),
                             if (s.medicalAvailable)
-                              _buildTag(Icons.medical_services_rounded, widget.isHindi ? 'मेडिकल' : 'Medical'),
+                              _buildTag(
+                                Icons.medical_services_rounded,
+                                widget.isHindi ? 'मेडिकल' : 'Medical',
+                              ),
                           ],
                         ),
 
                         // Row 5: Distance & Navigation chevron
                         Row(
                           children: [
-                            const Icon(Icons.near_me_rounded, size: 13.5, color: Color(0xFF0284C7)),
+                            const Icon(
+                              Icons.near_me_rounded,
+                              size: 13.5,
+                              color: Color(0xFF0284C7),
+                            ),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
