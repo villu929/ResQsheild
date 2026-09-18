@@ -37,6 +37,7 @@ class EvacuationOperation {
   int evacuatedFemale;
   int evacuatedOld;
   int evacuatedChildren;
+  List<Map<String, dynamic>>? mockSectorData;
 
   EvacuationOperation({
     required this.id,

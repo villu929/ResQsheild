@@ -170,6 +170,7 @@ class FieldResponderView extends StatefulWidget {
 class _FieldResponderViewState extends State<FieldResponderView>
     with TickerProviderStateMixin {
   static final Set<String> _acknowledgedEvacs = {};
+  final Map<String, int> _selectedSectorForOp = {};
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   int _tab = 0; // 0=Live Map, 1=Missions, 2=SOS Desk, 3=Assets, 4=Profile
@@ -3545,15 +3546,51 @@ class _FieldResponderViewState extends State<FieldResponderView>
   }
 
   Widget _buildEvacuationDetailsDashboard(EvacuationOperation op) {
+    int selectedIndex = _selectedSectorForOp[op.id] ?? 0;
+
+    if (op.mockSectorData == null) {
+      int t = op.targetPopulation;
+      int q = t ~/ 4;
+      op.mockSectorData = [
+        {'name': 'Sector A', 'target': q, 'evac': op.evacuatedCount, 'female': op.evacuatedFemale, 'child': op.evacuatedChildren, 'senior': op.evacuatedOld},
+        {'name': 'Sector B', 'target': q, 'evac': 0, 'female': 0, 'child': 0, 'senior': 0},
+        {'name': 'Sector C', 'target': q, 'evac': 0, 'female': 0, 'child': 0, 'senior': 0},
+        {'name': 'Sector D', 'target': t - (q * 3), 'evac': 0, 'female': 0, 'child': 0, 'senior': 0},
+      ];
+    }
+    
+    if (selectedIndex >= op.mockSectorData!.length) {
+      selectedIndex = 0;
+      _selectedSectorForOp[op.id] = 0;
+    }
+
+    var selectedSector = op.mockSectorData![selectedIndex];
+
     // Determine progress and remaining
     double progress = op.targetPopulation > 0 ? (op.evacuatedCount / op.targetPopulation) : 0;
     int remaining = op.targetPopulation - op.evacuatedCount;
     if (remaining < 0) remaining = 0;
 
     // Formatting mock demographics string based on current state
-    String demoStr = '${op.evacuatedFemale} / ${op.evacuatedChildren} / ${op.evacuatedOld}';
-    if (op.evacuatedFemale == 0 && op.evacuatedChildren == 0 && op.evacuatedOld == 0) {
+    String demoStr = '${selectedSector['female']} / ${selectedSector['child']} / ${selectedSector['senior']}';
+    if (selectedSector['female'] == 0 && selectedSector['child'] == 0 && selectedSector['senior'] == 0) {
       demoStr = ''; // Empty string means user hasn't typed anything yet
+    }
+
+    void updateSectorData(String key, int value) {
+      selectedSector[key] = value;
+      op.evacuatedCount = 0;
+      op.evacuatedFemale = 0;
+      op.evacuatedChildren = 0;
+      op.evacuatedOld = 0;
+      for (var s in op.mockSectorData!) {
+        op.evacuatedCount += s['evac'] as int;
+        op.evacuatedFemale += s['female'] as int;
+        op.evacuatedChildren += s['child'] as int;
+        op.evacuatedOld += s['senior'] as int;
+      }
+      IncidentCoordinator.instance.updateEvacuationOperation();
+      setState(() {});
     }
 
     return Container(
@@ -3870,10 +3907,20 @@ class _FieldResponderViewState extends State<FieldResponderView>
                           ],
                         ),
                         const SizedBox(height: 20),
-                        _buildMockSectorRow('Sector A', 620, 620, 'Done', const Color(0xFF16A34A)),
-                        _buildMockSectorRow('Sector B', 540, 780, 'In Progress', const Color(0xFF2563EB)),
-                        _buildMockSectorRow('Sector C', 430, 720, 'Pending', const Color(0xFFF59E0B)),
-                        _buildMockSectorRow('Sector D', 510, 720, 'Done', const Color(0xFF16A34A)),
+                        ...List.generate(op.mockSectorData!.length, (index) {
+                          var s = op.mockSectorData![index];
+                          return _buildMockSectorRow(
+                            name: s['name'],
+                            evac: s['evac'],
+                            target: s['target'],
+                            isSelected: selectedIndex == index,
+                            onTap: () {
+                              setState(() {
+                                _selectedSectorForOp[op.id] = index;
+                              });
+                            },
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -3893,10 +3940,10 @@ class _FieldResponderViewState extends State<FieldResponderView>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.edit, color: Color(0xFF2563EB), size: 20),
-                            SizedBox(width: 8),
-                            Text('Update Evacuation Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                          children: [
+                            const Icon(Icons.edit, color: Color(0xFF2563EB), size: 20),
+                            const SizedBox(width: 8),
+                            Text('Update Evacuation Status - ${selectedSector['name']}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -3909,7 +3956,8 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                   const Text('Total Evacuated Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
                                   const SizedBox(height: 8),
                                   TextFormField(
-                                    initialValue: op.evacuatedCount > 0 ? op.evacuatedCount.toString() : '',
+                                    key: ValueKey('evac_${op.id}_$selectedIndex'),
+                                    initialValue: selectedSector['evac'] > 0 ? selectedSector['evac'].toString() : '',
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(Icons.people_alt, color: Color(0xFF7E22CE), size: 20),
                                       hintText: 'e.g. 2100',
@@ -3921,10 +3969,9 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                     ),
                                     onChanged: (val) {
                                       int newVal = int.tryParse(val) ?? 0;
-                                      if (newVal > op.targetPopulation) newVal = op.targetPopulation;
-                                      op.evacuatedCount = newVal;
-                                      IncidentCoordinator.instance.updateEvacuationOperation();
-                                      setState((){});
+                                      int tgt = selectedSector['target'] as int;
+                                      if (newVal > tgt) newVal = tgt;
+                                      updateSectorData('evac', newVal);
                                     },
                                   ),
                                 ],
@@ -3938,6 +3985,7 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                   const Text('Demographics Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
                                   const SizedBox(height: 8),
                                   TextFormField(
+                                    key: ValueKey('demo_${op.id}_$selectedIndex'),
                                     initialValue: demoStr,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(Icons.family_restroom, color: Color(0xFF7E22CE), size: 20),
@@ -3949,42 +3997,18 @@ class _FieldResponderViewState extends State<FieldResponderView>
                                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                                     ),
                                     onChanged: (val) {
-                                      // Simple parsing for mock purposes
                                       final parts = val.split(RegExp(r'[/,]'));
-                                      if (parts.isNotEmpty) op.evacuatedFemale = int.tryParse(parts[0].trim()) ?? 0;
-                                      if (parts.length > 1) op.evacuatedChildren = int.tryParse(parts[1].trim()) ?? 0;
-                                      if (parts.length > 2) op.evacuatedOld = int.tryParse(parts[2].trim()) ?? 0;
-                                      IncidentCoordinator.instance.updateEvacuationOperation();
-                                      setState((){});
+                                      if (parts.isNotEmpty) {
+                                        selectedSector['female'] = int.tryParse(parts[0].trim()) ?? 0;
+                                      }
+                                      if (parts.length > 1) {
+                                        selectedSector['child'] = int.tryParse(parts[1].trim()) ?? 0;
+                                      }
+                                      if (parts.length > 2) {
+                                        selectedSector['senior'] = int.tryParse(parts[2].trim()) ?? 0;
+                                      }
+                                      updateSectorData('female', selectedSector['female']);
                                     },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Sector/Area Status Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: const [
-                                        Icon(Icons.list, color: Color(0xFF64748B), size: 20),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text('All sectors updated', style: TextStyle(fontSize: 14, color: Color(0xFF0F172A))),
-                                        ),
-                                        Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
-                                      ],
-                                    ),
                                   ),
                                 ],
                               ),
@@ -4057,35 +4081,61 @@ class _FieldResponderViewState extends State<FieldResponderView>
     );
   }
 
-  Widget _buildMockSectorRow(String name, int evac, int target, String status, Color color) {
-    double pct = (evac / target) * 100;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Icon(Icons.circle, size: 12, color: color),
-          const SizedBox(width: 12),
-          Expanded(flex: 2, child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
-          Expanded(flex: 3, child: Text('$evac / $target evacuated', style: const TextStyle(color: Color(0xFF475569), fontSize: 13))),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
+  Widget _buildMockSectorRow({
+    required String name,
+    required int evac,
+    required int target,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    double pct = target > 0 ? (evac / target) * 100 : 0;
+    
+    String status = 'Pending';
+    Color color = const Color(0xFFF59E0B);
+    if (evac > 0 && evac < target) {
+      status = 'In Progress';
+      color = const Color(0xFF2563EB);
+    } else if (evac >= target && target > 0) {
+      status = 'Done';
+      color = const Color(0xFF16A34A);
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
+          border: Border.all(color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent, width: 1.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.circle, size: 12, color: color),
+            const SizedBox(width: 12),
+            Expanded(flex: 2, child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+            Expanded(flex: 3, child: Text('$evac / $target evacuated', style: const TextStyle(color: Color(0xFF475569), fontSize: 13))),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ),
-          ),
-          Text('${pct.toInt()}%', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-        ],
+            Text('${pct.toInt()}%', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
