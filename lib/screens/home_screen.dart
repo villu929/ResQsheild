@@ -13,6 +13,7 @@ import 'authority/resource_shelter_map_screen.dart';
 import 'authority/trends_forecast_screen.dart';
 import 'authority/dam_coordination_screen.dart';
 import 'authority/coordination_log_screen.dart';
+import 'authority/active_evacuations_screen.dart';
 import 'authority/widgets/animated_ring_chart.dart';
 import 'authority/widgets/animated_trend_graph.dart';
 import 'citizen/citizen_shelters_view.dart';
@@ -1228,7 +1229,7 @@ class _HomeScreenState extends State<HomeScreen>
                   badge: '67% Sec A',
                   bgColor: CmdColors.blueLight,
                   borderColor: const Color(0xFFDBEAFE),
-                  onTap: () => setState(() => _activeNavIndex = 3),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveEvacuationsScreen())),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1530,7 +1531,7 @@ class _HomeScreenState extends State<HomeScreen>
                       subInfo: 'Sector A & B Done',
                       chartSize: 100,
                       isExpanded: true,
-                      onTap: () => setState(() => _activeNavIndex = 3),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveEvacuationsScreen())),
                     ),
                   ),
                   const SizedBox(width: 10),

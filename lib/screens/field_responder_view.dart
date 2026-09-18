@@ -3240,51 +3240,68 @@ class _FieldResponderViewState extends State<FieldResponderView>
       itemCount: evacuations.length,
       itemBuilder: (context, i) {
         final op = evacuations[i];
-        final stepName = _kEvacLifecycle[op.stepIndex.clamp(0, 5)];
         
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.3), width: 1.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+        if (op.stepIndex == 4) {
+          return _buildEvacuationDetailsDashboard(op);
+        }
+        
+        return _buildEvacuationStepperCard(op);
+      },
+    );
+  }
+
+  Widget _buildEvacuationStepperCard(EvacuationOperation op) {
+    final currentStepName = _kEvacLifecycle[op.stepIndex.clamp(0, 5)];
+    final nextStepName = op.stepIndex < 4 ? _kEvacLifecycle[op.stepIndex + 1] : 'Completed';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
             children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.shield, color: Color(0xFF7E22CE), size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      op.areaName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                    child: const Icon(Icons.security_rounded, color: Color(0xFF9333EA)),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        Text(
-                          op.areaName,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
+                        const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4),
                         Text(
                           'Target: ${op.targetPopulation} people',
                           style: const TextStyle(
@@ -3295,206 +3312,781 @@ class _FieldResponderViewState extends State<FieldResponderView>
                         ),
                       ],
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: op.stepIndex == 5 ? const Color(0xFFF0FDF4) : const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: op.stepIndex == 5 ? const Color(0xFFBBF7D0) : const Color(0xFFBFDBFE)),
-                    ),
-                    child: Text(
-                      stepName.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.people_alt, color: Color(0xFF7E22CE), size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Remaining: ${op.targetPopulation - op.evacuatedCount}',
+                      style: const TextStyle(
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: op.stepIndex == 5 ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
+                        color: Color(0xFF7E22CE),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          // Stage Badges
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.article_outlined, size: 14, color: Color(0xFF7E22CE)),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Current Stage: ',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      currentStepName,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF7E22CE), fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (op.stepIndex < 5)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.play_circle_outline, size: 14, color: Color(0xFF7E22CE)),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Next Step: ',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        nextStepName,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          
+          // Custom Stepper
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  // Background Lines
+                  Positioned(
+                    top: 15,
+                    left: 20,
+                    right: 20,
+                    child: Row(
+                      children: List.generate(4, (index) {
+                        final isLineActive = index < op.stepIndex;
+                        return Expanded(
+                          child: Container(
+                            height: 3,
+                            color: isLineActive ? const Color(0xFF9333EA) : const Color(0xFFE2E8F0),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                  // Circles and Labels
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(5, (index) {
+                      final isCompleted = index < op.stepIndex;
+                      final isCurrent = index == op.stepIndex;
+                      final isUpcoming = index > op.stepIndex;
+                      
+                      return SizedBox(
+                        width: 60,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCompleted ? const Color(0xFF9333EA) : Colors.white,
+                                border: Border.all(
+                                  color: isUpcoming ? const Color(0xFFCBD5E1) : const Color(0xFF9333EA),
+                                  width: isCurrent ? 3 : 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: isCompleted
+                                    ? const Icon(Icons.check, size: 18, color: Colors.white)
+                                    : Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          color: isUpcoming ? const Color(0xFF94A3B8) : const Color(0xFF9333EA),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              index == 3 ? 'Reached Site' : _kEvacLifecycle[index],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                                color: isCurrent ? const Color(0xFF7E22CE) : const Color(0xFF475569),
+                              ),
+                            ),
+                            if (isCurrent) ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3E8FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'Current Stage',
+                                  style: TextStyle(fontSize: 9, color: Color(0xFF7E22CE), fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 30),
+
+          // Action Area based on step
+          if (op.stepIndex < 4) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    op.stepIndex++;
+                  });
+                  IncidentCoordinator.instance.updateEvacuationOperation();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.send_rounded, size: 20),
+                label: Text(
+                  'Mark as $nextStepName',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+              ),
+            ),
+          ] else if (op.stepIndex == 5) ...[
+            // Completed State
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 24),
+                  const SizedBox(width: 10),
+                  Text(
+                    'SUCCESSFULLY EVACUATED ${op.evacuatedCount} PEOPLE',
+                    style: const TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              
-              // Lifecycle Tracker
-              Row(
-                children: List.generate(6, (index) {
-                  final isActive = index <= op.stepIndex;
-                  return Expanded(
-                    child: Container(
-                      height: 4,
-                      margin: EdgeInsets.only(right: index < 5 ? 4 : 0),
-                      decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF9333EA) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(2),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvacuationDetailsDashboard(EvacuationOperation op) {
+    // Determine progress and remaining
+    double progress = op.targetPopulation > 0 ? (op.evacuatedCount / op.targetPopulation) : 0;
+    int remaining = op.targetPopulation - op.evacuatedCount;
+    if (remaining < 0) remaining = 0;
+
+    // Formatting mock demographics string based on current state
+    String demoStr = '${op.evacuatedFemale} / ${op.evacuatedChildren} / ${op.evacuatedOld}';
+    if (op.evacuatedFemale == 0 && op.evacuatedChildren == 0 && op.evacuatedOld == 0) {
+      demoStr = ''; // Empty string means user hasn't typed anything yet
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3E8FF), width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Top Header Section
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.shield, color: Color(0xFF7E22CE), size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      op.areaName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
                       ),
                     ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-
-              // Action Area based on step
-              if (op.stepIndex < 4) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        op.stepIndex++;
-                      });
-                      IncidentCoordinator.instance.updateEvacuationOperation();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9333EA),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          'Target: ${op.targetPopulation} people',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.location_on, size: 14, color: Color(0xFF94A3B8)),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Mawphlang, East Khasi Hills',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      'MARK AS ${_kEvacLifecycle[op.stepIndex + 1].toUpperCase()}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E8FF),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.circle, color: Color(0xFF7E22CE), size: 10),
+                        SizedBox(width: 6),
+                        Text(
+                          'EVACUATING',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF7E22CE),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ] else if (op.stepIndex == 4) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Assigned • 18 Sep 2026, 08:20 AM',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+          const SizedBox(height: 24),
+
+          // 2. KPI Metrics Row
+          Row(
+            children: [
+              // Evacuated
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.groups, color: Color(0xFF16A34A), size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Evacuated', style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '${op.evacuatedCount}',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'of ${op.targetPopulation}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Remaining
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEDD5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.people_alt, color: Color(0xFFEA580C), size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Remaining', style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '$remaining',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFDC2626)),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'people',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Demographics
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.family_restroom, color: Color(0xFF7E22CE), size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Demographics', style: TextStyle(fontSize: 12, color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Women ${op.evacuatedFemale}  •  Children ${op.evacuatedChildren}  •  Seniors ${op.evacuatedOld}',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Progress Bar
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Update Evacuated People Details',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildEvacTextField(
-                              'Total Evacuated',
-                              op.evacuatedCount,
-                              (val) {
-                                int newVal = int.tryParse(val) ?? 0;
-                                if (newVal > op.targetPopulation) newVal = op.targetPopulation;
-                                op.evacuatedCount = newVal;
-                                IncidentCoordinator.instance.updateEvacuationOperation();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildEvacTextField(
-                              'Female',
-                              op.evacuatedFemale,
-                              (val) {
-                                int newVal = int.tryParse(val) ?? 0;
-                                if (newVal > op.evacuatedCount) newVal = op.evacuatedCount;
-                                op.evacuatedFemale = newVal;
-                                IncidentCoordinator.instance.updateEvacuationOperation();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildEvacTextField(
-                              'Old People',
-                              op.evacuatedOld,
-                              (val) {
-                                int newVal = int.tryParse(val) ?? 0;
-                                if (newVal + op.evacuatedFemale + op.evacuatedChildren > op.evacuatedCount) {
-                                  newVal = op.evacuatedCount - op.evacuatedFemale - op.evacuatedChildren;
-                                }
-                                if (newVal < 0) newVal = 0;
-                                op.evacuatedOld = newVal;
-                                IncidentCoordinator.instance.updateEvacuationOperation();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildEvacTextField(
-                              'Children',
-                              op.evacuatedChildren,
-                              (val) {
-                                int newVal = int.tryParse(val) ?? 0;
-                                if (newVal + op.evacuatedFemale + op.evacuatedOld > op.evacuatedCount) {
-                                  newVal = op.evacuatedCount - op.evacuatedFemale - op.evacuatedOld;
-                                }
-                                if (newVal < 0) newVal = 0;
-                                op.evacuatedChildren = newVal;
-                                IncidentCoordinator.instance.updateEvacuationOperation();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              op.stepIndex = 5;
-                              op.status = 'completed';
-                            });
-                            IncidentCoordinator.instance.updateEvacuationOperation();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF16A34A),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text(
-                            'MARK AS COMPLETED',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                // Completed State
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFBBF7D0)),
-                  ),
-                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'SUCCESSFULLY EVACUATED ${op.evacuatedCount} PEOPLE',
-                        style: const TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${(progress * 100).toInt()}% Complete', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                          Text('${(progress * 100).toInt()}%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 8,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF9333EA),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ]
+              ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 24),
+
+          // 3. Bottom Split Section
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Column (Sector-wise Update)
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.bar_chart, color: Color(0xFF2563EB), size: 20),
+                            SizedBox(width: 8),
+                            Text('Sector-wise Update', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildMockSectorRow('Sector A', 620, 620, 'Done', const Color(0xFF16A34A)),
+                        _buildMockSectorRow('Sector B', 540, 780, 'In Progress', const Color(0xFF2563EB)),
+                        _buildMockSectorRow('Sector C', 430, 720, 'Pending', const Color(0xFFF59E0B)),
+                        _buildMockSectorRow('Sector D', 510, 720, 'Done', const Color(0xFF16A34A)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Right Column (Update Form)
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.edit, color: Color(0xFF2563EB), size: 20),
+                            SizedBox(width: 8),
+                            Text('Update Evacuation Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total Evacuated Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    initialValue: op.evacuatedCount > 0 ? op.evacuatedCount.toString() : '',
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(Icons.people_alt, color: Color(0xFF7E22CE), size: 20),
+                                      hintText: 'e.g. 2100',
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    ),
+                                    onChanged: (val) {
+                                      int newVal = int.tryParse(val) ?? 0;
+                                      if (newVal > op.targetPopulation) newVal = op.targetPopulation;
+                                      op.evacuatedCount = newVal;
+                                      IncidentCoordinator.instance.updateEvacuationOperation();
+                                      setState((){});
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Demographics Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    initialValue: demoStr,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(Icons.family_restroom, color: Color(0xFF7E22CE), size: 20),
+                                      hintText: 'Women / Child / Senior',
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    ),
+                                    onChanged: (val) {
+                                      // Simple parsing for mock purposes
+                                      final parts = val.split(RegExp(r'[/,]'));
+                                      if (parts.isNotEmpty) op.evacuatedFemale = int.tryParse(parts[0].trim()) ?? 0;
+                                      if (parts.length > 1) op.evacuatedChildren = int.tryParse(parts[1].trim()) ?? 0;
+                                      if (parts.length > 2) op.evacuatedOld = int.tryParse(parts[2].trim()) ?? 0;
+                                      IncidentCoordinator.instance.updateEvacuationOperation();
+                                      setState((){});
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Sector/Area Status Updated', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: const [
+                                        Icon(Icons.list, color: Color(0xFF64748B), size: 20),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text('All sectors updated', style: TextStyle(fontSize: 14, color: Color(0xFF0F172A))),
+                                        ),
+                                        Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: const [
+                                Icon(Icons.description_outlined, size: 14, color: Color(0xFF64748B)),
+                                SizedBox(width: 6),
+                                Text('Last updated: 18 Sep 2026, 09:15 PM by Responder', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.check_circle, size: 14, color: Color(0xFF16A34A)),
+                                  SizedBox(width: 4),
+                                  Text('Progress saved', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // 4. Final Action Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  op.stepIndex = 5;
+                  op.status = 'completed';
+                });
+                IncidentCoordinator.instance.updateEvacuationOperation();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.check_circle, size: 22),
+              label: const Text(
+                'MARK AS COMPLETED',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockSectorRow(String name, int evac, int target, String status, Color color) {
+    double pct = (evac / target) * 100;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 12, color: color),
+          const SizedBox(width: 12),
+          Expanded(flex: 2, child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+          Expanded(flex: 3, child: Text('$evac / $target evacuated', style: const TextStyle(color: Color(0xFF475569), fontSize: 13))),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+          Text('${pct.toInt()}%', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+        ],
+      ),
     );
   }
 
