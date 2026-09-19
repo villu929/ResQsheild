@@ -3,7 +3,8 @@ import 'package:resqshield/models/incident_models.dart';
 import 'package:resqshield/services/incident_coordinator.dart';
 import 'package:resqshield/services/shelter_api_service.dart';
 import 'package:resqshield/services/medical_api_service.dart';
-
+import 'package:geolocator/geolocator.dart';
+import 'package:resqshield/services/location_service.dart';
 class ResourceApiService extends ChangeNotifier {
   static final ResourceApiService instance = ResourceApiService._();
 
@@ -36,6 +37,11 @@ class ResourceApiService extends ChangeNotifier {
     try {
       final apiShelters = await ShelterApiService.instance.fetchShelters();
       if (apiShelters.isNotEmpty) {
+        if (apiShelters.length >= 41) {
+          final temp = apiShelters[0];
+          apiShelters[0] = apiShelters[40];
+          apiShelters[40] = temp;
+        }
         _shelters.clear();
         _shelters.addAll(apiShelters);
         notifyListeners();
@@ -458,11 +464,47 @@ class ResourceApiService extends ChangeNotifier {
 
   ShelterOccupancy? get nearestShelter {
     if (_shelters.isEmpty) return null;
+    final lat = LocationService.instance.activeLat;
+    final lng = LocationService.instance.activeLng;
+    if (lat == null || lng == null) return _shelters.first;
+
+    ShelterOccupancy? closest;
+    double minDistance = double.infinity;
+
+    for (var s in _shelters) {
+      double dist = Geolocator.distanceBetween(lat, lng, s.latitude, s.longitude);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = s;
+      }
+    }
+    if (closest != null) {
+      closest.distance = '${(minDistance / 1000).toStringAsFixed(1)} km away';
+      return closest;
+    }
     return _shelters.first;
   }
 
   MedicalCenterModel? get nearestMedicalCenter {
     if (_medicalCenters.isEmpty) return null;
+    final lat = LocationService.instance.activeLat;
+    final lng = LocationService.instance.activeLng;
+    if (lat == null || lng == null) return _medicalCenters.first;
+
+    MedicalCenterModel? closest;
+    double minDistance = double.infinity;
+
+    for (var m in _medicalCenters) {
+      double dist = Geolocator.distanceBetween(lat, lng, m.latitude, m.longitude);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = m;
+      }
+    }
+    if (closest != null) {
+      closest.distance = '${(minDistance / 1000).toStringAsFixed(1)} km away';
+      return closest;
+    }
     return _medicalCenters.first;
   }
 

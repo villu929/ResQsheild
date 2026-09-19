@@ -18,6 +18,12 @@ class _HazardMapScreenState extends State<HazardMapScreen> {
   bool _showGlof = false;
   bool _showLandslide = false;
 
+  // Risk toggles
+  bool _showHighRisk = true;
+  bool _showModerateRisk = true;
+  bool _showSafeZone = true;
+
+
   final MapController _mapController = MapController();
   final LatLng _initialCenter = const LatLng(10.1076, 76.3516); // Kochi / Aluva basin
 
@@ -190,7 +196,12 @@ class _HazardMapScreenState extends State<HazardMapScreen> {
               ),
               // Village Risk Markers
               MarkerLayer(
-                markers: _villages.map((village) {
+                markers: _villages.where((village) {
+                  if (village.risk == _RiskLevel.high && !_showHighRisk) return false;
+                  if (village.risk == _RiskLevel.moderate && !_showModerateRisk) return false;
+                  if (village.risk == _RiskLevel.safe && !_showSafeZone) return false;
+                  return true;
+                }).map((village) {
                   return Marker(
                     point: village.location,
                     width: 70,
@@ -246,52 +257,89 @@ class _HazardMapScreenState extends State<HazardMapScreen> {
             top: 10,
             left: 10,
             right: 10,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  _layerChip(
-                    label: 'River Level',
-                    icon: Icons.water_rounded,
-                    isActive: _showRiver,
-                    activeColor: const Color(0xFFEF4444),
-                    onTap: () => setState(() => _showRiver = !_showRiver),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _layerChip(
+                        label: 'River Level',
+                        icon: Icons.water_rounded,
+                        isActive: _showRiver,
+                        activeColor: const Color(0xFFEF4444),
+                        onTap: () => setState(() => _showRiver = !_showRiver),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'Rainfall Radar',
+                        icon: Icons.cloud_download_rounded,
+                        isActive: _showRainfall,
+                        activeColor: const Color(0xFF0284C7),
+                        onTap: () => setState(() => _showRainfall = !_showRainfall),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'Dam Level',
+                        icon: Icons.water_damage_rounded,
+                        isActive: _showDam,
+                        activeColor: const Color(0xFF8B5CF6),
+                        onTap: () => setState(() => _showDam = !_showDam),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'GLOF Risk',
+                        icon: Icons.terrain_rounded,
+                        isActive: _showGlof,
+                        activeColor: const Color(0xFF06B6D4),
+                        onTap: () => setState(() => _showGlof = !_showGlof),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'Landslide',
+                        icon: Icons.landscape_rounded,
+                        isActive: _showLandslide,
+                        activeColor: const Color(0xFFF59E0B),
+                        onTap: () => setState(() => _showLandslide = !_showLandslide),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  _layerChip(
-                    label: 'Rainfall Radar',
-                    icon: Icons.cloud_download_rounded,
-                    isActive: _showRainfall,
-                    activeColor: const Color(0xFF0284C7),
-                    onTap: () => setState(() => _showRainfall = !_showRainfall),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _layerChip(
+                        label: 'Danger Zones',
+                        icon: Icons.warning_rounded,
+                        isActive: _showHighRisk,
+                        activeColor: const Color(0xFFEF4444),
+                        onTap: () => setState(() => _showHighRisk = !_showHighRisk),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'Alert Zones',
+                        icon: Icons.notifications_active_rounded,
+                        isActive: _showModerateRisk,
+                        activeColor: const Color(0xFFF59E0B),
+                        onTap: () => setState(() => _showModerateRisk = !_showModerateRisk),
+                      ),
+                      const SizedBox(width: 6),
+                      _layerChip(
+                        label: 'Safe Zones',
+                        icon: Icons.verified_user_rounded,
+                        isActive: _showSafeZone,
+                        activeColor: const Color(0xFF10B981),
+                        onTap: () => setState(() => _showSafeZone = !_showSafeZone),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  _layerChip(
-                    label: 'Dam Level',
-                    icon: Icons.water_damage_rounded,
-                    isActive: _showDam,
-                    activeColor: const Color(0xFF8B5CF6),
-                    onTap: () => setState(() => _showDam = !_showDam),
-                  ),
-                  const SizedBox(width: 6),
-                  _layerChip(
-                    label: 'GLOF Risk',
-                    icon: Icons.terrain_rounded,
-                    isActive: _showGlof,
-                    activeColor: const Color(0xFF06B6D4),
-                    onTap: () => setState(() => _showGlof = !_showGlof),
-                  ),
-                  const SizedBox(width: 6),
-                  _layerChip(
-                    label: 'Landslide',
-                    icon: Icons.landscape_rounded,
-                    isActive: _showLandslide,
-                    activeColor: const Color(0xFFF59E0B),
-                    onTap: () => setState(() => _showLandslide = !_showLandslide),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 

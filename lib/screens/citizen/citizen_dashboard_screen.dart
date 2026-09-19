@@ -407,34 +407,10 @@ final List<_DosDisasterInfo> _dosDisasterList = [
         titleEn: 'Before Lightning',
         titleHi: 'वज्रपात से पहले',
         tipsEn: [
-          'Follow the 30-30 rule: seek shelter if thunder follows flash within 30s.',
-          'Unplug computers, TVs, routers and non-essential electronic appliances.',
-          'Bring outdoor pets and livestock into grounded, enclosed shelters.',
-          'Avoid scheduling outdoor sports, farming or water activities during storm alerts.',
+          'Follow the 30-30 rule: seek shelter if thunder follows lightning within 30 seconds.',
         ],
         tipsHi: [
-          '30-30 नियम अपनाएं: बिजली चमकने के 30 सेकंड में गड़गड़ाहट हो तो सुरक्षित शरण लें।',
-          'कंप्यूटर, टीवी और सभी इलेक्ट्रॉनिक उपकरणों के प्लग बिजली बोर्ड से निकालें।',
-          'पालतू जानवरों और मवेशियों को खुले मैदान से सुरक्षित पक्के बाड़े में ले जाएं।',
-          'आंधी-तूफान के अलर्ट के समय खुले खेतों, खेल मैदानों या जलाशयों में न जाएं।',
-        ],
-      ),
-      _DosPhaseInfo(
-        badgeEn: 'During Lightning & Storm',
-        badgeHi: 'वज्रपात के दौरान सावधानी',
-        titleEn: 'During Lightning',
-        titleHi: 'वज्रपात के दौरान',
-        tipsEn: [
-          'Do not stand in a crowd or open fields; seek shelter in a concrete building.',
-          "Don't take shelter under isolated trees, tin roofs or metal sheds.",
-          "Don't touch indoor plumbing, metallic pipes, faucets or corded equipment.",
-          'Stay away from power lines, wire fences, open hilltops and water bodies.',
-        ],
-        tipsHi: [
-          'भीड़ में या खुले मैदान में खड़े न हों; पक्के कंक्रीट के मकान में आश्रय लें।',
-          'ऊंचे पेड़ों, बिजली के खंभों, टीन शेड या टावरों के नीचे कभी शरण न लें।',
-          'घर के अंदर नल, धातु के पाइप, धातु की खिड़कियां या वायर्ड फोन न छुएं।',
-          'बिजली के तारों, लोहे की बाड़, खुले टीलों और पानी के स्रोतों से दूर रहें।',
+          'बिजली चमकने के 30 सेकंड के भीतर गड़गड़ाहट होने पर सुरक्षित स्थान पर जाएं\u0964',
         ],
       ),
       _DosPhaseInfo(
@@ -477,6 +453,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // Dynamic Safety State (Safe / Watch / Warning / Critical)
   CitizenThreatLevel _threatLevel = CitizenThreatLevel.safe;
   bool _isSosActive = false;
+  String _locationStatusDesc = 'No active threats in your area.';
+  String _locationStatusDescHi = 'आपके क्षेत्र में कोई तात्कालिक खतरा नहीं।';
   int _activeAlertIndex = 0;
   double _alertMapZoom = 1.0;
   bool _alertMapSatellite = false;
@@ -497,7 +475,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
 
   // Key Coordinates (Local Basin)
-  final LatLng _userPos = const LatLng(23.7957, 86.4304);
+  LatLng _userPos = const LatLng(23.7957, 86.4304);
   final LatLng _waypointPos = const LatLng(23.7990, 86.4340);
   final LatLng _shelterPos1 = const LatLng(23.8030, 86.4380);
   final LatLng _shelterPos2 = const LatLng(23.7920, 86.4250);
@@ -551,89 +529,25 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   // Active Alerts List
   List<Map<String, dynamic>> _activeAlerts = [
     {
-      'title': 'Heavy Rainfall + Rising River Alert',
-      'titleHi': 'भारी बारिश + नदी जलस्तर वृद्धि चेतावनी',
-      'distance': '2.4 km from you',
-      'distanceHi': 'आपसे 2.4 किमी दूर',
-      'time': 'Updated 5 min ago',
-      'timeHi': '5 मिनट पहले अपडेट',
-      'impact': 'Low-lying areas may face flooding in the next 5–8 hours.',
-      'impactHi': 'निचले क्षेत्रों में अगले 5–8 घंटों में बाढ़ की संभावना है।',
-      'badge': 'FLOOD WARNING',
-      'badgeHi': 'बाढ़ चेतावनी',
-      'issued': 'Issued 2h ago',
-      'issuedHi': '2 घंटे पहले जारी',
-      'district': 'District: River Basin',
-      'districtHi': 'जिला: नदी बेसिन',
-      'riskLevel': 'Risk Level: High',
-      'riskLevelHi': 'जोखिम: उच्च',
-      'riskStep': 2,
-      'color': const Color(0xFFDC2626),
-    },
-    {
-      'title': 'High Water Discharge from Upstream Dam',
-      'titleHi': 'बांध से अतिरिक्त पानी छोड़ा गया',
-      'distance': '6.1 km upstream',
-      'distanceHi': '6.1 किमी ऊपर की ओर',
-      'time': 'Updated 18 min ago',
-      'timeHi': '18 मिनट पहले अपडेट',
-      'impact':
-          'River velocity elevated. Avoid low-ground causeways and riverbanks.',
-      'impactHi': 'नदी की गति तेज है। पुल और नदी तट से दूर रहें।',
-      'badge': 'DAM SURGE',
-      'badgeHi': 'डैम सर्ज',
-      'issued': 'Issued 45m ago',
-      'issuedHi': '45 मिनट पहले जारी',
-      'district': 'District: Upstream Valley',
-      'districtHi': 'जिला: ऊपरी घाटी',
-      'riskLevel': 'Risk Level: Moderate',
-      'riskLevelHi': 'जोखिम: मध्यम',
+      'title': 'NO ACTIVE ALERTS - SAFE',
+      'titleHi': '\u0915\u094b\u0908 \u0938\u0915\u094d\u0930\u093f\u092f \u0905\u0932\u0930\u094d\u091f \u0928\u0939\u0940\u0902 - \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
+      'distance': 'Fetching location data...',
+      'distanceHi': '\u0938\u094d\u0925\u093e\u0928 \u0921\u0947\u091f\u093e \u092a\u094d\u0930\u093e\u092a\u094d\u0924 \u0915\u0930 \u0930\u0939\u093e \u0939\u0948...',
+      'time': 'Just now',
+      'timeHi': '\u0905\u092d\u0940-\u0905\u092d\u0940',
+      'impact': 'You are in a safe zone.',
+      'impactHi': '\u0906\u092a \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0915\u094d\u0937\u0947\u0924\u094d\u0930 \u092e\u0947\u0902 \u0939\u0948\u0902\u0964',
+      'badge': 'SAFE',
+      'badgeHi': '\u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
+      'issued': 'System',
+      'issuedHi': '\u0938\u093f\u0938\u094d\u091f\u092e',
+      'district': 'Fetching...',
+      'districtHi': '\u092a\u094d\u0930\u093e\u092a\u094d\u0924 \u0915\u0930 \u0930\u0939\u093e \u0939\u0948...',
+      'riskLevel': 'Risk Level: SAFE',
+      'riskLevelHi': '\u091c\u094b\u0916\u093f\u092e \u0938\u094d\u0924\u0930: \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
       'riskStep': 1,
-      'color': const Color(0xFFF39A20),
-    },
-    {
-      'title': 'Severe Lightning & Thunderstorm Alert',
-      'titleHi': 'भीषण आंधी-तूफान एवं वज्रपात चेतावनी',
-      'distance': '1.2 km away • Basin Zone',
-      'distanceHi': '1.2 किमी दूर • बेसिन क्षेत्र',
-      'time': 'Updated 2 min ago',
-      'timeHi': '2 मिनट पहले अपडेट',
-      'impact':
-          'Stay indoors. Avoid open fields, tall trees and electrical poles.',
-      'impactHi':
-          'घर के अंदर रहें। खुले मैदान, ऊंचे पेड़ और खंभों से दूर रहें।',
-      'badge': 'THUNDERSTORM',
-      'badgeHi': 'वज्रपात चेतावनी',
-      'issued': 'Issued 30m ago',
-      'issuedHi': '30 मिनट पहले जारी',
-      'district': 'District: North Ridge',
-      'districtHi': 'जिला: उत्तरी कटक',
-      'riskLevel': 'Risk Level: High',
-      'riskLevelHi': 'जोखिम: उच्च',
-      'riskStep': 2,
-      'color': const Color(0xFFD97706),
-    },
-    {
-      'title': 'Bridge & Underpass Inundation Warning',
-      'titleHi': 'पुलिया व अंडरपास जलभराव सूचना',
-      'distance': '3.5 km away • Old Highway',
-      'distanceHi': '3.5 किमी दूर • पुराना हाईवे',
-      'time': 'Updated 12 min ago',
-      'timeHi': '12 मिनट पहले अपडेट',
-      'impact':
-          'Water height 2.5ft over causeway. Route blocked for light vehicles.',
-      'impactHi': 'पुलिया पर 2.5 फीट पानी। हल्के वाहनों का आवागमन बंद।',
-      'badge': 'ROAD BLOCKED',
-      'badgeHi': 'मार्ग अवरुद्ध',
-      'issued': 'Issued 1h ago',
-      'issuedHi': '1 घंटा पहले जारी',
-      'district': 'District: Highway Sector 4',
-      'districtHi': 'जिला: हाईवे सेक्टर 4',
-      'riskLevel': 'Risk Level: Critical',
-      'riskLevelHi': 'जोखिम: गंभीर',
-      'riskStep': 3,
-      'color': const Color(0xFFDC2626),
-    },
+      'color': const Color(0xFF22C55E),
+    }
   ];
 
   // Notifications List
@@ -752,7 +666,15 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       debugPrint('Timestamp: ${position.timestamp}');
       debugPrint('Source: ${position.isMocked ? "Mocked" : "Native OS / Browser API"}');
       
+      _resetAlertsForNewLocation();
       _fetchBackendAlerts(position.latitude, position.longitude);
+      
+      if (mounted) {
+        setState(() {
+          _userPos = LatLng(position.latitude, position.longitude);
+        });
+        _rainMapController.move(_userPos, 12.2);
+      }
 
       
       String? accuracyMsg;
@@ -864,7 +786,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     }
   }
 
-
   Future<void> _fetchOfficialAlerts(
     double lat,
     double lon,
@@ -880,33 +801,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     if (!mounted) return;
 
     if (alerts.isEmpty) {
-      setState(() {
-        _activeAlertIndex = 0;
-        _activeAlerts = [
-          {
-            'title': 'No Active Official Warning',
-            'titleHi': 'No Active Official Warning',
-            'distance': locationName,
-            'distanceHi': locationName,
-            'time': 'Checked live',
-            'timeHi': 'Checked live',
-            'impact':
-                'No active NDMA SACHET warning was found for this location.',
-            'impactHi':
-                'No active NDMA SACHET warning was found for this location.',
-            'badge': 'NO ACTIVE WARNING',
-            'badgeHi': 'NO ACTIVE WARNING',
-            'issued': 'NDMA SACHET',
-            'issuedHi': 'NDMA SACHET',
-            'district': locationName,
-            'districtHi': locationName,
-            'riskLevel': 'Official alerts: None active',
-            'riskLevelHi': 'Official alerts: None active',
-            'riskStep': 0,
-            'color': const Color(0xFF16A34A),
-          }
-        ];
-      });
       return;
     }
 
@@ -982,129 +876,415 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
     setState(() {
       _activeAlertIndex = 0;
-      _activeAlerts = mapped;
+      if (_activeAlerts.isNotEmpty && _activeAlerts[0]['title'].toString().contains('SAFE')) {
+        _activeAlerts = mapped;
+      } else {
+        _activeAlerts.insertAll(0, mapped);
+      }
     });
   }
 
+
+  void _resetAlertsForNewLocation() {
+    setState(() {
+      _activeAlerts = [
+        {
+          'title': 'NO ACTIVE ALERTS - SAFE',
+          'titleHi': '\u0915\u094b\u0908 \u0938\u0915\u094d\u0930\u093f\u092f \u0905\u0932\u0930\u094d\u091f \u0928\u0939\u0940\u0902 - \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
+          'distance': 'Fetching location data...',
+          'distanceHi': '\u0938\u094d\u0925\u093e\u0928 \u0921\u0947\u091f\u093e \u092a\u094d\u0930\u093e\u092a\u094d\u0924 \u0915\u0930 \u0930\u0939\u093e \u0939\u0948...',
+          'time': 'Just now',
+          'timeHi': '\u0905\u092d\u0940-\u0905\u092d\u0940',
+          'impact': 'You are in a safe zone.',
+          'impactHi': '\u0906\u092a \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0915\u094d\u0937\u0947\u0924\u094d\u0930 \u092e\u0947\u0902 \u0939\u0948\u0902\u0964',
+          'badge': 'SAFE',
+          'badgeHi': '\u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
+          'issued': 'System',
+          'issuedHi': '\u0938\u093f\u0938\u094d\u091f\u092e',
+          'district': 'Fetching...',
+          'districtHi': '\u092a\u094d\u0930\u093e\u092a\u094d\u0924 \u0915\u0930 \u0930\u0939\u093e \u0939\u0948...',
+          'riskLevel': 'Risk Level: SAFE',
+          'riskLevelHi': '\u091c\u094b\u0916\u093f\u092e \u0938\u094d\u0924\u0930: \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924',
+          'riskStep': 1,
+          'color': const Color(0xFF22C55E),
+        }
+      ];
+      _activeAlertIndex = 0;
+      // Reset safety card to safe while new location data loads
+      _threatLevel = CitizenThreatLevel.safe;
+      _locationStatusDesc = 'Fetching live data for new location...';
+      _locationStatusDescHi = 'नए स्थान का लाइव डेटा प्राप्त हो रहा है...';
+    });
+  }
   Future<void> _fetchBackendAlerts(double lat, double lon) async {
     final backend = ResqshieldBackendService.instance;
-    _fetchBackendWeather(lat, lon); // Fetch weather data in parallel
-    final riskData = await backend.fetchLocationRisk(lat: lat, lon: lon);
-    if (!mounted || riskData == null) return;
 
-    final stations = riskData['nearest_observations'] as List<dynamic>? ?? [];
-    String district = 'Your Location';
-    if (stations.isNotEmpty) {
-      district = stations[0]['district'] ?? district;
+    final stateCode = _latLonToStateCode(lat, lon);
+    final results = await Future.wait([
+      backend.fetchGpmRainfall(lat: lat, lon: lon),
+      backend.fetchHazardsDistricts(limit: 100),
+      stateCode.isNotEmpty
+          ? backend.fetchSachetAlerts(stateCode: stateCode)
+          : Future.value(<Map<String, dynamic>>[]),
+    ]);
+
+    if (!mounted) return;
+
+    final gpmData = results[0] as Map<String, dynamic>?;
+    final hazardDistricts = results[1] as List<Map<String, dynamic>>;
+    final sachetAlerts = results[2] as List<Map<String, dynamic>>;
+
+    // This is the REAL GPM rainfall value — same one used by alert container
+    final double rain = gpmData != null
+        ? ((gpmData['precipitation_mm_per_hour'] ?? 0.0) as num).toDouble()
+        : 0.0;
+
+    // Pass real GPM rain to weather forecast card so "Now" matches alert container
+    _fetchBackendWeather(lat, lon, liveRainMm: rain);
+
+    final locLower = _currentLocation.toLowerCase();
+    Map<String, dynamic>? matched;
+    for (final h in hazardDistricts) {
+      final dName = (h['district'] ?? '').toString().toLowerCase();
+      if (dName.isNotEmpty && locLower.contains(dName)) {
+        matched = h;
+        break;
+      }
     }
-    
-    if (stations.isNotEmpty) {
-      final firstStation = stations[0];
-      final level = firstStation['risk_level'] ?? 'SAFE';
-      
-      setState(() {
-        if (level != 'SAFE') {
-          final kindRaw = firstStation['kind']?.toString() ?? 'hazard';
-          final kind = kindRaw.toUpperCase();
-          final station = firstStation['station'] ?? district;
-          final value = firstStation['value']?.toString() ?? '';
-          final unit = firstStation['unit']?.toString() ?? '';
-          final valStr = value.isNotEmpty ? ' ($value $unit)' : '';
-          
-          _activeAlerts = [
-            {
-              'title': '$level $kind ALERT',
-              'titleHi': '$level $kind चेतावनी',
-              'distance': 'Based on precise coordinates',
-              'distanceHi': 'सटीक स्थान के आधार पर',
-              'time': 'Just now',
-              'timeHi': 'अभी-अभी',
-              'impact': 'Real-time $kindRaw anomaly detected near $station$valStr.',
-              'impactHi': '$station के पास रीयल-टाइम $kindRaw विसंगति का पता चला है$valStr।',
-              'badge': '$level RISK',
-              'badgeHi': '$level जोखिम',
-              'issued': 'Issued Live',
-              'issuedHi': 'लाइव जारी',
-              'district': 'District: $district',
-              'districtHi': 'जिला: $district',
-              'riskLevel': 'Risk Level: $level',
-              'riskLevelHi': 'जोखिम: $level',
-              'riskStep': level == 'CRITICAL' ? 3 : (level == 'HIGH' ? 2 : 1),
-              'color': level == 'CRITICAL' ? const Color(0xFFDC2626) : const Color(0xFFF39A20),
-            }
-          ];
-        } else {
-          _activeAlerts = [
-            {
-              'title': 'NO ACTIVE ALERTS - SAFE',
-              'titleHi': 'कोई सक्रिय चेतावनी नहीं - सुरक्षित',
-              'distance': 'Based on precise coordinates',
-              'distanceHi': 'सटीक स्थान के आधार पर',
-              'time': 'Just now',
-              'timeHi': 'अभी-अभी',
-              'impact': 'No significant hazard detected for $district.',
-              'impactHi': '$district के लिए कोई महत्वपूर्ण खतरा नहीं।',
-              'badge': 'SAFE',
-              'badgeHi': 'सुरक्षित',
-              'issued': 'Issued Live',
-              'issuedHi': 'लाइव जारी',
-              'district': 'District: $district',
-              'districtHi': 'जिला: $district',
-              'riskLevel': 'Risk Level: SAFE',
-              'riskLevelHi': 'जोखिम: सुरक्षित',
-              'riskStep': 0,
-              'color': const Color(0xFF10B981),
-            }
-          ];
+
+    Map<String, dynamic>? lsData;
+    Map<String, dynamic>? flData;
+    if (matched != null) {
+      final haz = matched['hazards'] as Map<String, dynamic>?;
+      if (haz != null) {
+        final ls = haz['landslide'] as Map<String, dynamic>?;
+        final fl = haz['flood'] as Map<String, dynamic>?;
+        if (ls != null && ls['level'] != null && ls['level'] != 'UNAVAILABLE') lsData = ls;
+        if (fl != null && fl['level'] != null && fl['level'] != 'UNAVAILABLE') flData = fl;
+      }
+    }
+
+    final bool compound = matched?['compound_hazard'] == true;
+    final String overallLvl = matched?['overall_risk_level']?.toString() ?? '';
+    final double scorePercent = matched != null
+        ? (((matched['overall_risk_score'] ?? 0.0) as num).toDouble() * 100)
+        : 0.0;
+    final int gsiCount = (lsData?['gsi_inventory_count'] as int?) ?? 0;
+    final String lsLvl = lsData?['level']?.toString() ?? '';
+    final String flLvl = flData?['level']?.toString() ?? '';
+
+    String buildMsg() {
+      final parts = <String>[];
+      if (rain >= 20.0) {
+        parts.add('Extreme rainfall: ${rain.toStringAsFixed(1)} mm/hr (NASA GPM Live Satellite)');
+      } else if (rain >= 7.5) {
+        parts.add('Heavy rainfall: ${rain.toStringAsFixed(1)} mm/hr (NASA GPM Live Satellite)');
+      } else if (rain >= 2.5) {
+        parts.add('Moderate rainfall: ${rain.toStringAsFixed(1)} mm/hr (NASA GPM)');
+      } else if (rain > 0) {
+        parts.add('Light rainfall: ${rain.toStringAsFixed(2)} mm/hr (NASA GPM)');
+      } else {
+        parts.add('No active rainfall detected (NASA GPM Live)');
+      }
+      if (lsData != null) {
+        if (gsiCount > 0) parts.add('$gsiCount historical landslide sites recorded by GSI (Geological Survey of India)');
+        if (lsLvl == 'CRITICAL') {
+          parts.add('CRITICAL landslide susceptibility — even moderate rain can trigger mass movements in this terrain');
+        } else if (lsLvl == 'HIGH') {
+          parts.add('HIGH landslide susceptibility — heavy rain may cause slope failures and rockslides');
         }
-      });
+      }
+      if (flData != null) {
+        if (flLvl == 'CRITICAL') {
+          parts.add('CRITICAL flood risk — CWC/NWDP river gauges indicate danger-level water readings nearby');
+        } else if (flLvl == 'HIGH') {
+          parts.add('HIGH flood risk — river levels elevated, low-lying area waterlogging possible');
+        }
+      }
+      if (compound && parts.length >= 2) {
+        parts.add('COMPOUND multi-hazard: simultaneous flood + landslide threat amplifies overall risk significantly');
+      }
+      return parts.join('. ');
     }
+
+    if (sachetAlerts.isNotEmpty) {
+      final alert = sachetAlerts.first;
+      final sev = (alert['severity'] ?? '').toString().toUpperCase();
+      final event = alert['event']?.toString() ?? 'Disaster Warning';
+      final area = alert['area']?.toString() ?? _currentLocation;
+      final Color col = sev.contains('EXTREME') || sev.contains('EMERGENCY')
+          ? const Color(0xFFDC2626)
+          : sev.contains('SEVERE') || sev.contains('ALERT')
+              ? const Color(0xFFF97316)
+              : const Color(0xFFEAB308);
+      final int stp = sev.contains('EXTREME') ? 3 : sev.contains('SEVERE') ? 2 : 1;
+      setState(() {
+        _activeAlerts = [{
+          'title': 'OFFICIAL ALERT: $event',
+          'titleHi': 'सरकारी चेतावनी: $event',
+          'distance': 'Area: $area',
+          'distanceHi': 'क्षेत्र: $area',
+          'time': alert['effective_start_time']?.toString() ?? 'Active now',
+          'timeHi': alert['effective_start_time']?.toString() ?? 'अभी सक्रिय',
+          'impact': alert['message']?.toString() ?? buildMsg(),
+          'impactHi': alert['message']?.toString() ?? buildMsg(),
+          'badge': sev.isNotEmpty ? sev : 'ALERT',
+          'badgeHi': sev.isNotEmpty ? sev : 'चेतावनी',
+          'issued': 'NDMA SACHET (Official Govt. Alert)',
+          'issuedHi': 'NDMA SACHET (सरकारी चेतावनी)',
+          'district': 'Area: $area',
+          'districtHi': 'क्षेत्र: $area',
+          'riskLevel': 'Risk Level: $sev',
+          'riskLevelHi': 'जोखिम: $sev',
+          'riskStep': stp,
+          'color': col,
+        }];
+      });
+      return;
+    }
+
+    String rl, title, source;
+    int step;
+    Color col;
+
+    if (rain >= 20.0) {
+      rl = 'CRITICAL'; step = 3; col = const Color(0xFFDC2626);
+      title = compound
+          ? 'CRITICAL: EXTREME RAIN + COMPOUND FLOOD & LANDSLIDE'
+          : lsLvl.isNotEmpty
+              ? 'CRITICAL: EXTREME RAIN + LANDSLIDE RISK'
+              : 'CRITICAL: EXTREME RAINFALL ALERT';
+      source = 'NASA GPM Live + GSI + CWC Multi-Hazard';
+    } else if (rain >= 7.5 && (lsLvl == 'CRITICAL' || lsLvl == 'HIGH')) {
+      rl = 'CRITICAL'; step = 3; col = const Color(0xFFDC2626);
+      title = gsiCount > 0
+          ? 'CRITICAL: HEAVY RAIN TRIGGERING LANDSLIDE RISK ($gsiCount sites)'
+          : 'CRITICAL: HEAVY RAIN + LANDSLIDE HAZARD ZONE';
+      source = 'NASA GPM Live + GSI Landslide Inventory + CWC';
+    } else if (rain >= 7.5 && (flLvl == 'CRITICAL' || flLvl == 'HIGH')) {
+      rl = 'CRITICAL'; step = 3; col = const Color(0xFFDC2626);
+      title = 'CRITICAL: HEAVY RAIN + FLOOD HAZARD ZONE';
+      source = 'NASA GPM Live + CWC River Gauges';
+    } else if (overallLvl == 'CRITICAL' && rain >= 2.5) {
+      rl = 'CRITICAL'; step = 3; col = const Color(0xFFDC2626);
+      title = compound
+          ? 'CRITICAL: RAIN TRIGGERING COMPOUND FLOOD + LANDSLIDE'
+          : lsLvl == 'CRITICAL'
+              ? 'CRITICAL: RAIN TRIGGERING LANDSLIDE IN HIGH-RISK ZONE'
+              : 'CRITICAL: RAINFALL IN CRITICAL HAZARD ZONE';
+      source = 'GSI + CWC + NASA Multi-Hazard Model';
+    } else if (overallLvl == 'CRITICAL') {
+      rl = 'HIGH'; step = 2; col = const Color(0xFFF97316);
+      title = lsLvl == 'CRITICAL'
+          ? 'HIGH: ACTIVE LANDSLIDE ZONE${gsiCount > 0 ? " ($gsiCount recorded incidents)" : ""}'
+          : flLvl == 'CRITICAL'
+              ? 'HIGH: FLOOD HAZARD ZONE — CWC River Risk Active'
+              : 'HIGH: CRITICAL HAZARD ZONE — STAY ALERT';
+      source = 'GSI Landslide Inventory + CWC/NWDP River Data';
+    } else if (rain >= 7.5) {
+      rl = 'HIGH'; step = 2; col = const Color(0xFFF97316);
+      title = 'HIGH: HEAVY RAINFALL WARNING';
+      source = 'NASA GPM IMERG (Live Satellite)';
+    } else if (overallLvl == 'HIGH' && rain >= 2.5) {
+      rl = 'HIGH'; step = 2; col = const Color(0xFFF97316);
+      title = lsLvl == 'HIGH'
+          ? 'HIGH: MODERATE RAIN IN LANDSLIDE SUSCEPTIBLE ZONE'
+          : 'HIGH: MODERATE RAIN IN FLOOD RISK ZONE';
+      source = 'NASA GPM + GSI + CWC Hazard Model';
+    } else if (overallLvl == 'HIGH') {
+      rl = 'HIGH'; step = 2; col = const Color(0xFFF97316);
+      title = 'HIGH: HAZARD ZONE — MONITOR CONDITIONS';
+      source = 'GSI + CWC Hazard Intelligence';
+    } else if (rain >= 2.5) {
+      rl = 'MODERATE'; step = 1; col = const Color(0xFFEAB308);
+      title = 'MODERATE: RAINFALL ADVISORY';
+      source = 'NASA GPM IMERG (Live Satellite)';
+    } else if (rain >= 0.5) {
+      rl = 'LOW'; step = 1; col = const Color(0xFF84CC16);
+      title = 'LOW: LIGHT RAINFALL — STAY INFORMED';
+      source = 'NASA GPM IMERG (Live Satellite)';
+    } else {
+      rl = 'SAFE'; step = 0; col = const Color(0xFF10B981);
+      title = 'NO ACTIVE ALERTS — SAFE ZONE';
+      source = 'NASA GPM + GSI + CWC (All Clear)';
+    }
+
+    // Map rl → threatLevel + short safety card message
+    CitizenThreatLevel newLevel;
+    String shortDesc, shortDescHi;
+    
+    String reason = '';
+    String reasonHi = '';
+    if (compound) {
+      reason = 'Flood & Landslide risk.';
+      reasonHi = 'बाढ़ और भूस्खलन का खतरा।';
+    } else if (lsLvl == 'CRITICAL' || lsLvl == 'HIGH') {
+      reason = 'Landslide risk. Avoid this area.';
+      reasonHi = 'भूस्खलन का खतरा। इस क्षेत्र से बचें।';
+    } else if (flLvl == 'CRITICAL' || flLvl == 'HIGH' || rain >= 20.0) {
+      reason = 'Flood risk high.';
+      reasonHi = 'बाढ़ का खतरा अधिक है।';
+    } else if (rain >= 7.5) {
+      reason = 'Heavy rain.';
+      reasonHi = 'भारी बारिश।';
+    }
+
+    if (rl == 'CRITICAL') {
+      newLevel = CitizenThreatLevel.evacuation;
+      shortDesc = 'Danger! $reason Evacuate immediately.';
+      shortDescHi = 'खतरा! $reasonHi तुरंत निकासी करें।';
+    } else if (rl == 'HIGH') {
+      newLevel = CitizenThreatLevel.warning;
+      shortDesc = 'High risk. $reason Prepare to move to a safe area.';
+      shortDescHi = 'उच्च खतरा। $reasonHi सुरक्षित स्थान के लिए तैयार हों।';
+    } else if (rl == 'MODERATE') {
+      newLevel = CitizenThreatLevel.watch;
+      shortDesc = 'Moderate risk. Stay alert, avoid flood-prone areas.';
+      shortDescHi = 'मध्यम खतरा। सतर्क रहें, बाढ़ क्षेत्र से बचें।';
+    } else if (rl == 'LOW') {
+      newLevel = CitizenThreatLevel.watch;
+      shortDesc = 'Low risk. Light rain detected. Stay informed.';
+      shortDescHi = 'कम खतरा। हल्की बारिश। जानकारी लेते रहें।';
+    } else {
+      newLevel = CitizenThreatLevel.safe;
+      shortDesc = 'No active threats in your area.';
+      shortDescHi = 'आपके क्षेत्र में कोई तात्कालिक खतरा नहीं।';
+    }
+
+    setState(() {
+      _activeAlerts = [{
+        'title': title,
+        'titleHi': title,
+        'distance': matched != null
+            ? 'Hazard Score: ${scorePercent.toStringAsFixed(0)}% | $_currentLocation'
+            : 'Live Data: $_currentLocation',
+        'distanceHi': matched != null
+            ? 'जोखिम स्कोर: ${scorePercent.toStringAsFixed(0)}% | $_currentLocation'
+            : 'लाइव डेटा: $_currentLocation',
+        'time': 'Just now (Live)',
+        'timeHi': 'अभी (Live)',
+        'impact': buildMsg(),
+        'impactHi': buildMsg(),
+        'badge': rl == 'SAFE' ? 'SAFE' : '$rl RISK',
+        'badgeHi': rl == 'SAFE' ? 'सुरक्षित' : '$rl जोखिम',
+        'issued': source,
+        'issuedHi': source,
+        'district': matched != null
+            ? 'District: ${matched["district"]}, ${matched["state"]}'
+            : 'Coords: ${lat.toStringAsFixed(3)}, ${lon.toStringAsFixed(3)}',
+        'districtHi': matched != null
+            ? 'जिला: ${matched["district"]}, ${matched["state"]}'
+            : 'निर्देशांक: ${lat.toStringAsFixed(3)}, ${lon.toStringAsFixed(3)}',
+        'riskLevel': 'Risk Level: $rl',
+        'riskLevelHi': 'जोखिम: $rl',
+        'riskStep': step,
+        'color': col,
+      }];
+      // Update safety card threat level + short description dynamically
+      _threatLevel = newLevel;
+      _locationStatusDesc = shortDesc;
+      _locationStatusDescHi = shortDescHi;
+    });
   }
 
-  Future<void> _fetchBackendWeather(double lat, double lon) async {
+
+  /// Map lat/lon to Indian state code for SACHET API
+  String _latLonToStateCode(double lat, double lon) {
+    if (lat >= 8 && lat <= 12.5 && lon >= 74 && lon <= 78) return 'IND-KL';   // Kerala
+    if (lat >= 10 && lat <= 14 && lon >= 76 && lon <= 80) return 'IND-KA';     // Karnataka  
+    if (lat >= 8 && lat <= 13.5 && lon >= 76.5 && lon <= 80.5) return 'IND-TN'; // Tamil Nadu
+    if (lat >= 17 && lat <= 20.5 && lon >= 73 && lon <= 80.5) return 'IND-MH';  // Maharashtra
+    if (lat >= 22 && lat <= 27.5 && lon >= 85 && lon <= 90) return 'IND-WB';    // West Bengal
+    if (lat >= 25 && lat <= 27.5 && lon >= 85 && lon <= 88) return 'IND-BR';    // Bihar
+    if (lat >= 19 && lat <= 25 && lon >= 81 && lon <= 85) return 'IND-OR';      // Odisha
+    if (lat >= 22.5 && lat <= 27 && lon >= 76 && lon <= 84) return 'IND-MP';    // Madhya Pradesh
+    if (lat >= 24 && lat <= 30.5 && lon >= 73 && lon <= 84) return 'IND-UP';    // Uttar Pradesh
+    if (lat >= 28 && lat <= 32 && lon >= 76 && lon <= 80) return 'IND-DL';      // Delhi/NCR
+    if (lat >= 30 && lat <= 33 && lon >= 74 && lon <= 80) return 'IND-HP';      // Himachal
+    if (lat >= 29 && lat <= 32 && lon >= 77 && lon <= 81) return 'IND-UK';      // Uttarakhand
+    if (lat >= 23 && lat <= 27 && lon >= 69 && lon <= 74) return 'IND-GJ';      // Gujarat
+    if (lat >= 25 && lat <= 30.5 && lon >= 69 && lon <= 77) return 'IND-RJ';    // Rajasthan
+    if (lat >= 25 && lat <= 28 && lon >= 83 && lon <= 88) return 'IND-JH';      // Jharkhand
+    if (lat >= 17.5 && lat <= 21 && lon >= 78 && lon <= 84) return 'IND-AP';    // Andhra Pradesh
+    if (lat >= 16 && lat <= 20 && lon >= 77.5 && lon <= 81.5) return 'IND-TG';  // Telangana
+    if (lat >= 20 && lat <= 26 && lon >= 81 && lon <= 85) return 'IND-CG';      // Chhattisgarh
+    if (lat >= 23 && lat <= 28 && lon >= 88 && lon <= 97) return 'IND-AS';      // Assam
+    return 'IND-ALL';
+  }
+
+
+
+  Future<void> _fetchBackendWeather(double lat, double lon, {double? liveRainMm}) async {
     final backend = ResqshieldBackendService.instance;
-    final weatherData = await backend.fetchGpmRainfall(lat: lat, lon: lon);
-    
-    if (!mounted) return;
-    
-    // Prediction logic based on API data (with synthetic fallback if API fails or empty)
-    double rainfall = 0.0;
-    if (weatherData != null && (weatherData['rainfall_mm'] != null || weatherData['precipitation'] != null || weatherData['value'] != null)) {
-      rainfall = (weatherData['rainfall_mm'] ?? weatherData['precipitation'] ?? weatherData['value'] ?? 0.0).toDouble();
+
+    // Use real GPM value if provided by _fetchBackendAlerts (same data as alert container)
+    double rainfall;
+    if (liveRainMm != null) {
+      rainfall = liveRainMm;
     } else {
-      final seed = (lat * 10000 + lon * 10000).toInt();
-      rainfall = (seed % 65).toDouble(); // pseudo-random realistic fallback
+      // Standalone call — fetch GPM directly using correct field name
+      final weatherData = await backend.fetchGpmRainfall(lat: lat, lon: lon);
+      if (!mounted) return;
+      rainfall = weatherData != null
+          ? ((weatherData['precipitation_mm_per_hour'] ?? 0.0) as num).toDouble()
+          : 0.0;
     }
 
+    // Call new ML model endpoint
+    final forecastData = await backend.fetchRainForecast(lat: lat, lon: lon, currentRain: rainfall);
+
+    double f1 = rainfall * 1.2;
+    double f2 = rainfall * 0.8;
+    double f3 = rainfall * 0.4;
     String predictionTitle = 'Clear weather expected';
     String predictionTitleHi = 'साफ मौसम की उम्मीद';
     String warningText = 'Next 3 hrs: Normal conditions';
     String warningTextHi = 'अगले 3 घंटे: सामान्य स्थिति';
     Color warningColor = const Color(0xFF10B981); // Green
 
-    if (rainfall > 50) {
-      predictionTitle = 'Extreme rainfall expected today';
-      predictionTitleHi = 'आज अत्यधिक भारी वर्षा की संभावना';
-      warningText = 'Next 3 hrs: Severe flood risk. Evacuate low-lying areas.';
-      warningTextHi = 'अगले 3 घंटे: गंभीर बाढ़ का खतरा। निचले इलाकों को खाली करें।';
-      warningColor = const Color(0xFFDC2626); // Red
-    } else if (rainfall > 20) {
-      predictionTitle = 'Heavy rainfall expected today';
-      predictionTitleHi = 'आज भारी वर्षा की संभावना';
-      warningText = 'Next 3 hrs: Flood risk may rise';
-      warningTextHi = 'अगले 3 घंटे: बाढ़ का खतरा बढ़ सकता है';
-      warningColor = const Color(0xFFEA580C); // Orange
-    } else if (rainfall > 5) {
-      predictionTitle = 'Moderate rainfall expected';
-      predictionTitleHi = 'मध्यम वर्षा की संभावना';
-      warningText = 'Next 3 hrs: Slippery roads & waterlogging';
-      warningTextHi = 'अगले 3 घंटे: फिसलन भरी सड़कें और जलभराव';
-      warningColor = const Color(0xFFF59E0B); // Amber
+    if (forecastData != null) {
+      rainfall = (forecastData['current_rain'] ?? rainfall).toDouble();
+      f1 = (forecastData['forecast_1h'] ?? f1).toDouble();
+      f2 = (forecastData['forecast_2h'] ?? f2).toDouble();
+      f3 = (forecastData['forecast_3h'] ?? f3).toDouble();
+      warningText = forecastData['warning'] ?? warningText;
+      warningTextHi = forecastData['warning_hi'] ?? warningTextHi;
+      predictionTitle = forecastData['title'] ?? predictionTitle;
+      predictionTitleHi = forecastData['title_hi'] ?? predictionTitleHi;
+      
+      final colorHex = forecastData['color'] as String?;
+      if (colorHex != null && colorHex.isNotEmpty) {
+        warningColor = Color(int.parse(colorHex.replaceAll('#', '0xFF')));
+      }
+    } else {
+      // Fallback heuristics if ML API fails
+      if (rainfall > 50) {
+        predictionTitle = 'Extreme rainfall expected today';
+        predictionTitleHi = 'आज अत्यधिक भारी वर्षा की संभावना';
+        warningText = 'Next 3 hrs: Severe flood risk. Evacuate low-lying areas.';
+        warningTextHi = 'अगले 3 घंटे: गंभीर बाढ़ का खतरा। निचले इलाकों को खाली करें।';
+        warningColor = const Color(0xFFDC2626); // Red
+      } else if (rainfall > 20) {
+        predictionTitle = 'Heavy rainfall expected today';
+        predictionTitleHi = 'आज भारी वर्षा की संभावना';
+        warningText = 'Next 3 hrs: Flood risk may rise';
+        warningTextHi = 'अगले 3 घंटे: बाढ़ का खतरा बढ़ सकता है';
+        warningColor = const Color(0xFFEA580C); // Orange
+      } else if (rainfall > 5) {
+        predictionTitle = 'Moderate rainfall expected';
+        predictionTitleHi = 'मध्यम वर्षा की संभावना';
+        warningText = 'Next 3 hrs: Slippery roads & waterlogging';
+        warningTextHi = 'अगले 3 घंटे: फिसलन भरी सड़कें और जलभराव';
+        warningColor = const Color(0xFFF59E0B); // Amber
+      }
     }
 
     setState(() {
       _weatherPrediction = {
         'rainfall': rainfall,
+        'forecast_1h': f1,
+        'forecast_2h': f2,
+        'forecast_3h': f3,
         'title': predictionTitle,
         'titleHi': predictionTitleHi,
         'warning': warningText,
@@ -1616,17 +1796,17 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFCBD5E1)),
             ),
             child: Text(
-              _isHindi ? 'EN' : 'हिं',
+              _isHindi ? 'English' : 'हिंदी',
               style: const TextStyle(
                 color: Color(0xFF0F172A),
-                fontSize: 10.5,
+                fontSize: 12.0,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -2191,9 +2371,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         badgeColor = const Color(0xFFDCFCE7);
         badgeTextColor = const Color(0xFF065F46);
         statusTitle = _isHindi ? 'आप सुरक्षित हैं' : 'You are currently safe';
-        statusDesc = _isHindi
-            ? 'आपके क्षेत्र में कोई तात्कालिक खतरा नहीं'
-            : 'No immediate threats in your area';
+        statusDesc = _isHindi ? _locationStatusDescHi : _locationStatusDesc;
         shieldIcon = Icons.shield_rounded;
         break;
 
@@ -2203,9 +2381,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         badgeColor = const Color(0xFFFEF08A);
         badgeTextColor = const Color(0xFFB45309);
         statusTitle = _isHindi ? 'सतर्क रहें' : 'Stay alert & monitor';
-        statusDesc = _isHindi
-            ? 'जलस्तर बढ़ रहा है। तैयार रहें।'
-            : 'Water levels rising. Keep essentials ready.';
+        statusDesc = _isHindi ? _locationStatusDescHi : _locationStatusDesc;
         shieldIcon = Icons.visibility_rounded;
         break;
 
@@ -2215,9 +2391,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         badgeColor = const Color(0xFFFFEDD5);
         badgeTextColor = const Color(0xFFC2410C);
         statusTitle = _isHindi ? 'निकासी की तैयारी' : 'Prepare to evacuate';
-        statusDesc = _isHindi
-            ? 'बाढ़ का खतरा बढ़ रहा है। मार्ग पहचानें।'
-            : 'Flood risk increasing. Check safe route.';
+        statusDesc = _isHindi ? _locationStatusDescHi : _locationStatusDesc;
         shieldIcon = Icons.warning_amber_rounded;
         break;
 
@@ -2229,9 +2403,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         statusTitle = _isHindi
             ? 'तुरंत सुरक्षित स्थान जाएं'
             : 'Evacuate immediately';
-        statusDesc = _isHindi
-            ? 'तत्काल राहत शिविर की ओर बढ़ें।'
-            : 'Move to nearest shelter immediately.';
+        statusDesc = _isHindi ? _locationStatusDescHi : _locationStatusDesc;
         shieldIcon = Icons.crisis_alert_rounded;
         break;
     }
@@ -6067,7 +6239,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
 
                   const SizedBox(height: 14),
 
-                  // 4-Hour Rainfall Forecast Outlook
+                  // 4-Hour Rainfall Forecast Outlook (ML predictions)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -6083,27 +6255,27 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
                       Expanded(
                         child: _buildHourlyRain(
                           '+1 hr',
-                          _weatherPrediction != null && _weatherPrediction!['rainfall'] > 10 ? '🌧️🌧️🌧️' : '☁️',
-                          _weatherPrediction != null ? '${(_weatherPrediction!['rainfall'] * 1.2).toStringAsFixed(1)} mm/h' : '48 mm/h',
-                          _weatherPrediction != null ? (_weatherPrediction!['rainfall'] * 1.2 > 20 ? 'Peak' : 'Low') : 'Peak',
+                          _weatherPrediction != null && (_weatherPrediction!['forecast_1h'] ?? 0) > 10 ? '🌧️🌧️🌧️' : '☁️',
+                          _weatherPrediction != null ? '${(_weatherPrediction!['forecast_1h'] ?? 48.0).toStringAsFixed(1)} mm/h' : '48 mm/h',
+                          _weatherPrediction != null ? ((_weatherPrediction!['forecast_1h'] ?? 48.0) > 20 ? 'Peak' : 'Low') : 'Peak',
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildHourlyRain(
                           '+2 hr',
-                          _weatherPrediction != null && _weatherPrediction!['rainfall'] > 10 ? '🌧️🌧️' : '☁️',
-                          _weatherPrediction != null ? '${(_weatherPrediction!['rainfall'] * 0.8).toStringAsFixed(1)} mm/h' : '30 mm/h',
-                          _weatherPrediction != null ? (_weatherPrediction!['rainfall'] * 0.8 > 20 ? 'High' : 'Low') : 'High',
+                          _weatherPrediction != null && (_weatherPrediction!['forecast_2h'] ?? 0) > 10 ? '🌧️🌧️' : '☁️',
+                          _weatherPrediction != null ? '${(_weatherPrediction!['forecast_2h'] ?? 30.0).toStringAsFixed(1)} mm/h' : '30 mm/h',
+                          _weatherPrediction != null ? ((_weatherPrediction!['forecast_2h'] ?? 30.0) > 20 ? 'High' : 'Low') : 'High',
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildHourlyRain(
                           '+3 hr',
-                          _weatherPrediction != null && _weatherPrediction!['rainfall'] > 10 ? '🌧️' : '🌤️',
-                          _weatherPrediction != null ? '${(_weatherPrediction!['rainfall'] * 0.4).toStringAsFixed(1)} mm/h' : '14 mm/h',
-                          _weatherPrediction != null ? (_weatherPrediction!['rainfall'] * 0.4 > 10 ? 'Moderate' : 'Low') : 'Moderate',
+                          _weatherPrediction != null && (_weatherPrediction!['forecast_3h'] ?? 0) > 10 ? '🌧️' : '🌤️',
+                          _weatherPrediction != null ? '${(_weatherPrediction!['forecast_3h'] ?? 14.0).toStringAsFixed(1)} mm/h' : '14 mm/h',
+                          _weatherPrediction != null ? ((_weatherPrediction!['forecast_3h'] ?? 14.0) > 10 ? 'Moderate' : 'Low') : 'Moderate',
                         ),
                       ),
                     ],
@@ -8916,6 +9088,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       setState(() => _currentLocation = locName);
       LocationService.instance.setManualLocation(lat, lng, locName);
       
+      _resetAlertsForNewLocation();
       await _fetchBackendAlerts(lat, lng);
       await _fetchOfficialAlerts(lat, lng, locName);
       

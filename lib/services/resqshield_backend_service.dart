@@ -104,6 +104,17 @@ class ResqshieldBackendService {
     return null;
   }
 
+  /// Fetch ML Rain Forecast
+  Future<Map<String, dynamic>?> fetchRainForecast({required double lat, required double lon, required double currentRain}) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/predict/rain_forecast?lat=$lat&lon=$lon&current_rain=$currentRain')).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) { print('API ERROR: $e'); }
+    return null;
+  }
+
   /// Fetch risk at location
   Future<Map<String, dynamic>?> fetchLocationRisk({required double lat, required double lon}) async {
     try {
@@ -113,6 +124,34 @@ class ResqshieldBackendService {
       }
     } catch (e) { print('API ERROR: $e'); }
     return null;
+  }
+
+  /// Fetch ML predicted alert based on backend data
+  Future<Map<String, dynamic>?> fetchPredictedAlert({required double lat, required double lon}) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/predict/alert?lat=$lat&lon=$lon')).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) { print('PREDICT API ERROR: $e'); }
+    return null;
+  }
+
+  /// Fetch live NDMA SACHET official government alerts by state code
+  Future<List<Map<String, dynamic>>> fetchSachetAlerts({required String stateCode}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$_baseUrl/alerts/sachet/cap?identifier=$stateCode'))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final body = json.decode(utf8.decode(response.bodyBytes));
+        final alerts = body['alerts'];
+        if (alerts is List && alerts.isNotEmpty) {
+          return alerts.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+    } catch (e) { print('SACHET API ERROR: $e'); }
+    return [];
   }
 
   /// Fetch active official NDMA SACHET alerts for the selected/current location.

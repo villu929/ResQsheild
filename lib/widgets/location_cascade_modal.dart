@@ -114,129 +114,136 @@ class _LocationCascadeModalState extends State<LocationCascadeModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: EdgeInsets.only(
-        top: 24,
-        left: 24,
-        right: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 12.0,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Container(
+        padding: const EdgeInsets.only(
+          top: 24,
+          left: 24,
+          right: 24,
+          bottom: 32,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                widget.isHindi ? 'स्थान चुनें' : 'Select Location',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+              Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.isHindi ? 'स्थान चुनें' : 'Select Location',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // State Dropdown
+            const Text(
+              'State',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 6),
+            _isLoadingStates
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<String>(
+                    value: _selectedState,
+                    hint: Text(widget.isHindi ? 'राज्य चुनें' : 'Select State'),
+                    isExpanded: true,
+                    decoration: _inputDecoration(),
+                    items: _states.map((s) {
+                      return DropdownMenuItem(value: s, child: Text(s));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) _fetchCities(val);
+                    },
+                  ),
+            
+            const SizedBox(height: 12),
+            
+            // City Dropdown
+            const Text(
+              'City',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 6),
+            _isLoadingCities
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<String>(
+                    value: _selectedCity,
+                    hint: Text(widget.isHindi ? 'शहर चुनें' : 'Select City'),
+                    isExpanded: true,
+                    decoration: _inputDecoration(),
+                    items: _cities.map((c) {
+                      return DropdownMenuItem(value: c, child: Text(c));
+                    }).toList(),
+                    onChanged: _selectedState == null
+                        ? null
+                        : (val) {
+                            setState(() => _selectedCity = val);
+                          },
+                  ),
+            
+            const SizedBox(height: 12),
+            
+            // Area TextField
+            Text(
+              widget.isHindi ? 'क्षेत्र / इलाका (वैकल्पिक)' : 'Area / Locality (Optional)',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              decoration: _inputDecoration().copyWith(
+                hintText: widget.isHindi ? 'उदा. सेक्टर 5, अंधेरी पूर्व...' : 'e.g. Sector 5, Andheri East...',
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF64748B)),
-                onPressed: () => Navigator.pop(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              onChanged: (val) => _area = val,
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Submit Button
+            ElevatedButton(
+              onPressed: (_selectedState == null || _selectedCity == null || _isSubmitting)
+                  ? null
+                  : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : Text(
+                      widget.isHindi ? 'पुष्टि करें' : 'Confirm Location',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+            ),
             ],
           ),
-          const SizedBox(height: 24),
-          
-          // State Dropdown
-          const Text(
-            'State',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 8),
-          _isLoadingStates
-              ? const Center(child: CircularProgressIndicator())
-              : DropdownButtonFormField<String>(
-                  value: _selectedState,
-                  hint: Text(widget.isHindi ? 'राज्य चुनें' : 'Select State'),
-                  isExpanded: true,
-                  decoration: _inputDecoration(),
-                  items: _states.map((s) {
-                    return DropdownMenuItem(value: s, child: Text(s));
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) _fetchCities(val);
-                  },
-                ),
-          
-          const SizedBox(height: 16),
-          
-          // City Dropdown
-          const Text(
-            'City',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 8),
-          _isLoadingCities
-              ? const Center(child: CircularProgressIndicator())
-              : DropdownButtonFormField<String>(
-                  value: _selectedCity,
-                  hint: Text(widget.isHindi ? 'शहर चुनें' : 'Select City'),
-                  isExpanded: true,
-                  decoration: _inputDecoration(),
-                  items: _cities.map((c) {
-                    return DropdownMenuItem(value: c, child: Text(c));
-                  }).toList(),
-                  onChanged: _selectedState == null
-                      ? null
-                      : (val) {
-                          setState(() => _selectedCity = val);
-                        },
-                ),
-          
-          const SizedBox(height: 16),
-          
-          // Area TextField
-          Text(
-            widget.isHindi ? 'क्षेत्र / इलाका (वैकल्पिक)' : 'Area / Locality (Optional)',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            decoration: _inputDecoration().copyWith(
-              hintText: widget.isHindi ? 'उदा. सेक्टर 5, अंधेरी पूर्व...' : 'e.g. Sector 5, Andheri East...',
-            ),
-            onChanged: (val) => _area = val,
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Submit Button
-          ElevatedButton(
-            onPressed: (_selectedState == null || _selectedCity == null || _isSubmitting)
-                ? null
-                : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : Text(
-                    widget.isHindi ? 'पुष्टि करें' : 'Confirm Location',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -245,7 +252,7 @@ class _LocationCascadeModalState extends State<LocationCascadeModal> {
     return InputDecoration(
       filled: true,
       fillColor: const Color(0xFFF8FAFC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
