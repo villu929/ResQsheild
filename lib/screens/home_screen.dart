@@ -2570,7 +2570,7 @@ class _HomeScreenState extends State<HomeScreen>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
-                      Icons.warning_amber_rounded,
+                      Icons.track_changes_rounded,
                       color: Color(0xFFDC2626),
                       size: 20,
                     ),
@@ -2600,19 +2600,91 @@ class _HomeScreenState extends State<HomeScreen>
                       ],
                     ),
                   ),
+                  const SizedBox(width: 16),
                   const Text(
-                    'JALGUARD • PROTECTING PEOPLE, SAFER TOMORROWS',
-                    style: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+                    'Last updated 12 Jul 2024, 10:24 AM',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'View All Incidents',
+                          style: TextStyle(color: Color(0xFF0284C7), fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_rounded, color: Color(0xFF0284C7), size: 14),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
+              const SizedBox(height: 16),
+              
+              // Column Headers
+              Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9), // subtle grey table header background
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 80), // Space for Priority Box + spacing
+                    const Expanded(
+                      flex: 30,
+                      child: Text(
+                        'AREA / IMPACT',
+                        style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      ),
+                    ),
+                    const Expanded(
+                      flex: 18,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          'RISK SCORE',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ),
+                    const Expanded(
+                      flex: 25,
+                      child: Text(
+                        'RECOMMENDED ACTION',
+                        style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      ),
+                    ),
+                    const Expanded(
+                      flex: 17,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'ACTIONS',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
               // Priority 1 — Mawphlang
               _villagePriorityCard(
                 rank: '1',
@@ -2625,15 +2697,15 @@ class _HomeScreenState extends State<HomeScreen>
                 sosCount: '8 SOS',
                 roadAccess: 'Road Blocked',
                 activeOp: op,
+                recommendedAction: 'Immediate Evacuation',
+                recommendedSubtitle: 'High risk of flash flooding',
                 onView: () {
                   _mapController.move(const LatLng(25.4512, 91.7589), 13.5);
                 },
                 onOrderEvac: op == null ? () => _showIssueEvacuationDialog(context, 'Mawphlang Sector', 2840, 380, '8 SOS', 'Road Blocked', 94) : null,
               ),
 
-              const SizedBox(height: 8),
-
-              // Priority 2 — Village B
+              // Priority 2 — Nongstoin
               _villagePriorityCard(
                 rank: '2',
                 villageName: 'Nongstoin Valley Lowland',
@@ -2644,6 +2716,8 @@ class _HomeScreenState extends State<HomeScreen>
                 vulnerable: '210',
                 sosCount: '3 SOS',
                 roadAccess: 'Possible (Caution)',
+                recommendedAction: 'Prepare Evacuation',
+                recommendedSubtitle: 'Rising water levels expected',
                 onView: () {
                   _mapController.move(const LatLng(25.5230, 91.2680), 13.0);
                 },
@@ -2651,9 +2725,7 @@ class _HomeScreenState extends State<HomeScreen>
                 actionLabel: 'Prepare',
               ),
 
-              const SizedBox(height: 8),
-
-              // Priority 3 — Village C
+              // Priority 3 — Pynursla
               _villagePriorityCard(
                 rank: '3',
                 villageName: 'Pynursla Riverbed Basin',
@@ -2664,6 +2736,8 @@ class _HomeScreenState extends State<HomeScreen>
                 vulnerable: '160',
                 sosCount: '1 SOS',
                 roadAccess: 'Open',
+                recommendedAction: 'Monitor Closely',
+                recommendedSubtitle: 'Watch for further changes',
                 onView: () {
                   _mapController.move(const LatLng(25.3094, 91.9022), 13.0);
                 },
@@ -2685,12 +2759,22 @@ class _HomeScreenState extends State<HomeScreen>
     required String vulnerable,
     required String sosCount,
     required String roadAccess,
+    String? recommendedAction,
+    String? recommendedSubtitle,
     EvacuationOperation? activeOp,
     VoidCallback? onView,
     VoidCallback? onOrderEvac,
     String? actionLabel,
   }) {
     bool isEvacActive = activeOp != null;
+
+    final String displayRecommendedAction =
+        recommendedAction ??
+        (actionLabel == 'Prepare'
+            ? 'Prepare Evacuation'
+            : onOrderEvac != null
+                ? 'Immediate Evacuation'
+                : 'Monitor Closely');
 
     String statusText = '';
     Color statusColor = const Color(0xFF0284C7);
@@ -2721,257 +2805,259 @@ class _HomeScreenState extends State<HomeScreen>
     final double scoreVal = double.tryParse(scoreStr) ?? 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x05000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: badgeColor, width: 4)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. P Badge
-              Container(
-                width: 32,
-                height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 1. P Badge
+          SizedBox(
+            width: 80,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: badgeColor,
-                  borderRadius: BorderRadius.circular(8),
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     'P$rank',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
+            ),
+          ),
 
-              // 2. Info Block
-              Expanded(
-                flex: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // 2. Info Block (AREA & IMPACT)
+          Expanded(
+            flex: 30,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  villageName,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
                   children: [
+                    const Icon(Icons.people_alt_outlined, color: Color(0xFF64748B), size: 14),
+                    const SizedBox(width: 4),
                     Text(
-                      villageName,
-                      style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.people_alt_rounded, size: 12, color: Color(0xFF64748B)),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$population people',
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6),
-                          child: Text('|', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-                        ),
-                        const Icon(Icons.group_rounded, size: 12, color: Color(0xFF64748B)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Vulnerable: $vulnerable',
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.people_alt_rounded, size: 12, color: Color(0xFFDC2626)),
-                          const SizedBox(width: 4),
-                          Text(
-                            sosCount,
-                            style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w900),
-                          ),
-                        ],
-                      ),
+                      '$population people',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
-              ),
-
-              // 3. Score Block
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 4),
+                Row(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Score',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600),
-                        ),
-                        const Spacer(),
-                        Text(
-                          scoreStr,
-                          style: TextStyle(color: badgeColor, fontSize: 16, fontWeight: FontWeight.w900),
-                        ),
-                        const Text(
-                          ' / 100',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: scoreVal / 100,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: AlwaysStoppedAnimation<Color>(badgeColor),
-                        minHeight: 6,
-                      ),
+                    const Icon(Icons.family_restroom_rounded, color: Color(0xFF64748B), size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Vulnerable: $vulnerable',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 24),
-
-              // 4. Status Pill
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: roadAccess.contains('Blocked')
-                          ? const Color(0xFFFEF2F2)
-                          : roadAccess.contains('Caution') || roadAccess.contains('Possible')
-                              ? const Color(0xFFFFFBEB)
-                              : const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          roadAccess.contains('Blocked')
-                              ? Icons.block_rounded
-                              : roadAccess.contains('Caution') || roadAccess.contains('Possible')
-                                  ? Icons.warning_amber_rounded
-                                  : Icons.check_circle_rounded,
-                          size: 14,
-                          color: roadAccess.contains('Blocked')
-                              ? const Color(0xFFDC2626)
-                              : roadAccess.contains('Caution') || roadAccess.contains('Possible')
-                                  ? const Color(0xFFD97706)
-                                  : const Color(0xFF16A34A),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEA580C),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          roadAccess,
-                          style: TextStyle(
-                            color: roadAccess.contains('Blocked')
-                                ? const Color(0xFFDC2626)
-                                : roadAccess.contains('Caution') || roadAccess.contains('Possible')
-                                    ? const Color(0xFFD97706)
-                                    : const Color(0xFF16A34A),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: const Text('SOS', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        sosCount,
+                        style: const TextStyle(color: Color(0xFFEA580C), fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 3. Score Block
+          Expanded(
+            flex: 18,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: scoreStr,
+                          style: TextStyle(color: badgeColor, fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                        const TextSpan(
+                          text: ' / 100',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: scoreVal / 100,
+                      backgroundColor: const Color(0xFFE2E8F0),
+                      valueColor: AlwaysStoppedAnimation<Color>(badgeColor),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
               ),
-
-              // 5. Actions
-              Expanded(
-                flex: 3,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (onView != null) ...[
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFFEFF6FF),
-                          foregroundColor: const Color(0xFF2563EB),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                        icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                        label: const Text('View', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                        onPressed: onView,
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    
-                    if (onOrderEvac != null)
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: actionLabel != null ? const Color(0xFFEA580C) : const Color(0xFFDC2626),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                        icon: Icon(actionLabel != null ? Icons.assignment_rounded : Icons.security_rounded, size: 16),
-                        label: Text('${actionLabel ?? 'Order Evac'} →', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                        onPressed: actionLabel == 'Prepare' 
-                            ? () {
-                                IncidentCoordinator.instance.issuePrepareAlert(villageName);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Prepare Alert sent to Citizens in $villageName!')),
-                                );
-                              }
-                            : onOrderEvac,
-                      )
-                    else if (isEvacActive)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: statusBgColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          statusText,
-                          style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // 4. Recommended Action
+          Expanded(
+            flex: 25,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    rank == '3' ? Icons.access_time_rounded : Icons.error_outline_rounded,
+                    color: badgeColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayRecommendedAction,
+                          style: TextStyle(
+                            color: badgeColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (recommendedSubtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            recommendedSubtitle,
+                            style: TextStyle(
+                              color: badgeColor.withValues(alpha: 0.8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 5. Actions
+          Expanded(
+            flex: 17,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (onView != null) ...[
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F9FF),
+                      foregroundColor: const Color(0xFF0284C7),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                    onPressed: onView,
+                    child: const Text('View', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                
+                if (onOrderEvac != null)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: actionLabel != null ? const Color(0xFFEA580C) : const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                    onPressed: actionLabel == 'Prepare' 
+                        ? () {
+                            IncidentCoordinator.instance.issuePrepareAlert(villageName);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Prepare Alert sent to Citizens in $villageName!')),
+                            );
+                          }
+                        : onOrderEvac,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.campaign_rounded, size: 14),
+                        const SizedBox(width: 4),
+                        Text(actionLabel ?? 'Order Evac', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      ],
+                    ),
+                  )
+                else if (isEvacActive)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w900),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
