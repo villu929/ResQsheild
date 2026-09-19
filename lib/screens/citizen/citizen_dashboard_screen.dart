@@ -669,7 +669,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
   void initState() {
     super.initState();
     _fetchRealLocation();
-    _fetchBackendAlerts(23.7957, 86.4304); // Default coords before location fetch
     _mapController = MapController();
     _fullMapController = MapController();
     _rainMapController = MapController();
@@ -845,6 +844,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           }
         }
       }
+      if (mounted && !LocationService.instance.isManual) {
+        await _fetchOfficialAlerts(
+          position.latitude,
+          position.longitude,
+          _currentLocation,
+        );
+      }
+
       debugPrint('--- LOCATION FETCH COMPLETE ---');
     } catch (e) {
       debugPrint('ERROR: Core Location Fetch Failed: $e');
@@ -855,6 +862,128 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         });
       }
     }
+  }
+
+
+  Future<void> _fetchOfficialAlerts(
+    double lat,
+    double lon,
+    String locationName,
+  ) async {
+    final alerts = await ResqshieldBackendService.instance
+        .fetchCurrentOfficialAlerts(
+      lat: lat,
+      lon: lon,
+      radiusKm: 50,
+    );
+
+    if (!mounted) return;
+
+    if (alerts.isEmpty) {
+      setState(() {
+        _activeAlertIndex = 0;
+        _activeAlerts = [
+          {
+            'title': 'No Active Official Warning',
+            'titleHi': 'No Active Official Warning',
+            'distance': locationName,
+            'distanceHi': locationName,
+            'time': 'Checked live',
+            'timeHi': 'Checked live',
+            'impact':
+                'No active NDMA SACHET warning was found for this location.',
+            'impactHi':
+                'No active NDMA SACHET warning was found for this location.',
+            'badge': 'NO ACTIVE WARNING',
+            'badgeHi': 'NO ACTIVE WARNING',
+            'issued': 'NDMA SACHET',
+            'issuedHi': 'NDMA SACHET',
+            'district': locationName,
+            'districtHi': locationName,
+            'riskLevel': 'Official alerts: None active',
+            'riskLevelHi': 'Official alerts: None active',
+            'riskStep': 0,
+            'color': const Color(0xFF16A34A),
+          }
+        ];
+      });
+      return;
+    }
+
+    final mapped = alerts.map<Map<String, dynamic>>((item) {
+      final severity =
+          (item['severity'] ?? '').toString().toUpperCase();
+      final severityColor =
+          (item['severity_color'] ?? '').toString().toLowerCase();
+
+      Color color;
+      int riskStep;
+
+      if (severityColor == 'red' ||
+          severity.contains('EMERGENCY')) {
+        color = const Color(0xFFDC2626);
+        riskStep = 3;
+      } else if (severityColor == 'orange' ||
+          severity.contains('ALERT')) {
+        color = const Color(0xFFF97316);
+        riskStep = 2;
+      } else if (severityColor == 'yellow' ||
+          severity.contains('WATCH')) {
+        color = const Color(0xFFEAB308);
+        riskStep = 1;
+      } else {
+        color = const Color(0xFF2563EB);
+        riskStep = 1;
+      }
+
+      final distance = item['distance_km'];
+
+      return {
+        'title':
+            (item['title'] ?? 'Official Disaster Alert').toString(),
+        'titleHi':
+            (item['title'] ?? 'Official Disaster Alert').toString(),
+        'distance': distance != null
+            ? '$distance km from selected location'
+            : (item['area'] ?? locationName).toString(),
+        'distanceHi': distance != null
+            ? '$distance km from selected location'
+            : (item['area'] ?? locationName).toString(),
+        'time':
+            (item['effective_start_time'] ?? 'Active now').toString(),
+        'timeHi':
+            (item['effective_start_time'] ?? 'Active now').toString(),
+        'impact': (item['message'] ??
+                'Official disaster warning active for this area.')
+            .toString(),
+        'impactHi': (item['message'] ??
+                'Official disaster warning active for this area.')
+            .toString(),
+        'badge':
+            severity.isNotEmpty ? severity : 'OFFICIAL ALERT',
+        'badgeHi':
+            severity.isNotEmpty ? severity : 'OFFICIAL ALERT',
+        'issued':
+            'Source: ${(item['source'] ?? 'NDMA SACHET').toString()}',
+        'issuedHi':
+            'Source: ${(item['source'] ?? 'NDMA SACHET').toString()}',
+        'district':
+            'Area: ${(item['area'] ?? locationName).toString()}',
+        'districtHi':
+            'Area: ${(item['area'] ?? locationName).toString()}',
+        'riskLevel':
+            'Likelihood: ${(item['severity_level'] ?? 'Official warning').toString()}',
+        'riskLevelHi':
+            'Likelihood: ${(item['severity_level'] ?? 'Official warning').toString()}',
+        'riskStep': riskStep,
+        'color': color,
+      };
+    }).toList();
+
+    setState(() {
+      _activeAlertIndex = 0;
+      _activeAlerts = mapped;
+    });
   }
 
   Future<void> _fetchBackendAlerts(double lat, double lon) async {
@@ -8787,7 +8916,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       setState(() => _currentLocation = locName);
       LocationService.instance.setManualLocation(lat, lng, locName);
       
-      _fetchBackendAlerts(lat, lng);
+      await _fetchBackendAlerts(lat, lng);
+      await _fetchOfficialAlerts(lat, lng, locName);
       
       _showMessage(
         _isHindi ? 'स्थान बदला गया: $locName' : 'Location updated: $locName',

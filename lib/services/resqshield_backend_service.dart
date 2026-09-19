@@ -114,4 +114,45 @@ class ResqshieldBackendService {
     } catch (e) { print('API ERROR: $e'); }
     return null;
   }
+
+  /// Fetch active official NDMA SACHET alerts for the selected/current location.
+  Future<List<Map<String, dynamic>>> fetchCurrentOfficialAlerts({
+    required double lat,
+    required double lon,
+    double radiusKm = 50,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/alerts/current').replace(
+        queryParameters: {
+          'lat': lat.toString(),
+          'lon': lon.toString(),
+          'radius_km': radiusKm.toString(),
+        },
+      );
+
+      final response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final body = json.decode(
+          utf8.decode(response.bodyBytes),
+        );
+
+        final alerts = body['alerts'];
+        if (alerts is List) {
+          return alerts
+              .map<Map<String, dynamic>>(
+                (e) => Map<String, dynamic>.from(e as Map),
+              )
+              .toList();
+        }
+      }
+    } catch (e) {
+      print('SACHET API ERROR: $e');
+    }
+
+    return [];
+  }
+
 }
