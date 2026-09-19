@@ -19,9 +19,7 @@ class ResQShieldApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Arial',
         scaffoldBackgroundColor: const Color(0xFFF0F6FA),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF007AEB),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF007AEB)),
       ),
       home: const LoginScreen(),
     );
@@ -65,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _buttonPressed = false;
   bool _isLoading = false;
   bool _isSuccess = false;
+  bool _isRedirectingOut = false;
 
   // --------------------------------------------------------------------------
   // AMBIENT ANIMATION CONTROLLERS
@@ -187,7 +186,9 @@ class _LoginScreenState extends State<LoginScreen>
           content: const Text('Please enter your phone number'),
           backgroundColor: const Color(0xFF013973),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       _identityFocusNode.requestFocus();
@@ -200,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen>
           content: const Text('Please enter your password'),
           backgroundColor: const Color(0xFF013973),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       _passwordFocusNode.requestFocus();
@@ -251,7 +254,10 @@ class _LoginScreenState extends State<LoginScreen>
           final double scaleW = (w / 390.0).clamp(0.65, 1.45);
           final double scaleH = (h / 844.0).clamp(0.55, 1.35);
           final double scaleMin = math.min(scaleW, scaleH);
-          final double textScale = (math.min(w / 390.0, h / 800.0)).clamp(0.65, 1.25);
+          final double textScale = (math.min(
+            w / 390.0,
+            h / 800.0,
+          )).clamp(0.65, 1.25);
 
           final double padH = (18.0 * scaleW).clamp(12.0, 24.0);
           final double padV = (8.0 * scaleH).clamp(4.0, 12.0);
@@ -275,22 +281,42 @@ class _LoginScreenState extends State<LoginScreen>
               // ==================================================================
               SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padH,
+                    vertical: padV,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── TOP NAV BAR (BACK BUTTON & LANGUAGE SELECTOR) ──
-                      _buildTopBar(context, scaleW, scaleH, scaleMin, textScale),
+                      _buildTopBar(
+                        context,
+                        scaleW,
+                        scaleH,
+                        scaleMin,
+                        textScale,
+                      ),
 
                       const Spacer(flex: 1),
 
                       // ── BIG CENTERED LOGO + RESQSHIELD + 1-LINE MOTTO ──
-                      _buildCenteredBrandHeader(scaleW, scaleH, scaleMin, textScale),
+                      _buildCenteredBrandHeader(
+                        scaleW,
+                        scaleH,
+                        scaleMin,
+                        textScale,
+                      ),
 
                       SizedBox(height: (12.0 * scaleH).clamp(8.0, 18.0)),
 
                       // ── LOGIN CARD / SUCCESS CARD ──
-                      _buildLoginCard(scaleW, scaleH, scaleMin, textScale, screenWidth: w),
+                      _buildLoginCard(
+                        scaleW,
+                        scaleH,
+                        scaleMin,
+                        textScale,
+                        screenWidth: w,
+                      ),
 
                       const Spacer(flex: 3),
                     ],
@@ -371,7 +397,9 @@ class _LoginScreenState extends State<LoginScreen>
               children: [
                 Text(
                   '🇮🇳',
-                  style: TextStyle(fontSize: (11.5 * textScale).clamp(9.5, 13.0)),
+                  style: TextStyle(
+                    fontSize: (11.5 * textScale).clamp(9.5, 13.0),
+                  ),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -415,18 +443,27 @@ class _LoginScreenState extends State<LoginScreen>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Big Centered Logo with soft ambient shadow
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: logoSize,
           height: logoSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF013973).withValues(alpha: 0.14),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: _isSuccess && !_isRedirectingOut
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      blurRadius: 40,
+                      spreadRadius: 12,
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: const Color(0xFF013973).withValues(alpha: 0.14),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Image.asset(
             'assets/images/app_logo.png',
@@ -463,10 +500,7 @@ class _LoginScreenState extends State<LoginScreen>
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.3,
                   shadows: const [
-                    Shadow(
-                      color: Color(0x6600FF00),
-                      blurRadius: 6,
-                    ),
+                    Shadow(color: Color(0x6600FF00), blurRadius: 6),
                   ],
                 ),
               ),
@@ -516,8 +550,11 @@ class _LoginScreenState extends State<LoginScreen>
     // safely bounded by available screen width so there is zero overflow on mobile/tablet,
     // and strictly center aligned.
     final double maxCardWidth = 960.0;
-    final double availableWidth = screenWidth - (24.0 * scaleW).clamp(16.0, 48.0);
-    final double cardWidth = math.min(availableWidth, maxCardWidth).clamp(280.0, maxCardWidth);
+    final double availableWidth =
+        screenWidth - (24.0 * scaleW).clamp(16.0, 48.0);
+    final double cardWidth = math
+        .min(availableWidth, maxCardWidth)
+        .clamp(280.0, maxCardWidth);
 
     return Center(
       child: SizedBox(
@@ -532,7 +569,9 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular((20.0 * scaleMin).clamp(16.0, 24.0)),
+            borderRadius: BorderRadius.circular(
+              (20.0 * scaleMin).clamp(16.0, 24.0),
+            ),
             border: Border.all(color: const Color(0xFFE0EEF8), width: 1.2),
             boxShadow: const [
               BoxShadow(
@@ -664,7 +703,12 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   // LOGIN FORM CONTENT
   // --------------------------------------------------------------------------
-  Widget _buildLoginFormContent(double scaleW, double scaleH, double scaleMin, double textScale) {
+  Widget _buildLoginFormContent(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
     return Column(
       key: const ValueKey('login_form'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,7 +783,11 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         child: _rememberMe
-                            ? Icon(Icons.check, size: (12.0 * scaleMin).clamp(10.0, 14.0), color: Colors.white)
+                            ? Icon(
+                                Icons.check,
+                                size: (12.0 * scaleMin).clamp(10.0, 14.0),
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                       SizedBox(width: (6.0 * scaleW).clamp(4.0, 8.0)),
@@ -893,7 +941,12 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   // EMAIL / IDENTITY INPUT FIELD (EQUAL SIZING WITH PREFIX ICON)
   // --------------------------------------------------------------------------
-  Widget _buildIdentityTextField(double scaleW, double scaleH, double scaleMin, double textScale) {
+  Widget _buildIdentityTextField(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
     final bool hasText = _identityController.text.isNotEmpty;
 
     Color borderColor = const Color(0xFFE2E8F0);
@@ -915,10 +968,16 @@ class _LoginScreenState extends State<LoginScreen>
       curve: Curves.easeOut,
       height: boxHeight,
       alignment: Alignment.center,
-      transform: Matrix4.translationValues(0, _isIdentityFocused ? -1.0 : 0.0, 0),
+      transform: Matrix4.translationValues(
+        0,
+        _isIdentityFocused ? -1.0 : 0.0,
+        0,
+      ),
       decoration: BoxDecoration(
         color: _isIdentityFocused ? Colors.white : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular((13.0 * scaleMin).clamp(11.0, 16.0)),
+        borderRadius: BorderRadius.circular(
+          (13.0 * scaleMin).clamp(11.0, 16.0),
+        ),
         border: Border.all(
           color: borderColor,
           width: _isIdentityFocused ? 1.8 : (hasText ? 1.4 : 1.0),
@@ -927,44 +986,47 @@ class _LoginScreenState extends State<LoginScreen>
             ? [
                 // Soft radiating light glow around the border
                 BoxShadow(
-                  color: (_isIdentityValid
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFF007AEB))
-                      .withValues(alpha: 0.24),
+                  color:
+                      (_isIdentityValid
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFF007AEB))
+                          .withValues(alpha: 0.24),
                   blurRadius: 10,
                   spreadRadius: 1.2,
                   offset: const Offset(0, 0),
                 ),
                 BoxShadow(
-                  color: (_isIdentityValid
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFF007AEB))
-                      .withValues(alpha: 0.12),
+                  color:
+                      (_isIdentityValid
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFF007AEB))
+                          .withValues(alpha: 0.12),
                   blurRadius: 4,
                   spreadRadius: 0.5,
                   offset: const Offset(0, 1),
                 ),
               ]
             : (hasText
-                ? [
-                    // Subtle light halo when text is entered
-                    BoxShadow(
-                      color: (_isIdentityValid
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFF007AEB))
-                          .withValues(alpha: 0.12),
-                      blurRadius: 7,
-                      spreadRadius: 0.6,
-                      offset: const Offset(0, 0),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x04000000),
-                      blurRadius: 3,
-                      offset: Offset(0, 1),
-                    ),
-                  ]),
+                  ? [
+                      // Subtle light halo when text is entered
+                      BoxShadow(
+                        color:
+                            (_isIdentityValid
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFF007AEB))
+                                .withValues(alpha: 0.12),
+                        blurRadius: 7,
+                        spreadRadius: 0.6,
+                        offset: const Offset(0, 0),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x04000000),
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
+                      ),
+                    ]),
       ),
       child: TextField(
         controller: _identityController,
@@ -993,8 +1055,8 @@ class _LoginScreenState extends State<LoginScreen>
             color: _isIdentityFocused
                 ? const Color(0xFF007AEB)
                 : (_isIdentityValid
-                    ? const Color(0xFF22C55E)
-                    : const Color(0xFF94A3B8)),
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFF94A3B8)),
             size: iconSize,
           ),
           prefixIconConstraints: BoxConstraints(
@@ -1026,12 +1088,19 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   // PASSWORD INPUT FIELD (EQUAL SIZING WITH PREFIX ICON)
   // --------------------------------------------------------------------------
-  Widget _buildPasswordTextField(double scaleW, double scaleH, double scaleMin, double textScale) {
+  Widget _buildPasswordTextField(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
     final bool hasText = _passwordController.text.isNotEmpty;
 
     Color borderColor = _isPasswordFocused
         ? const Color(0xFF007AEB)
-        : (hasText ? const Color(0xFF007AEB).withValues(alpha: 0.7) : const Color(0xFFE2E8F0));
+        : (hasText
+              ? const Color(0xFF007AEB).withValues(alpha: 0.7)
+              : const Color(0xFFE2E8F0));
 
     final double inputFontSize = (17.5 * textScale).clamp(15.5, 20.0);
     final double hintFontSize = (14.0 * textScale).clamp(12.0, 16.0);
@@ -1043,10 +1112,16 @@ class _LoginScreenState extends State<LoginScreen>
       curve: Curves.easeOut,
       height: boxHeight,
       alignment: Alignment.center,
-      transform: Matrix4.translationValues(0, _isPasswordFocused ? -1.0 : 0.0, 0),
+      transform: Matrix4.translationValues(
+        0,
+        _isPasswordFocused ? -1.0 : 0.0,
+        0,
+      ),
       decoration: BoxDecoration(
         color: _isPasswordFocused ? Colors.white : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular((13.0 * scaleMin).clamp(11.0, 16.0)),
+        borderRadius: BorderRadius.circular(
+          (13.0 * scaleMin).clamp(11.0, 16.0),
+        ),
         border: Border.all(
           color: borderColor,
           width: _isPasswordFocused ? 1.8 : (hasText ? 1.4 : 1.0),
@@ -1068,22 +1143,22 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ]
             : (hasText
-                ? [
-                    // Subtle light halo when text is entered
-                    BoxShadow(
-                      color: const Color(0xFF007AEB).withValues(alpha: 0.12),
-                      blurRadius: 7,
-                      spreadRadius: 0.6,
-                      offset: const Offset(0, 0),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x04000000),
-                      blurRadius: 3,
-                      offset: Offset(0, 1),
-                    ),
-                  ]),
+                  ? [
+                      // Subtle light halo when text is entered
+                      BoxShadow(
+                        color: const Color(0xFF007AEB).withValues(alpha: 0.12),
+                        blurRadius: 7,
+                        spreadRadius: 0.6,
+                        offset: const Offset(0, 0),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x04000000),
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
+                      ),
+                    ]),
       ),
       child: TextField(
         controller: _passwordController,
@@ -1150,7 +1225,12 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   // PRIMARY LOGIN BUTTON (IDLE -> LOADING -> SUCCESS)
   // --------------------------------------------------------------------------
-  Widget _buildLoginButton(double scaleW, double scaleH, double scaleMin, double textScale) {
+  Widget _buildLoginButton(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _buttonPressed = true),
       onTapUp: (_) {
@@ -1170,7 +1250,9 @@ class _LoginScreenState extends State<LoginScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius: BorderRadius.circular((16.0 * scaleMin).clamp(13.0, 20.0)),
+            borderRadius: BorderRadius.circular(
+              (16.0 * scaleMin).clamp(13.0, 20.0),
+            ),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x38007AEB),
@@ -1254,7 +1336,9 @@ class _LoginScreenState extends State<LoginScreen>
         height: (48.0 * scaleH).clamp(44.0, 54.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular((14.0 * scaleMin).clamp(12.0, 17.0)),
+          borderRadius: BorderRadius.circular(
+            (14.0 * scaleMin).clamp(12.0, 17.0),
+          ),
           border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
           boxShadow: const [
             BoxShadow(
@@ -1293,16 +1377,18 @@ class _LoginScreenState extends State<LoginScreen>
   // --------------------------------------------------------------------------
   Widget _buildGoogleIcon(double scaleMin) {
     final double dim = (20.5 * scaleMin).clamp(18.0, 24.0);
-    return CustomPaint(
-      size: Size(dim, dim),
-      painter: _GoogleIconPainter(),
-    );
+    return CustomPaint(size: Size(dim, dim), painter: _GoogleIconPainter());
   }
 
   // --------------------------------------------------------------------------
   // SUCCESS STATE (CARD CONTENT)
   // --------------------------------------------------------------------------
-  Widget _buildSuccessCardContent(double scaleW, double scaleH, double scaleMin, double textScale) {
+  Widget _buildSuccessCardContent(
+    double scaleW,
+    double scaleH,
+    double scaleMin,
+    double textScale,
+  ) {
     final double iconDim = (48.0 * scaleMin).clamp(36.0, 60.0);
     final double checkDim = (28.0 * scaleMin).clamp(20.0, 34.0);
 
@@ -1414,4 +1500,382 @@ class _GoogleIconPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+// ============================================================================
+// CUSTOM SUCCESS ANIMATIONS & PAINTERS
+// ============================================================================
 
+class _SuccessCardAnimation extends StatefulWidget {
+  final double scaleH;
+  final double scaleMin;
+  final double textScale;
+
+  const _SuccessCardAnimation({
+    required this.scaleH,
+    required this.scaleMin,
+    required this.textScale,
+  });
+
+  @override
+  State<_SuccessCardAnimation> createState() => _SuccessCardAnimationState();
+}
+
+class _SuccessCardAnimationState extends State<_SuccessCardAnimation>
+    with TickerProviderStateMixin {
+  late final AnimationController _timeline;
+
+  late final Animation<double> _loaderOpacity;
+  late final Animation<double> _tickProgress;
+  late final Animation<double> _ringScale;
+  late final Animation<double> _ringOpacity;
+
+  late final Animation<double> _text1Opacity;
+  late final Animation<Offset> _text1Slide;
+
+  late final Animation<double> _text2Opacity;
+  late final Animation<Offset> _text2Slide;
+
+  late final Animation<double> _text3Opacity;
+  late final Animation<Offset> _text3Slide;
+
+  late final Animation<double> _progressWidth;
+
+  @override
+  void initState() {
+    super.initState();
+    // 2100ms total timeline
+    _timeline = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2100),
+    );
+
+    // 0 - 350ms (0 to 0.166): Loader spinning and fading out
+    _loaderOpacity =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: ConstantTween(1.0), weight: 80),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+        ]).animate(
+          CurvedAnimation(parent: _timeline, curve: const Interval(0.0, 0.166)),
+        );
+
+    // 350 - 700ms (0.166 to 0.333): Tick draws
+    _tickProgress = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.166, 0.333, curve: Curves.easeInOut),
+      ),
+    );
+
+    // 700 - 1150ms (0.333 to 0.547): Ring expands and fades
+    _ringScale = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.333, 0.547, curve: Curves.easeOut),
+      ),
+    );
+    _ringOpacity = Tween<double>(begin: 0.35, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.333, 0.547, curve: Curves.easeOut),
+      ),
+    );
+
+    // 700 - 950ms (0.333 to 0.452): Text 1
+    _text1Opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.333, 0.452, curve: Curves.easeOut),
+      ),
+    );
+    _text1Slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _timeline,
+            curve: const Interval(0.333, 0.452, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    // 790 - 1040ms (0.376 to 0.495): Text 2
+    _text2Opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.376, 0.495, curve: Curves.easeOut),
+      ),
+    );
+    _text2Slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _timeline,
+            curve: const Interval(0.376, 0.495, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    // 910 - 1160ms (0.433 to 0.552): Text 3
+    _text3Opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.433, 0.552, curve: Curves.easeOut),
+      ),
+    );
+    _text3Slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _timeline,
+            curve: const Interval(0.433, 0.552, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    // 910 - 2110ms (0.433 to 1.0): Progress bar
+    _progressWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.433, 1.0, curve: Curves.easeInOut),
+      ),
+    );
+
+    _timeline.forward();
+  }
+
+  @override
+  void dispose() {
+    _timeline.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double iconDim = (64.0 * widget.scaleMin).clamp(48.0, 72.0);
+
+    return AnimatedBuilder(
+      animation: _timeline,
+      builder: (context, child) {
+        return Container(
+          height: 380 * widget.scaleH,
+          width: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: (8.0 * widget.scaleH).clamp(4.0, 14.0)),
+
+              // Icon Area
+              SizedBox(
+                width: iconDim + 40,
+                height: iconDim + 40,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Expanding Soft Ring
+                    Transform.scale(
+                      scale: _ringScale.value,
+                      child: Opacity(
+                        opacity: _ringOpacity.value,
+                        child: Container(
+                          width: iconDim,
+                          height: iconDim,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF22C55E),
+                              width: 6.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Base Circle (White inside, light green background)
+                    Container(
+                      width: iconDim,
+                      height: iconDim,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A).withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+
+                    // Blue Loader (fades out)
+                    Opacity(
+                      opacity: _loaderOpacity.value,
+                      child: SizedBox(
+                        width: iconDim,
+                        height: iconDim,
+                        child: const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF007AEB),
+                          ),
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    ),
+
+                    // Green Success Tick Drawing
+                    if (_tickProgress.value > 0)
+                      SizedBox(
+                        width: iconDim,
+                        height: iconDim,
+                        child: CustomPaint(
+                          painter: _TickPainter(
+                            progress: _tickProgress.value,
+                            color: const Color(0xFF22C55E),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: (16.0 * widget.scaleH).clamp(10.0, 24.0)),
+
+              // Text 1
+              Opacity(
+                opacity: _text1Opacity.value,
+                child: SlideTransition(
+                  position: _text1Slide,
+                  child: Text(
+                    'Login Successful',
+                    style: TextStyle(
+                      color: const Color(0xFF0F172A),
+                      fontSize: (22.0 * widget.textScale).clamp(18.0, 26.0),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: (6.0 * widget.scaleH).clamp(4.0, 8.0)),
+
+              // Text 2
+              Opacity(
+                opacity: _text2Opacity.value,
+                child: SlideTransition(
+                  position: _text2Slide,
+                  child: Text(
+                    'Welcome back to ResQShield',
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontSize: (14.0 * widget.textScale).clamp(12.0, 16.0),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // Text 3 & Progress Line
+              Opacity(
+                opacity: _text3Opacity.value,
+                child: SlideTransition(
+                  position: _text3Slide,
+                  child: Column(
+                    children: [
+                      Text(
+                        'Redirecting to your dashboard...',
+                        style: TextStyle(
+                          color: const Color(0xFF94A3B8),
+                          fontSize: (12.0 * widget.textScale).clamp(10.0, 14.0),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 140,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: _progressWidth.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF007AEB),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: (12.0 * widget.scaleH).clamp(6.0, 18.0)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TickPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _TickPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress == 0) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 3.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Tick path points relative to bounding box
+    final start = Offset(size.width * 0.3, size.height * 0.55);
+    final mid = Offset(size.width * 0.45, size.height * 0.7);
+    final end = Offset(size.width * 0.75, size.height * 0.35);
+
+    // Calculate segment lengths
+    final l1 = (mid - start).distance;
+    final l2 = (end - mid).distance;
+    final totalL = l1 + l2;
+
+    final currentL = totalL * progress;
+
+    final path = Path();
+    path.moveTo(start.dx, start.dy);
+
+    if (currentL <= l1) {
+      final t = currentL / l1;
+      path.lineTo(
+        start.dx + (mid.dx - start.dx) * t,
+        start.dy + (mid.dy - start.dy) * t,
+      );
+    } else {
+      path.lineTo(mid.dx, mid.dy);
+      final t = (currentL - l1) / l2;
+      path.lineTo(
+        mid.dx + (end.dx - mid.dx) * t,
+        mid.dy + (end.dy - mid.dy) * t,
+      );
+    }
+
+    // Outer circle trace as part of the morph
+    final circlePaint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    // Draw the circle sweeping from 0 to 360 over the progress
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      -3.14159 / 2, // start at top
+      2 * 3.14159 * progress,
+      false,
+      circlePaint,
+    );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TickPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}

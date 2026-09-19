@@ -518,7 +518,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
                                   s.photoUrl,
                                   width: imageWidth,
                                   height: double.infinity,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                   errorBuilder: (_, __, ___) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
@@ -530,7 +530,7 @@ class _ResourceShelterMapScreenState extends State<ResourceShelterMapScreen> {
                                   s.photoUrl,
                                   width: imageWidth,
                                   height: double.infinity,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                   errorBuilder: (_, __, ___) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(

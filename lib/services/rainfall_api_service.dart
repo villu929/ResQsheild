@@ -1,5 +1,5 @@
 import 'package:resqshield/models/incident_models.dart';
-
+import 'package:resqshield/services/resqshield_backend_service.dart';
 class RainfallApiService {
   static List<RainfallObservation> _generateObservations(List<double> cumulativeData) {
     final now = DateTime.now();
@@ -70,7 +70,33 @@ class RainfallApiService {
   ];
 
   static Future<List<RainfallModel>> fetchRainfallData() async {
-    await Future.delayed(const Duration(milliseconds: 900));
+    try {
+      final data = await ResqshieldBackendService.instance.fetchFloodRiskDistricts(limit: 5);
+      if (data.isNotEmpty) {
+        List<RainfallModel> models = [];
+        for (int i = 0; i < data.length; i++) {
+          final d = data[i];
+          final mmPerHour = (d['gpm']?['rainfall_mm_per_hour'] as num?)?.toDouble() ?? 0.0;
+          String alert = 'Green';
+          String status = 'LOW';
+          if (mmPerHour > 15) { alert = 'Red'; status = 'DANGER'; }
+          else if (mmPerHour > 8) { alert = 'Orange'; status = 'HEAVY'; }
+          else if (mmPerHour > 3) { alert = 'Yellow'; status = 'MODERATE'; }
+          
+          models.add(RainfallModel(
+            id: 'RF-API-$i',
+            areaName: d['district'] ?? 'Unknown',
+            state: d['state'] ?? 'Unknown',
+            forecastMm: mmPerHour * 3,
+            status: status,
+            alertLevel: alert,
+            lastUpdated: DateTime.now(),
+            observations: _generateObservations([0, mmPerHour * 0.2, mmPerHour * 0.5, mmPerHour * 0.8, mmPerHour]),
+          ));
+        }
+        if (models.isNotEmpty) return models;
+      }
+    } catch (_) {}
     return _mockRainfallData;
   }
 

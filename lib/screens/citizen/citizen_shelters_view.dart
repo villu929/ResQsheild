@@ -556,7 +556,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final imageWidth = screenWidth * 0.25;
-    const double cardHeight = 156.0; // 0.8x of previous 195.0 height
+    const double cardHeight = 187.2; // 1.2x of previous 156.0 height
 
     return Container(
       height: cardHeight,
@@ -610,7 +610,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   s.photoUrl,
                                   width: imageWidth,
                                   height: double.infinity,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                   errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(
@@ -626,7 +626,7 @@ class _CitizenSheltersViewState extends State<CitizenSheltersView> {
                                   s.photoUrl,
                                   width: imageWidth,
                                   height: double.infinity,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                   errorBuilder: (_, e, __) => Container(
                                     color: const Color(0xFF0F172A),
                                     child: const Center(

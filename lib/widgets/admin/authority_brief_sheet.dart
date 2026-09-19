@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/resqshield_backend_service.dart';
 
 class AuthorityBriefSheet extends StatefulWidget {
   const AuthorityBriefSheet({Key? key}) : super(key: key);
@@ -14,11 +15,19 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
   bool _isReady = false;
   final TextEditingController _noteController = TextEditingController();
 
+  // API Data State
+  bool _isLoadingIntelligence = true;
+  List<Map<String, String>> _floodRiskItems = [];
+  List<Map<String, String>> _landslideRiskItems = [];
+  List<Map<String, String>> _extremeRainfallItems = [];
+  String _satChangeText = '+18% surface water';
+  String _satAffectedText = '14.2 sq km';
+
   final List<String> _priorities = ['ROUTINE', 'WATCH', 'URGENT', 'CRITICAL'];
   final List<String> _recipients = [
     'District Authority',
     'SDMA Control Room',
-    'NDRF Control Room'
+    'NDRF Control Room',
   ];
 
   void _sendToAuthority() {
@@ -26,20 +35,29 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: const [
               Icon(Icons.satellite_alt_rounded, color: Color(0xFF6366F1)),
               SizedBox(width: 10),
-              Text('Prototype Mode', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                'Prototype Mode',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
             ],
           ),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Authority transmission is not connected in this prototype.'),
+              Text(
+                'Authority transmission is not connected in this prototype.',
+              ),
               SizedBox(height: 10),
-              Text('This intelligence brief is ready for transmission. No data has been sent.'),
+              Text(
+                'This intelligence brief is ready for transmission. No data has been sent.',
+              ),
             ],
           ),
           actions: [
@@ -52,13 +70,21 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Authority brief prepared — transmission pending integration.'),
+                    content: Text(
+                      'Authority brief prepared — transmission pending integration.',
+                    ),
                     backgroundColor: Color(0xFF6366F1),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Text('Save as Ready for Review', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Save as Ready for Review',
+                style: TextStyle(
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -67,12 +93,104 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchIntelligenceData();
+  }
+
+  Future<void> _fetchIntelligenceData() async {
+    final backend = ResqshieldBackendService.instance;
+
+    // Fetch in parallel
+    final results = await Future.wait([
+      backend.fetchFloodRiskDistricts(limit: 3),
+      backend.fetchLandslideDistricts(limit: 3),
+      backend.fetchIntelligenceSummary(),
+    ]);
+
+    final floodData = results[0] as List<Map<String, dynamic>>;
+    final landslideData = results[1] as List<Map<String, dynamic>>;
+    final intelData = results[2] as Map<String, dynamic>?;
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingIntelligence = false;
+
+      // Populate Floods
+      if (floodData.isNotEmpty) {
+        _floodRiskItems = floodData.map((d) {
+          final loc = "${d['district']}, ${d['state']}";
+          final score = (d['risk_score'] * 100).toInt();
+          return {
+            'location': loc,
+            'score': 'Score: $score/100',
+            'status': '${d['risk_level']} Risk',
+          };
+        }).toList();
+      } else {
+        _floodRiskItems = [
+          {
+            'location': 'Data unavailable',
+            'score': 'N/A',
+            'status': 'No flood risk data from API',
+          },
+        ];
+      }
+
+      // Populate Landslides
+      if (landslideData.isNotEmpty) {
+        _landslideRiskItems = landslideData.map((d) {
+          final loc =
+              "${d['district'] ?? 'Unknown'}, ${d['state'] ?? 'Unknown'}";
+          final score = ((d['landslide_risk_score'] ?? 0.0) * 100).toInt();
+          return {
+            'location': loc,
+            'score': 'Score: $score/100',
+            'status': '${d['landslide_risk_level'] ?? 'HIGH'} Risk',
+          };
+        }).toList();
+      } else {
+        _landslideRiskItems = [
+          {
+            'location': 'Data unavailable',
+            'score': 'N/A',
+            'status': 'No landslide risk data from API',
+          },
+        ];
+      }
+
+      // Extreme Rainfall (Using GPM data from flood risk as fallback since no explicit rainfall alerts endpoint was provided, but user said "if available in risk payload")
+      _extremeRainfallItems = [];
+      for (var d in floodData) {
+        if (d['gpm'] != null && d['gpm']['rainfall_mm_per_hour'] != null) {
+          final mm = d['gpm']['rainfall_mm_per_hour'];
+          if (mm > 5) {
+            _extremeRainfallItems.add({
+              'location': "${d['district']}, ${d['state']}",
+              'score': '${mm.toStringAsFixed(1)} mm/hr',
+              'status': 'Heavy Rainfall - GPM Detected',
+            });
+          }
+        }
+      }
+      if (_extremeRainfallItems.isEmpty) {
+        _extremeRainfallItems = [
+          {
+            'location': 'No extreme rainfall',
+            'score': 'Normal',
+            'status': 'Clear',
+          },
+        ];
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       width: 600, // Drawer width
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFFF8FAFC)),
       child: Column(
         children: [
           // HEADER
@@ -115,15 +233,22 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: _isReady ? const Color(0xFFE8F7F0) : const Color(0xFFFFF3CD),
+                        color: _isReady
+                            ? const Color(0xFFE8F7F0)
+                            : const Color(0xFFFFF3CD),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         _status,
                         style: TextStyle(
-                          color: _isReady ? const Color(0xFF0E5C38) : const Color(0xFF856404),
+                          color: _isReady
+                              ? const Color(0xFF0E5C38)
+                              : const Color(0xFF856404),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -143,7 +268,13 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                           items: _priorities.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             );
                           }).toList(),
                           onChanged: (newValue) {
@@ -158,7 +289,14 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 ),
                 const SizedBox(height: 16),
                 // Recipient
-                const Text('RECIPIENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                const Text(
+                  'RECIPIENT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
@@ -175,7 +313,13 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                       items: _recipients.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                          child: Text(
+                            value,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (newValue) {
@@ -208,14 +352,30 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Data Freshness', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                          const Text(
+                            'Data Freshness',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFE0F2FE),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text('FRESH', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 11)),
+                            child: const Text(
+                              'FRESH',
+                              style: TextStyle(
+                                color: Color(0xFF0284C7),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -238,42 +398,58 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         title: 'High Flood Risk Areas',
                         icon: Icons.water_drop_rounded,
                         color: const Color(0xFF0284C7),
-                        items: [
-                          {'location': 'Patna, Bihar', 'score': 'Score: 94/100', 'status': 'High Flood Risk - Rapid river level rise'},
-                          {'location': 'Guwahati, Assam', 'score': 'Score: 91/100', 'status': 'High Flood Risk - Brahmaputra overflowing'},
-                          {'location': 'Balasore, Odisha', 'score': 'Score: 88/100', 'status': 'Severe Flood Risk - Coastal inundation'},
-                        ],
+                        items: _isLoadingIntelligence
+                            ? [
+                                {
+                                  'location': 'Loading data...',
+                                  'score': 'Score: --/100',
+                                  'status': 'Fetching latest satellite risk models...'
+                                }
+                              ]
+                            : _floodRiskItems,
                       ),
                       _buildRiskContainer(
                         title: 'Active Landslide Zones',
                         icon: Icons.terrain_rounded,
                         color: const Color(0xFFB45309),
-                        items: [
-                          {'location': 'Mandi, Himachal Pradesh', 'score': 'Score: 95/100', 'status': 'High Landslide Risk - Soil saturation'},
-                          {'location': 'Wayanad, Kerala', 'score': 'Score: 92/100', 'status': 'Critical Landslide Risk - Steep slope failure'},
-                          {'location': 'Gangtok, Sikkim', 'score': 'Score: 89/100', 'status': 'High Landslide Risk - Highway blocked'},
-                        ],
+                        items: _isLoadingIntelligence
+                            ? [
+                                {
+                                  'location': 'Loading data...',
+                                  'score': 'Score: --/100',
+                                  'status': 'Fetching latest satellite risk models...'
+                                }
+                              ]
+                            : _landslideRiskItems,
                       ),
                       _buildRiskContainer(
                         title: 'Extreme Rainfall Alerts',
                         icon: Icons.thunderstorm_rounded,
                         color: const Color(0xFFDC2626),
-                        items: [
-                          {'location': 'Cherrapunji, Meghalaya', 'score': 'Score: 98/100', 'status': 'Extreme Rainfall - Cloudburst patterns'},
-                          {'location': 'Udupi, Coastal Karnataka', 'score': 'Score: 93/100', 'status': 'Very Heavy Rainfall - Continuous downpour'},
-                          {'location': 'Mumbai, Maharashtra', 'score': 'Score: 90/100', 'status': 'Heavy Rainfall - Urban waterlogging'},
-                        ],
+                        items: _isLoadingIntelligence
+                            ? [
+                                {
+                                  'location': 'Loading data...',
+                                  'score': 'Score: --/100',
+                                  'status': 'Fetching latest satellite risk models...'
+                                }
+                              ]
+                            : _extremeRainfallItems,
                       ),
-                      
+
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8.0),
                         child: Divider(color: Color(0xFFE2E8F0)),
                       ),
-                      
+
                       // Local Data
                       const Text(
                         'Local Region: Significant water-spread expansion detected',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -281,10 +457,25 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         style: TextStyle(color: Color(0xFF334155), height: 1.4),
                       ),
                       const SizedBox(height: 16),
-                      _buildMetricRow('Detected Change', '+18% surface water'),
-                      _buildMetricRow('Affected Area', '14.2 sq km'),
-                      _buildMetricRow('Satellite Evidence Confidence', 'HIGH (92%)', color: const Color(0xFFB45309)),
-                      _buildMetricRow('Change Detection Confidence', 'HIGH (89%)'),
+                      _buildMetricRow(
+                        'Detected Change',
+                        _isLoadingIntelligence ? 'Loading...' : _satChangeText,
+                      ),
+                      _buildMetricRow(
+                        'Affected Area',
+                        _isLoadingIntelligence
+                            ? 'Loading...'
+                            : _satAffectedText,
+                      ),
+                      _buildMetricRow(
+                        'Satellite Evidence Confidence',
+                        'HIGH (92%)',
+                        color: const Color(0xFFB45309),
+                      ),
+                      _buildMetricRow(
+                        'Change Detection Confidence',
+                        'HIGH (89%)',
+                      ),
                     ],
                   ),
                 ),
@@ -302,15 +493,27 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                           color: const Color(0xFFE2E8F0),
                           borderRadius: BorderRadius.circular(8),
                           image: const DecorationImage(
-                            image: NetworkImage('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80'), // Placeholder for map
+                            image: NetworkImage(
+                              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+                            ), // Placeholder for map
                             fit: BoxFit.cover,
                           ),
                         ),
                         child: Center(
                           child: Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                            child: const Text('SAT-MAP RENDERING', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'SAT-MAP RENDERING',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -335,11 +538,31 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                   title: 'EVIDENCE CORROBORATION',
                   child: Column(
                     children: [
-                      _buildCorroborationRow('Satellite flood extent', 'STRONG', const Color(0xFF059669)),
-                      _buildCorroborationRow('Upstream rainfall', 'EXTREME', const Color(0xFFDC2626)),
-                      _buildCorroborationRow('River rate-of-rise', 'CRITICAL', const Color(0xFFDC2626)),
-                      _buildCorroborationRow('Ground sensor agreement', 'HIGH', const Color(0xFFD97706)),
-                      _buildCorroborationRow('Verified field reports', '2', const Color(0xFF6366F1)),
+                      _buildCorroborationRow(
+                        'Satellite flood extent',
+                        'STRONG',
+                        const Color(0xFF059669),
+                      ),
+                      _buildCorroborationRow(
+                        'Upstream rainfall',
+                        'EXTREME',
+                        const Color(0xFFDC2626),
+                      ),
+                      _buildCorroborationRow(
+                        'River rate-of-rise',
+                        'CRITICAL',
+                        const Color(0xFFDC2626),
+                      ),
+                      _buildCorroborationRow(
+                        'Ground sensor agreement',
+                        'HIGH',
+                        const Color(0xFFD97706),
+                      ),
+                      _buildCorroborationRow(
+                        'Verified field reports',
+                        '2',
+                        const Color(0xFF6366F1),
+                      ),
                       const Divider(height: 24),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -350,12 +573,19 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         ),
                         child: Row(
                           children: const [
-                            Icon(Icons.check_circle, color: Color(0xFF059669), size: 20),
+                            Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF059669),
+                              size: 20,
+                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 '4 of 5 available evidence channels support escalation.',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
                               ),
                             ),
                           ],
@@ -368,7 +598,8 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
 
                 // 6. POTENTIAL OPERATIONAL IMPACT
                 _buildSectionCard(
-                  title: 'CRITICAL INFRASTRUCTURE DAMAGE (HIMACHAL, BIHAR, JHARKHAND)',
+                  title:
+                      'CRITICAL INFRASTRUCTURE DAMAGE (HIMACHAL, BIHAR, JHARKHAND)',
                   child: Column(
                     children: [
                       _buildRiskContainer(
@@ -376,9 +607,21 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         icon: Icons.add_road_rounded,
                         color: const Color(0xFFDC2626),
                         items: [
-                          {'location': 'NH-3, Mandi (Himachal)', 'score': 'BLOCKED', 'status': 'Massive landslide debris on route.'},
-                          {'location': 'NH-31, Patna (Bihar)', 'score': 'SUBMERGED', 'status': '4ft flood water over highway.'},
-                          {'location': 'SH-24, Ranchi (Jharkhand)', 'score': 'COLLAPSED', 'status': 'Bridge washed away in flash flood.'},
+                          {
+                            'location': 'NH-3, Mandi (Himachal)',
+                            'score': 'BLOCKED',
+                            'status': 'Massive landslide debris on route.',
+                          },
+                          {
+                            'location': 'NH-31, Patna (Bihar)',
+                            'score': 'SUBMERGED',
+                            'status': '4ft flood water over highway.',
+                          },
+                          {
+                            'location': 'SH-24, Ranchi (Jharkhand)',
+                            'score': 'COLLAPSED',
+                            'status': 'Bridge washed away in flash flood.',
+                          },
                         ],
                       ),
                       _buildRiskContainer(
@@ -386,17 +629,33 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         icon: Icons.local_hospital_rounded,
                         color: const Color(0xFFB45309),
                         items: [
-                          {'location': 'Darbhanga Medical (Bihar)', 'score': 'EVACUATING', 'status': 'Ground floor completely flooded.'},
-                          {'location': 'Govt High School, Kullu', 'score': 'DAMAGED', 'status': 'Roof damaged by landslide boulders.'},
-                          {'location': 'Sadar Hospital, Deoghar', 'score': 'INACCESSIBLE', 'status': 'Surrounding area severely waterlogged.'},
+                          {
+                            'location': 'Darbhanga Medical (Bihar)',
+                            'score': 'EVACUATING',
+                            'status': 'Ground floor completely flooded.',
+                          },
+                          {
+                            'location': 'Govt High School, Kullu',
+                            'score': 'DAMAGED',
+                            'status': 'Roof damaged by landslide boulders.',
+                          },
+                          {
+                            'location': 'Sadar Hospital, Deoghar',
+                            'score': 'INACCESSIBLE',
+                            'status': 'Surrounding area severely waterlogged.',
+                          },
                         ],
                       ),
                       const SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.visibility, size: 18),
-                        label: const Text('View full infrastructure damage report'),
-                        style: TextButton.styleFrom(foregroundColor: const Color(0xFF6366F1)),
+                        label: const Text(
+                          'View full infrastructure damage report',
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF6366F1),
+                        ),
                       ),
                     ],
                   ),
@@ -408,7 +667,11 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                   title: 'ANALYSIS SUMMARY',
                   child: const Text(
                     'Satellite imagery shows expanding surface water downstream while upstream rainfall and river-rise observations are also elevated. Evidence is consistent across multiple sources. Immediate public evacuation is not being issued from this screen; authority review is recommended.',
-                    style: TextStyle(color: Color(0xFF334155), height: 1.5, fontSize: 14),
+                    style: TextStyle(
+                      color: Color(0xFF334155),
+                      height: 1.5,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -436,9 +699,23 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: const [
-                            Text('Suggested Authority Action', style: TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w800)),
+                            Text(
+                              'Suggested Authority Action',
+                              style: TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             SizedBox(height: 4),
-                            Text('REVIEW FOR WARNING ESCALATION', style: TextStyle(color: Color(0xFF991B1B), fontSize: 16, fontWeight: FontWeight.w900)),
+                            Text(
+                              'REVIEW FOR WARNING ESCALATION',
+                              style: TextStyle(
+                                color: Color(0xFF991B1B),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -448,19 +725,36 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 const SizedBox(height: 16),
 
                 // 9. ADMIN NOTE
-                const Text('OPERATIONAL NOTE FOR AUTHORITY (OPTIONAL)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                const Text(
+                  'OPERATIONAL NOTE FOR AUTHORITY (OPTIONAL)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _noteController,
                   maxLines: 3,
                   maxLength: 250,
                   decoration: InputDecoration(
-                    hintText: 'Add contextual information, verification note or reason for review...',
+                    hintText:
+                        'Add contextual information, verification note or reason for review...',
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF6366F1))),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF6366F1)),
+                    ),
                   ),
                 ),
               ],
@@ -474,7 +768,11 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               boxShadow: [
-                BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, -4)),
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 10,
+                  offset: Offset(0, -4),
+                ),
               ],
             ),
             child: Row(
@@ -482,11 +780,17 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                 OutlinedButton(
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     side: const BorderSide(color: Color(0xFFCBD5E1)),
                     foregroundColor: const Color(0xFF475569),
                   ),
-                  child: const Text('Save Draft', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Save Draft',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
@@ -494,7 +798,10 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                   icon: const Icon(Icons.preview, size: 18),
                   label: const Text('Preview as Authority'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     side: const BorderSide(color: Color(0xFF6366F1)),
                     foregroundColor: const Color(0xFF6366F1),
                   ),
@@ -507,16 +814,35 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: const [
-                      Text('Send to Authority', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      Text('DEMO MODE', style: TextStyle(fontSize: 9, color: Colors.white70, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                      Text(
+                        'Send to Authority',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        'DEMO MODE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ],
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6366F1),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
@@ -535,13 +861,25 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: const [
-          BoxShadow(color: Color(0x050F172A), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+            color: Color(0x050F172A),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF64748B),
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 12),
           child,
         ],
@@ -555,8 +893,26 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 2, child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500))),
-          Expanded(flex: 3, child: Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600))),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -619,17 +975,28 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                           children: [
                             Text(
                               item['location']!,
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                                fontSize: 13,
+                              ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: color.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 item['score']!,
-                                style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
                           ],
@@ -637,7 +1004,11 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
                         const SizedBox(height: 2),
                         Text(
                           item['status']!,
-                          style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            color: Color(0xFF475569),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -657,10 +1028,25 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.arrow_right, size: 16, color: color ?? const Color(0xFF64748B)),
+          Icon(
+            Icons.arrow_right,
+            size: 16,
+            color: color ?? const Color(0xFF64748B),
+          ),
           const SizedBox(width: 4),
-          Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF475569)))),
-          Text(value, style: TextStyle(color: color ?? const Color(0xFF0F172A), fontWeight: FontWeight.w700)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Color(0xFF475569)),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? const Color(0xFF0F172A),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -672,14 +1058,27 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF334155),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
           ),
         ],
       ),
@@ -691,9 +1090,18 @@ class _AuthorityBriefSheetState extends State<AuthorityBriefSheet> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          const Icon(Icons.check_box_outline_blank, size: 18, color: Color(0xFF94A3B8)),
+          const Icon(
+            Icons.check_box_outline_blank,
+            size: 18,
+            color: Color(0xFF94A3B8),
+          ),
           const SizedBox(width: 8),
-          Expanded(child: Text(label, style: const TextStyle(color: Color(0xFF334155)))),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Color(0xFF334155)),
+            ),
+          ),
         ],
       ),
     );

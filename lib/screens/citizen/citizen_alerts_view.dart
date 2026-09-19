@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/resqshield_backend_service.dart';
 
 class CitizenAlertsView extends StatefulWidget {
   final bool isHindi;
@@ -11,8 +12,9 @@ class CitizenAlertsView extends StatefulWidget {
 
 class _CitizenAlertsViewState extends State<CitizenAlertsView> {
   String _activeFilter = 'All';
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _alerts = [
+  List<Map<String, dynamic>> _alerts = [
     {
       'id': 'ALT-104',
       'level': 'EVACUATION ORDER',
@@ -74,6 +76,65 @@ class _CitizenAlertsViewState extends State<CitizenAlertsView> {
       'icon': Icons.check_circle_outline_rounded,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLiveAlerts();
+  }
+
+  Future<void> _fetchLiveAlerts() async {
+    final backend = ResqshieldBackendService.instance;
+    final summary = await backend.fetchHazardsSummary();
+    if (!mounted || summary == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final critical = summary['critical'] ?? 0;
+    final high = summary['high'] ?? 0;
+    
+    if (critical > 0 || high > 0) {
+      final List<Map<String, dynamic>> apiAlerts = [];
+      if (critical > 0) {
+        apiAlerts.add({
+          'id': 'API-CRIT',
+          'level': 'CRITICAL HAZARD',
+          'levelHi': 'गंभीर खतरा',
+          'time': 'Just now',
+          'source': 'ResQShield AI',
+          'title': '$critical Critical Zones Detected',
+          'titleHi': '$critical गंभीर क्षेत्र',
+          'message': 'Satellite analysis indicates imminent severe hazards in $critical districts. Check dashboard for your location risk.',
+          'messageHi': 'उपग्रह विश्लेषण $critical जिलों में आसन्न गंभीर खतरों का संकेत देता है।',
+          'color': const Color(0xFFDC2626),
+          'icon': Icons.warning_rounded,
+        });
+      }
+      if (high > 0) {
+        apiAlerts.add({
+          'id': 'API-HIGH',
+          'level': 'HIGH RISK',
+          'levelHi': 'उच्च जोखिम',
+          'time': 'Just now',
+          'source': 'ResQShield AI',
+          'title': '$high High Risk Zones',
+          'titleHi': '$high उच्च जोखिम क्षेत्र',
+          'message': 'Elevated hazards detected in $high districts. Stay alert.',
+          'messageHi': '$high जिलों में उच्च जोखिम का पता चला है। सतर्क रहें।',
+          'color': const Color(0xFFF39A20),
+          'icon': Icons.warning_amber_rounded,
+        });
+      }
+      
+      setState(() {
+        _alerts = [...apiAlerts, ..._alerts];
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
 
   void _showMessage(String msg) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();

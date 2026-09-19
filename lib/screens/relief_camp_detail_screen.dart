@@ -165,7 +165,7 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
                   child: s.photoUrl.startsWith('http')
                       ? Image.network(
                           s.photoUrl,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fill,
                           errorBuilder: (_, __, ___) => Container(
                             color: const Color(0xFF0A2540),
                             child: const Center(
@@ -175,7 +175,7 @@ class _ReliefCampDetailScreenState extends State<ReliefCampDetailScreen> {
                         )
                       : Image.asset(
                           s.photoUrl,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fill,
                           errorBuilder: (_, __, ___) => Container(
                             color: const Color(0xFF0A2540),
                             child: const Center(

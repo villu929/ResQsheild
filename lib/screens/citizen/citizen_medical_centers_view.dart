@@ -312,7 +312,7 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
           children: [
             // Left Image Section
             Expanded(
-              flex: 40,
+              flex: 32,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: ClipRRect(
@@ -323,7 +323,7 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                       center.photoUrl.startsWith('http')
                           ? Image.network(
                               center.photoUrl,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.fill,
                               errorBuilder: (_, __, ___) => Container(
                                 color: const Color(0xFF0F172A),
                                 child: const Center(
@@ -333,7 +333,7 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
                             )
                           : Image.asset(
                               center.photoUrl,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.fill,
                               errorBuilder: (_, __, ___) => Container(
                                 color: const Color(0xFF0F172A),
                                 child: const Center(
@@ -472,7 +472,7 @@ class _CitizenMedicalCentersViewState extends State<CitizenMedicalCentersView> {
 
             // Right Details Section
             Expanded(
-              flex: 60,
+              flex: 68,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(

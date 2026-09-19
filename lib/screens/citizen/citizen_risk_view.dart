@@ -1,9 +1,61 @@
 import 'package:flutter/material.dart';
+import '../../services/resqshield_backend_service.dart';
 
-class CitizenRiskView extends StatelessWidget {
+class CitizenRiskView extends StatefulWidget {
   final bool isHindi;
+  final double? lat;
+  final double? lon;
 
-  const CitizenRiskView({super.key, this.isHindi = false});
+  const CitizenRiskView({super.key, this.isHindi = false, this.lat, this.lon});
+
+  @override
+  State<CitizenRiskView> createState() => _CitizenRiskViewState();
+}
+
+class _CitizenRiskViewState extends State<CitizenRiskView> {
+  bool _isLoading = true;
+  String _riskLevel = 'SAFE';
+  int _riskScore = 0;
+  String _district = 'Unknown';
+  String _state = '';
+  
+  // Specific hazards
+  bool _hasFlood = false;
+  bool _hasLandslide = false;
+  bool _hasRainfall = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRiskData();
+  }
+
+  Future<void> _fetchRiskData() async {
+    final lat = widget.lat ?? 23.7957; // Default to Damodar basin
+    final lon = widget.lon ?? 86.4304;
+
+    final data = await ResqshieldBackendService.instance.fetchLocationRisk(lat: lat, lon: lon);
+    if (!mounted) return;
+
+    if (data != null) {
+      final stations = data['nearest_observations'] as List<dynamic>? ?? [];
+      if (stations.isNotEmpty) {
+        final st = stations[0];
+        _riskLevel = st['risk_level'] ?? 'SAFE';
+        _riskScore = ((st['risk_score'] ?? 0.0) * 100).toInt();
+        _district = data['district'] ?? 'Unknown';
+        _state = data['state'] ?? '';
+        
+        final method = st['method'] ?? '';
+        _hasFlood = method.contains('historical_anomaly');
+        _hasLandslide = method.contains('landslide');
+        _hasRainfall = (st['gpm'] != null);
+      }
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,22 +115,22 @@ class CitizenRiskView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isHindi ? 'वर्तमान स्थिति' : 'Current Village GPS Position',
+                          widget.isHindi ? 'वर्तमान स्थिति' : 'Current GPS Position',
                           style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Sector 4, Bokaro (Damodar Basin)',
-                          style: TextStyle(
+                        Text(
+                          '$_district, $_state',
+                          style: const TextStyle(
                             color: Color(0xFF013973),
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          '23.7957° N, 86.4304° E • Elevation: 218m',
-                          style: TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w500),
+                        Text(
+                          '${(widget.lat ?? 23.7957).toStringAsFixed(4)}° N, ${(widget.lon ?? 86.4304).toStringAsFixed(4)}° E',
+                          style: const TextStyle(color: Color(0xFF537392), fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -104,13 +156,15 @@ class CitizenRiskView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        children: const [
-                          Icon(Icons.warning_amber_rounded, color: Color(0xFFF39A20), size: 24),
-                          SizedBox(width: 8),
+                        children: [
+                          Icon(Icons.warning_amber_rounded, 
+                            color: _riskLevel == 'CRITICAL' ? const Color(0xFFDC2626) : const Color(0xFFF39A20), 
+                            size: 24),
+                          const SizedBox(width: 8),
                           Text(
-                            'OVERALL HAZARD: HIGH',
+                            'OVERALL HAZARD: $_riskLevel',
                             style: TextStyle(
-                              color: Color(0xFFF39A20),
+                              color: _riskLevel == 'CRITICAL' ? const Color(0xFFDC2626) : const Color(0xFFF39A20),
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
@@ -121,21 +175,21 @@ class CitizenRiskView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF39A20),
+                          color: _riskLevel == 'CRITICAL' ? const Color(0xFFDC2626) : const Color(0xFFF39A20),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'PREPARE TO EVACUATE',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                        child: Text(
+                          _riskLevel == 'SAFE' ? 'ALL CLEAR' : 'STAY ALERT',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    isHindi
-                        ? 'सरल भाषा में आपके लिए अर्थ: आपके क्षेत्र के पास नदी का पानी बढ़ रहा है। अगले 2-3 घंटों में मुख्य सड़क पर पानी आ सकता है।'
-                        : 'What this means in plain words: River Damodar upstream gates are discharging water. Low-lying roads near your house may become impassable in 2-3 hours.',
+                    widget.isHindi
+                        ? 'सरल भाषा में आपके लिए अर्थ: उपग्रह और सेंसर डेटा के आधार पर आपका क्षेत्र जोखिम स्कोर $_riskScore/100 है।'
+                        : 'What this means in plain words: Based on live satellite and sensor data, your location risk score is $_riskScore/100. $_riskLevel risk detected.',
                     style: const TextStyle(
                       color: Color(0xFF0F2642),
                       fontSize: 13,
@@ -161,26 +215,40 @@ class CitizenRiskView extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            _hazardTile(
-              icon: Icons.flood_rounded,
-              color: const Color(0xFFE92828),
-              title: isHindi ? 'फ्लैश फ्लड (अचानक बाढ़)' : 'Flash Flood Risk',
-              level: 'HIGH 🔴',
-              desc: isHindi
-                  ? 'जलस्तर 12 सेमी प्रति घंटा की दर से बढ़ रहा है। निचले कमरों से ऊपर जाएं।'
-                  : 'Water level is rising 12 cm/hour. Avoid ground-level basements and culverts.',
-            ),
-            const SizedBox(height: 10),
-            _hazardTile(
-              icon: Icons.landslide_rounded,
-              color: const Color(0xFFF39A20),
-              title: isHindi ? 'भूस्खलन / मिट्टी का कटाव' : 'Landslide & Mudflow',
-              level: 'MODERATE 🟠',
-              desc: isHindi
-                  ? 'पहाड़ी किनारों पर मिट्टी गीली है। ढलान वाले रास्तों पर सावधानी बरतें।'
-                  : 'Hillslope soil saturation is 78%. Steer clear of steep road embankments.',
-            ),
-            const SizedBox(height: 10),
+            if (_hasFlood)
+              _hazardTile(
+                icon: Icons.flood_rounded,
+                color: const Color(0xFFE92828),
+                title: widget.isHindi ? 'फ्लैश फ्लड (अचानक बाढ़)' : 'Flash Flood Risk',
+                level: '$_riskLevel 🔴',
+                desc: widget.isHindi
+                    ? 'असामान्य नदी स्तर और वर्षा दर्ज की गई है। सतर्क रहें।'
+                    : 'Anomalous river levels and rainfall detected in your basin area.',
+              ),
+            if (_hasFlood) const SizedBox(height: 10),
+            
+            if (_hasLandslide)
+              _hazardTile(
+                icon: Icons.landslide_rounded,
+                color: const Color(0xFFF39A20),
+                title: widget.isHindi ? 'भूस्खलन / मिट्टी का कटाव' : 'Landslide & Mudflow',
+                level: '$_riskLevel 🟠',
+                desc: widget.isHindi
+                    ? 'पहाड़ी किनारों पर मिट्टी गीली है। ढलान वाले रास्तों पर सावधानी बरतें।'
+                    : 'Soil saturation levels are high. Steer clear of steep embankments.',
+              ),
+            if (_hasLandslide) const SizedBox(height: 10),
+            
+            if (!_hasFlood && !_hasLandslide)
+              _hazardTile(
+                icon: Icons.check_circle_outline_rounded,
+                color: const Color(0xFF10B981),
+                title: widget.isHindi ? 'कोई तत्काल खतरा नहीं' : 'No Immediate Hazard',
+                level: 'SAFE 🟢',
+                desc: widget.isHindi
+                    ? 'आपके क्षेत्र में अभी कोई गंभीर खतरा नहीं है।'
+                    : 'No critical hazards detected for your area at this time.',
+              ),
             _hazardTile(
               icon: Icons.water_drop_rounded,
               color: const Color(0xFF007AEB),

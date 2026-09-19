@@ -67,7 +67,7 @@ class MedicalCenterDetailScreen extends StatelessWidget {
           children: [
             Image.asset(
               center.photoUrl,
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: const Color(0xFF0F172A),
                 child: const Center(

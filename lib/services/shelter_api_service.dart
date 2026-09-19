@@ -107,7 +107,7 @@ class ShelterApiService {
       }
     }
 
-    // Override shelters with local assets (repeats the 75 images up to 150 containers)
+    // Override shelters with local assets (repeats the 75 images up to 255 containers)
     final List<String> localImages = [
       'assets/images/shelter_community.jpg',
       'assets/images/hospital_ranchi.jpg',
@@ -186,8 +186,17 @@ class ShelterApiService {
       'assets/images/shelter_images/75.jpg',
     ];
 
-    if (index >= 0 && index < 150) {
-      photoUrl = localImages[index % 75];
+    if (index >= 0 && index <= 255) {
+      if (index == 0) {
+        photoUrl = 'assets/images/shelter_images/101.jpg';
+      } else if (index == 1) {
+        photoUrl = 'assets/images/shelter_images/102.jpg';
+      } else if (index >= 154) {
+        // Container 155 (index 154) maps to photo 1
+        photoUrl = localImages[(index - 154) % 75];
+      } else {
+        photoUrl = localImages[index % 75];
+      }
     }
 
     // Services list built from provisions
